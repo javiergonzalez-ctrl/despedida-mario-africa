@@ -2581,7 +2581,91 @@ async function startIntro() {
     </div>
   `;
   for (let i = 0; i < AFRICA_PIXEL_DOTS.length; i++) setTimeout(() => sfx.tick(), i * 120);
-  await sleep(4200);
+  await sleep(3000);
+
+  // Pokemon-style SPOTLIGHT: darken all except circle around Nigeria → Galicia
+  const wrap = document.querySelector('.africa-pixel-wrap');
+  if (wrap) {
+    const lagos = AFRICA_PIXEL_DOTS[0];   // Nigeria
+    const cies = AFRICA_PIXEL_DOTS[9];    // Galicia
+    wrap.style.position = 'relative';
+
+    // Convert grid (col,row) -> percentage of SVG bounding box
+    function pctFor(dot) {
+      return {
+        x: (dot.col * PX + PX/2) / W * 100,
+        y: (dot.row * PX + PX/2) / H * 100
+      };
+    }
+
+    // Spotlight overlay (radial gradient mask)
+    const spot = document.createElement('div');
+    spot.style.cssText =
+      'position:absolute;inset:0;pointer-events:none;z-index:4;' +
+      'transition:background 1s cubic-bezier(0.65, 0, 0.35, 1);';
+    wrap.appendChild(spot);
+
+    // Label
+    const label = document.createElement('div');
+    label.style.cssText =
+      "position:absolute;top:-44px;left:50%;transform:translateX(-50%);" +
+      "font-family:'Press Start 2P',monospace;font-size:clamp(10px,1.5vw,16px);" +
+      "color:#ffd700;text-shadow:3px 3px 0 #000,1px -1px 0 #000;letter-spacing:0.12em;" +
+      "z-index:6;opacity:0;transition:opacity 0.5s;pointer-events:none;white-space:nowrap;";
+    wrap.appendChild(label);
+
+    // Arrow that points to the spotlight
+    const arrow = document.createElement('div');
+    arrow.style.cssText =
+      "position:absolute;font-family:'Press Start 2P',monospace;font-size:18px;color:#ff2244;" +
+      "text-shadow:2px 2px 0 #000;z-index:7;opacity:0;transition:opacity 0.4s;pointer-events:none;";
+    arrow.textContent = '▼';
+    wrap.appendChild(arrow);
+
+    function setSpotlight(pct, radius) {
+      spot.style.background =
+        'radial-gradient(circle at ' + pct.x + '% ' + pct.y + '%, ' +
+        'transparent 0%, transparent ' + (radius - 4) + '%, ' +
+        'rgba(0,0,0,0.78) ' + radius + '%, rgba(0,0,0,0.92) 100%)';
+    }
+
+    function positionArrow(pct) {
+      arrow.style.left = pct.x + '%';
+      arrow.style.top = 'calc(' + pct.y + '% - 38px)';
+      arrow.style.transform = 'translateX(-50%)';
+    }
+
+    // 1) Spotlight on Nigeria
+    const lagosPct = pctFor(lagos);
+    setSpotlight(lagosPct, 14);
+    label.textContent = '▸ NIGERIA · LAGOS ◂';
+    label.style.opacity = '1';
+    positionArrow(lagosPct);
+    arrow.style.opacity = '1';
+    sweep(220, 900, 0.7, 'sine', 0.05);
+    await sleep(2200);
+
+    // 2) Pan to Galicia
+    const ciesPct = pctFor(cies);
+    label.style.opacity = '0';
+    arrow.style.opacity = '0';
+    await sleep(280);
+    setSpotlight(ciesPct, 14);
+    label.textContent = '▸ GALICIA · ISLAS CÍES ◂';
+    label.style.opacity = '1';
+    positionArrow(ciesPct);
+    arrow.style.opacity = '1';
+    sweep(500, 1300, 0.7, 'sine', 0.05);
+    await sleep(2200);
+
+    // 3) Fade spotlight out
+    label.style.opacity = '0';
+    arrow.style.opacity = '0';
+    spot.style.background = 'radial-gradient(circle at 50% 50%, transparent 0%, transparent 100%, rgba(0,0,0,0) 100%)';
+    await sleep(800);
+  } else {
+    await sleep(1500);
+  }
 
   // Phase 4: WANTED
   stage.innerHTML = `
