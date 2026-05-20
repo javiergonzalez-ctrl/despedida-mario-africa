@@ -4,6 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#0a0606" />
+<!-- Cache busting: avoid stale HTML on mobile -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <title>AFRICA STRIKES BACK — Operación Cristóbal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -67,6 +71,62 @@
   .flash-overlay.red { background: var(--blood); }
   .flash-overlay.gold { background: var(--gold); }
   .flash-overlay.green { background: var(--terminal); }
+
+  /* ============ AFRICA PIXEL MAP ============ */
+  .africa-pixel-wrap {
+    position: relative;
+    width: min(720px, 92vw);
+    aspect-ratio: 41/49;
+    margin: 0 auto;
+    max-height: 70vh;
+  }
+  .africa-pixel-svg {
+    width: 100%; height: 100%;
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+  .pixel-dot {
+    transform-origin: center;
+    transform-box: fill-box;
+  }
+  @keyframes pixelDotIn {
+    0% { opacity: 0; transform: scale(0); }
+    60% { opacity: 1; transform: scale(1.8); }
+    100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 6px #ff2244); }
+  }
+  .pin-label {
+    position: absolute;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(7px, 0.9vw, 11px);
+    color: #fff;
+    background: rgba(0, 0, 0, 0.82);
+    border: 2px solid #ffd700;
+    padding: 4px 8px;
+    letter-spacing: 0.06em;
+    box-shadow: 3px 3px 0 #000;
+    white-space: nowrap;
+    z-index: 10;
+    opacity: 0;
+    transform-origin: center;
+    animation: pinLabelIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    pointer-events: none;
+    line-height: 1.1;
+  }
+  .pin-label .lbl-text { color: #ffd700; }
+  .pin-label .lbl-arrow {
+    color: #ff2244;
+    text-shadow: 1px 1px 0 #000;
+    font-size: 1.1em;
+    vertical-align: middle;
+  }
+  @keyframes pinLabelIn {
+    0%   { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @media (max-width: 480px) {
+    .pin-label { font-size: 7px; padding: 3px 5px; border-width: 1px; box-shadow: 2px 2px 0 #000; }
+  }
 
   /* ============ SCREENS ============ */
   .screen {
@@ -379,16 +439,16 @@
     position: absolute;
     bottom: -50%;
     left: 50%;
-    width: 70%;
-    max-width: 700px;
+    width: 78%;
+    max-width: 820px;
     transform-origin: 50% 100%;
-    transform: translateX(-50%) rotateX(35deg);
+    transform: translateX(-50%) rotateX(28deg);
     color: var(--gold);
-    font-size: clamp(18px, 2.5vw, 26px);
-    line-height: 1.6;
+    font-size: clamp(20px, 3vw, 30px);
+    line-height: 1.65;
     text-align: justify;
     font-weight: 500;
-    animation: crawl 22s linear forwards;
+    animation: crawl 40s linear forwards;
   }
   @keyframes crawl {
     0% { bottom: -50%; }
@@ -2327,18 +2387,19 @@ const AFRICA_PIXEL_GRID = [
   "....................#####................"
 ];
 const AFRICA_PIXEL_DOTS = [
-  {col: 12, row: 22, c: "Lagos"},
-  {col: 33, row: 28, c: "Nairobi"},
-  {col: 32, row: 27, c: "Kampala"},
-  {col: 10, row: 22, c: "Accra"},
-  {col: 1, row: 15, c: "Dakar"},
-  {col: 28, row: 44, c: "Joburg"},
-  {col: 27, row: 31, c: "Kinshasa"},
-  {col: 28, row: 8, c: "Cairo"},
-  {col: 7, row: 2, c: "Tanger"},
-  {col: 6, row: 0, c: "Cies"},
-  {col: 39, row: 22, c: "Addis"},
-  {col: 6, row: 3, c: "Casa"}
+  // pos: L/R/T/B + optional dy (vertical offset in % to avoid label collisions)
+  {col: 12, row: 22, c: "LAGOS",      pos: 'L', dy:  4},
+  {col: 33, row: 28, c: "NAIROBI",    pos: 'R', dy:  3},
+  {col: 32, row: 27, c: "KAMPALA",    pos: 'R', dy: -3},
+  {col: 10, row: 22, c: "ACCRA",      pos: 'L', dy: -4},
+  {col: 1,  row: 15, c: "DAKAR",      pos: 'L'},
+  {col: 28, row: 44, c: "JOBURG",     pos: 'R'},
+  {col: 27, row: 31, c: "KINSHASA",   pos: 'R'},
+  {col: 28, row: 8,  c: "CAIRO",      pos: 'R'},
+  {col: 7,  row: 2,  c: "TÁNGER",     pos: 'L', dy:  1},
+  {col: 6,  row: 0,  c: "ISLAS CÍES", pos: 'L', dy: -3},
+  {col: 39, row: 22, c: "ADDIS",      pos: 'R'},
+  {col: 6,  row: 3,  c: "CASA",       pos: 'L', dy:  5}
 ];
 const BIPLANE_GRID = ['............................','.............R..............','....WWWWWWWWWWWWWWWWWW......','....WWWWWWWWWWWWWWWWWW......','.........S......S...........','.........S......S...........','........BBBBBBBBBBBBP.......','........BCCBBBBBBBBPRRRRR...','........BCCBBBBBBBBP........','........BBBBBBBBBBBBP.......','.........S......S...........','.........S......S...........','....WWWWWWWWWWWWWWWWWW......','....WWWWWWWWWWWWWWWWWW......'];
 
@@ -2552,103 +2613,49 @@ async function startIntro() {
     dotRects += '<rect class="pixel-dot" x="' + (d.col*PX - 2) + '" y="' + (d.row*PX - 2) + '" width="' + (PX+4) + '" height="' + (PX+4) + '" fill="#ff2244" opacity="0" style="animation: pixelDotIn 0.45s ease-out forwards;"/>';
   });
 
+  // Generate city labels (all 12) — each with its name + arrow pointing to its pin.
+  // Position via percentage relative to SVG box. Side (T/B/L/R) controls placement.
+  let labelsHTML = '';
+  AFRICA_PIXEL_DOTS.forEach((d, i) => {
+    const px = (d.col * PX + PX/2) / W * 100;
+    const py = (d.row * PX + PX/2) / H * 100 + (d.dy || 0);
+    let style, arrow;
+    const delay = 800 + i * 60;
+    if (d.pos === 'L') {
+      style = 'right:calc(' + (100 - px) + '% + 18px);top:' + py + '%;transform:translateY(-50%);';
+      arrow = '<span class="lbl-arrow">▶</span>';
+    } else if (d.pos === 'R') {
+      style = 'left:calc(' + px + '% + 18px);top:' + py + '%;transform:translateY(-50%);';
+      arrow = '<span class="lbl-arrow">◀</span>';
+    } else if (d.pos === 'T') {
+      style = 'left:' + px + '%;bottom:calc(' + (100 - py) + '% + 18px);transform:translateX(-50%);';
+      arrow = '';
+    } else {
+      style = 'left:' + px + '%;top:calc(' + py + '% + 18px);transform:translateX(-50%);';
+      arrow = '';
+    }
+    labelsHTML += '<div class="pin-label" style="' + style + 'animation-delay:' + delay + 'ms;">' +
+      (d.pos === 'R' ? arrow + ' ' : '') +
+      '<span class="lbl-text">' + d.c + '</span>' +
+      (d.pos === 'L' ? ' ' + arrow : '') +
+      '</div>';
+  });
+
   stage.innerHTML = `
     <div class="counter-stage" style="width:100%;">
-      <p class="counter-label" style="font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:0.15em;margin-bottom:18px;">CADA PIXEL · UNA VIDA DESTROZADA</p>
       <div class="africa-pixel-wrap">
         <svg class="africa-pixel-svg" viewBox="0 0 ${W} ${H}" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">
           ${landRects}
           ${dotRects}
         </svg>
+        ${labelsHTML}
       </div>
+      <p class="counter-label" style="font-family:'Press Start 2P',monospace;font-size:clamp(8px,1vw,11px);letter-spacing:0.2em;margin-top:24px;color:var(--gold);text-shadow:2px 2px 0 #000;">CADA PIXEL · UNA VIDA DESTROZADA</p>
     </div>
   `;
-  for (let i = 0; i < AFRICA_PIXEL_DOTS.length; i++) setTimeout(() => sfx.tick(), i * 120);
-  await sleep(3000);
-
-  // Pokemon-style SPOTLIGHT: darken all except circle around Nigeria → Galicia
-  const wrap = document.querySelector('.africa-pixel-wrap');
-  if (wrap) {
-    const lagos = AFRICA_PIXEL_DOTS[0];   // Nigeria
-    const cies = AFRICA_PIXEL_DOTS[9];    // Galicia
-    wrap.style.position = 'relative';
-
-    // Convert grid (col,row) -> percentage of SVG bounding box
-    function pctFor(dot) {
-      return {
-        x: (dot.col * PX + PX/2) / W * 100,
-        y: (dot.row * PX + PX/2) / H * 100
-      };
-    }
-
-    // Spotlight overlay (radial gradient mask)
-    const spot = document.createElement('div');
-    spot.style.cssText =
-      'position:absolute;inset:0;pointer-events:none;z-index:4;' +
-      'transition:background 1s cubic-bezier(0.65, 0, 0.35, 1);';
-    wrap.appendChild(spot);
-
-    // Label
-    const label = document.createElement('div');
-    label.style.cssText =
-      "position:absolute;top:-44px;left:50%;transform:translateX(-50%);" +
-      "font-family:'Press Start 2P',monospace;font-size:clamp(10px,1.5vw,16px);" +
-      "color:#ffd700;text-shadow:3px 3px 0 #000,1px -1px 0 #000;letter-spacing:0.12em;" +
-      "z-index:6;opacity:0;transition:opacity 0.5s;pointer-events:none;white-space:nowrap;";
-    wrap.appendChild(label);
-
-    // Arrow that points to the spotlight
-    const arrow = document.createElement('div');
-    arrow.style.cssText =
-      "position:absolute;font-family:'Press Start 2P',monospace;font-size:18px;color:#ff2244;" +
-      "text-shadow:2px 2px 0 #000;z-index:7;opacity:0;transition:opacity 0.4s;pointer-events:none;";
-    arrow.textContent = '▼';
-    wrap.appendChild(arrow);
-
-    function setSpotlight(pct, radius) {
-      spot.style.background =
-        'radial-gradient(circle at ' + pct.x + '% ' + pct.y + '%, ' +
-        'transparent 0%, transparent ' + (radius - 4) + '%, ' +
-        'rgba(0,0,0,0.78) ' + radius + '%, rgba(0,0,0,0.92) 100%)';
-    }
-
-    function positionArrow(pct) {
-      arrow.style.left = pct.x + '%';
-      arrow.style.top = 'calc(' + pct.y + '% - 38px)';
-      arrow.style.transform = 'translateX(-50%)';
-    }
-
-    // 1) Spotlight on Nigeria
-    const lagosPct = pctFor(lagos);
-    setSpotlight(lagosPct, 14);
-    label.textContent = '▸ NIGERIA · LAGOS ◂';
-    label.style.opacity = '1';
-    positionArrow(lagosPct);
-    arrow.style.opacity = '1';
-    sweep(220, 900, 0.7, 'sine', 0.05);
-    await sleep(2200);
-
-    // 2) Pan to Galicia
-    const ciesPct = pctFor(cies);
-    label.style.opacity = '0';
-    arrow.style.opacity = '0';
-    await sleep(280);
-    setSpotlight(ciesPct, 14);
-    label.textContent = '▸ GALICIA · ISLAS CÍES ◂';
-    label.style.opacity = '1';
-    positionArrow(ciesPct);
-    arrow.style.opacity = '1';
-    sweep(500, 1300, 0.7, 'sine', 0.05);
-    await sleep(2200);
-
-    // 3) Fade spotlight out
-    label.style.opacity = '0';
-    arrow.style.opacity = '0';
-    spot.style.background = 'radial-gradient(circle at 50% 50%, transparent 0%, transparent 100%, rgba(0,0,0,0) 100%)';
-    await sleep(800);
-  } else {
-    await sleep(1500);
-  }
+  sfx.tick();
+  // Hold so user can read all 12 labels
+  await sleep(6500);
 
   // Phase 4: WANTED
   stage.innerHTML = `
@@ -2677,9 +2684,9 @@ async function startIntro() {
     </div>
   `;
   sfx.whoosh();
-  await sleep(22000);
+  await sleep(40000);
 
-  await showPlaneScene();
+  // Plane scene removed from intro flow per design review.
   goToVictims();
 }
 
