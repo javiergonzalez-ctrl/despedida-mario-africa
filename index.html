@@ -7,7 +7,7 @@
 <title>AFRICA STRIKES BACK — Operación Cristóbal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -1785,6 +1785,72 @@
   </div>
 </div>
 
+<!-- ============ PLANE SCENE (pixel art) ============ -->
+<div class="screen hidden" id="screen-plane">
+  <div class="plane-stage">
+    <div class="plane-sky-pixel"></div>
+    <div class="plane-clouds-pixel">
+      <div class="pixel-cloud pc1"></div>
+      <div class="pixel-cloud pc2"></div>
+      <div class="pixel-cloud pc3"></div>
+    </div>
+    <div class="plane-mountains-pixel"></div>
+    <div class="plane-text-overlay">
+      <div class="plane-flight-no">VUELO 482 · ÁFRICA → TFS</div>
+      <div class="plane-destination">DESTINO: <span class="accent">TENERIFE</span></div>
+    </div>
+    <div class="biplane-wrap" id="biplane-wrap">
+      <svg class="biplane-svg" id="biplane-svg" shape-rendering="crispEdges"></svg>
+      <div class="banner-pixel">¡ AFRICA STRIKES BACK !</div>
+    </div>
+  </div>
+</div>
+
+    <svg class="plane-icon" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M6.428 1.151C6.708.591 7.213 0 8 0s1.292.592 1.572 1.151C9.861 1.73 10 2.431 10 3v3.691l5.17 2.585a1.5 1.5 0 0 1 .83 1.342V12a.5.5 0 0 1-.582.493l-5.507-.918-.375 2.253 1.318.878a.5.5 0 0 1 .222.416v.5a.5.5 0 0 1-.641.479L8 15.071l-2.434.696A.5.5 0 0 1 5 15.286v-.5a.5.5 0 0 1 .222-.415l1.318-.879-.375-2.253-5.507.918A.5.5 0 0 1 0 12v-1.382a1.5 1.5 0 0 1 .83-1.342L6 6.691V3c0-.568.14-1.271.428-1.849Z"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ============ TENERIFE MAP ============ -->
+<div class="screen hidden" id="screen-map">
+  <div class="map-header">
+    <h2>TENERIFE</h2>
+    <p>12 paradas · 12 vidas arruinadas · 1 boda en juego</p>
+  </div>
+  <div class="tenerife-container">
+    <svg class="tenerife-svg" viewBox="0 0 600 340" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <linearGradient id="tenerife-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(180, 130, 80, 0.4)" />
+          <stop offset="50%" stop-color="rgba(120, 80, 50, 0.55)" />
+          <stop offset="100%" stop-color="rgba(60, 40, 25, 0.7)" />
+        </linearGradient>
+        <radialGradient id="teide-grad" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0%" stop-color="rgba(255,255,255,0.8)" />
+          <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+        </radialGradient>
+      </defs>
+      <!-- Tenerife island -->
+      <path class="island" d="M 90,170 C 75,150 80,130 105,120 L 145,108 195,98 250,90 295,85 C 340,85 380,90 420,95 L 460,108 490,128 510,150 C 522,170 524,188 515,205 L 495,225 470,238 440,245 C 405,250 370,247 335,240 L 290,225 245,215 200,210 C 165,213 130,212 105,205 C 85,195 80,180 90,170 Z" />
+      <!-- Teide (volcano) glow indicator -->
+      <circle cx="300" cy="155" r="30" fill="url(#teide-grad)" opacity="0.5" />
+      <circle cx="300" cy="155" r="4" fill="#fff" opacity="0.7" />
+      <text x="300" y="180" fill="rgba(255,255,255,0.7)" font-family="JetBrains Mono" font-size="9" text-anchor="middle">TEIDE</text>
+      <!-- Pins placeholder, filled by JS -->
+      <g id="map-pins"></g>
+    </svg>
+    <div class="map-current-info" id="map-info" style="display:none;">
+      <div class="label">SIGUIENTE PARADA</div>
+      <div class="name" id="map-current-name">—</div>
+      <div class="game" id="map-current-game">—</div>
+      <div class="map-actions">
+        <button class="btn-primary" id="map-go-btn" onclick="document.dispatchEvent(new CustomEvent('map-go'))">▶ EMPEZAR</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ GAME ============ -->
 <div class="screen hidden" id="screen-game">
   <div class="game-stage" id="game-stage"></div>
@@ -1976,6 +2042,87 @@ function toast(msg, kind = '') {
   setTimeout(() => t.classList.remove('visible'), 2400);
 }
 
+
+// ============================================
+// PLANE SCENE
+// ============================================
+async function showPlaneScene() {
+  initAudio();
+  show('screen-plane');
+
+  const PX = 8;
+  const cols = BIPLANE_GRID[0].length;
+  const rows = BIPLANE_GRID.length;
+  const palette = {
+    'B': '#c81d1d',
+    'C': '#5bd0ff',
+    'W': '#1a5bb8',
+    'S': '#2a1810',
+    'P': '#ffd700',
+    'R': '#888'
+  };
+  let rects = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const ch = BIPLANE_GRID[r][c];
+      if (palette[ch]) {
+        rects += '<rect x="' + (c*PX) + '" y="' + (r*PX) + '" width="' + PX + '" height="' + PX + '" fill="' + palette[ch] + '"/>';
+      }
+    }
+  }
+  const svg = document.getElementById('biplane-svg');
+  if (svg) {
+    svg.setAttribute('viewBox', '0 0 ' + (cols*PX) + ' ' + (rows*PX));
+    svg.innerHTML = rects;
+  }
+
+  sweep(60, 80, 7, 'sawtooth', 0.04);
+  setTimeout(() => sweep(80, 40, 1.5, 'sawtooth', 0.05), 7000);
+  return new Promise(resolve => setTimeout(resolve, 8500));
+}
+
+// ============================================
+// TENERIFE MAP
+// ============================================
+function renderMapPins() {
+  const g = document.getElementById('map-pins');
+  if (!g) return;
+  g.innerHTML = MAP_PINS.map((p, i) => {
+    const idx = i + 1;
+    const v = VICTIMS[i];
+    const done = i < (state.currentRound - 1);
+    const active = i === (state.currentRound - 1);
+    const cls = ['map-pin', done ? 'done' : '', active ? 'active' : ''].filter(Boolean).join(' ');
+    const label = done ? '✓' : idx;
+    return `<g class="${cls}" data-i="${i}" transform="translate(${p.x},${p.y})">
+      <circle class="pin-circle" r="18"/>
+      <text class="pin-num">${label}</text>
+      <title>${v.name} · ${v.gameName}</title>
+    </g>`;
+  }).join('');
+}
+
+async function showMap(opts = {}) {
+  show('screen-map');
+  renderMapPins();
+  const idx = state.currentRound - 1;
+  const v = VICTIMS[idx];
+  const info = document.getElementById('map-info');
+  if (v && info) {
+    document.getElementById('map-current-name').textContent = v.name.toUpperCase();
+    document.getElementById('map-current-game').textContent = '▸ ' + v.gameName + ' ◂';
+    info.style.display = 'block';
+  }
+  sfx.tick();
+  if (opts.autoAdvanceAfter) {
+    await sleep(opts.autoAdvanceAfter);
+    return;
+  }
+  return new Promise(resolve => {
+    document.addEventListener('map-go', resolve, { once: true });
+  });
+}
+
 // ============================================
 // SCREEN MANAGER
 // ============================================
@@ -2102,10 +2249,10 @@ const VICTIMS = [
     instruction: 'Golpea SOLO a las FAKE. Si pegas a Paz Padilla: chupito x2. Acelera con el tiempo.'
   },
   {
-    name: 'Aitor Menta', loc: 'Abuja, Nigeria 🇳🇬',
-    avatar: DICEBEAR('Aitor-Menta'),
-    story: 'Médico residente. Apostó la guardia entera en "trío podio". Ninguno acabó arriba. Sigue debiendo a la cooperativa.',
-    quote: '"Yo salvo vidas. Tú las arruinas. Defiende lo tuyo, Mario."',
+    name: 'El Demonio de las Islas Jiménez', loc: 'Islas Cíes, Galicia 🇪🇸',
+    avatar: DICEBEAR('Demonio-Islas-Jimenez'),
+    story: 'Marinero retirado en las Cíes. Mario le metió en "F1 Fantasy gallego edition" prometiendo cuotas inflated para pescaderos. Apostó la pensión entera al Verstappen-en-Vigo (un GP que no existía).',
+    quote: '"Vas a saber por qué me llaman el Demonio de las Islas, Mariño."',
     debt: 5, game: 'press', gameName: 'PRESS CONFERENCE MADRID',
     instruction: 'Responde 5 preguntas SIN palabras prohibidas. La pregunta desaparece a los 3s.'
   },
@@ -2127,6 +2274,73 @@ const VICTIMS = [
   }
 ];
 
+
+const AFRICA_PIXEL_GRID = [
+  "......IIIIII............................................",
+  "......IIIII.............................................",
+  "......IIII..............................................",
+  ".....IIIII..............................................",
+  ".......II...####........................................",
+  ".......#########........................................",
+  "......###########.......................................",
+  ".....##############...##................................",
+  ".....###############.########...........................",
+  "....#########################...........................",
+  "...##########################...........................",
+  "..############################..........................",
+  "..#############################.........................",
+  ".##############################.........................",
+  ".###############################........................",
+  ".###############################........................",
+  ".################################.......................",
+  ".################################.......................",
+  ".#################################......................",
+  ".##################################.....................",
+  ".###################################...#................",
+  "..######################################................",
+  "...#####################################................",
+  "....#######..##########################.................",
+  ".....##.......#########################.................",
+  "................######################..................",
+  "................#####################...................",
+  "................####################....................",
+  "................###################.....................",
+  ".................#################......................",
+  "..................###############.......................",
+  "..................###############.......................",
+  "..................################......................",
+  "..................################......................",
+  "..................################......................",
+  "..................################.....#................",
+  ".................#################....##................",
+  ".................#################...###................",
+  ".................###############....###.................",
+  "..................#############.....###.................",
+  "..................#############.....##..................",
+  "...................############....###..................",
+  "..................#############.....##..................",
+  "...................##########...........................",
+  "...................##########...........................",
+  "....................#########...........................",
+  "....................########............................",
+  ".....................######.............................",
+  "....................#####..............................."
+];
+const AFRICA_PIXEL_DOTS = [
+  {col: 12, row: 22, c: "Lagos"},
+  {col: 33, row: 28, c: "Nairobi"},
+  {col: 32, row: 27, c: "Kampala"},
+  {col: 10, row: 22, c: "Accra"},
+  {col: 1, row: 15, c: "Dakar"},
+  {col: 28, row: 44, c: "Joburg"},
+  {col: 27, row: 31, c: "Kinshasa"},
+  {col: 28, row: 8, c: "Cairo"},
+  {col: 7, row: 2, c: "Tanger"},
+  {col: 6, row: 0, c: "Cies"},
+  {col: 39, row: 22, c: "Addis"},
+  {col: 6, row: 3, c: "Casa"}
+];
+const BIPLANE_GRID = ['............................','.............R..............','....WWWWWWWWWWWWWWWWWW......','....WWWWWWWWWWWWWWWWWW......','.........S......S...........','.........S......S...........','........BBBBBBBBBBBBP.......','........BCCBBBBBBBBPRRRRR...','........BCCBBBBBBBBP........','........BBBBBBBBBBBBP.......','.........S......S...........','.........S......S...........','....WWWWWWWWWWWWWWWWWW......','....WWWWWWWWWWWWWWWWWW......'];
 
 // ===== AFRICA SVG (paths from flekschas/simple-world-map, CC BY-SA 3.0) =====
 const AFRICA_PATHS = `<path d="M512.674,502.797l3.526,2.403l1.046-0.052l8.757-3.008l0.994,3.206l-0.701,2.706l-1.893,1.503l-4.729-0.302l-6.769-4.158L512.674,502.797L512.674,502.797z"/>
@@ -2196,10 +2410,12 @@ const AFRICA_DOTS_REAL = [
   {x:415,y:510, c:'Lagos'},   {x:510,y:540, c:'Nairobi'}, {x:495,y:530, c:'Kampala'},
   {x:405,y:510, c:'Accra'},   {x:370,y:480, c:'Dakar'},   {x:485,y:605, c:'Joburg'},
   {x:475,y:545, c:'Kinshasa'},{x:495,y:440, c:'Cairo'},   {x:395,y:425, c:'Tanger'},
-  {x:425,y:505, c:'Abuja'},   {x:390,y:430, c:'Casa'},    {x:525,y:510, c:'Addis'}
+  {x:410,y:408, c:'Cíes'},    {x:390,y:430, c:'Casa'},    {x:525,y:510, c:'Addis'}
 ];
 
 // ===== VICTIM PHOTO OVERRIDES (drop friend photos into ./images/ to override) =====
+const MAP_PINS = [{x:140,y:155},{x:190,y:130},{x:245,y:115},{x:305,y:105},{x:370,y:108},{x:425,y:125},{x:470,y:155},{x:455,y:195},{x:390,y:215},{x:310,y:225},{x:230,y:215},{x:165,y:190}];
+
 const VICTIM_IMAGES = {
   // 'Elver Galarga': 'images/elver.jpg',
   // 'Rosa Melano': 'images/rosa.jpg',
@@ -2309,31 +2525,63 @@ async function startIntro() {
   await animateCounter('counter', 0, 4732891, 2600);
   await sleep(900);
 
-  // Phase 3: Real Africa map (Wikimedia CC BY-SA paths)
+  // Phase 3: PIXEL ART Africa + Iberia map
   await sleep(800);
+  const PX = 12;
+  const cols = AFRICA_PIXEL_GRID[0].length;
+  const rows = AFRICA_PIXEL_GRID.length;
+  const W = cols * PX;
+  const H = rows * PX;
+
+  let landRects = '';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const ch = AFRICA_PIXEL_GRID[r][c];
+      let fill = null;
+      let dark = null;
+      if (ch === '#') {
+        const isEdge = (
+          (r === 0 || AFRICA_PIXEL_GRID[r-1][c] !== '#') ||
+          (r === rows-1 || AFRICA_PIXEL_GRID[r+1][c] !== '#') ||
+          (c === 0 || AFRICA_PIXEL_GRID[r][c-1] !== '#') ||
+          (c === cols-1 || AFRICA_PIXEL_GRID[r][c+1] !== '#')
+        );
+        fill = isEdge ? '#c97c2f' : '#e8a04a';
+      } else if (ch === 'M') {
+        fill = '#d4862e';
+      } else if (ch === 'I') {
+        const isEdge = (
+          (r === 0 || AFRICA_PIXEL_GRID[r-1][c] !== 'I') ||
+          (r === rows-1 || AFRICA_PIXEL_GRID[r+1][c] !== 'I') ||
+          (c === 0 || AFRICA_PIXEL_GRID[r][c-1] !== 'I') ||
+          (c === cols-1 || AFRICA_PIXEL_GRID[r][c+1] !== 'I')
+        );
+        fill = isEdge ? '#6b8e3a' : '#8aa84f';
+      }
+      if (fill) {
+        landRects += '<rect x="' + (c*PX) + '" y="' + (r*PX) + '" width="' + PX + '" height="' + PX + '" fill="' + fill + '"/>';
+      }
+    }
+  }
+
+  let dotRects = '';
+  AFRICA_PIXEL_DOTS.forEach((d, i) => {
+    dotRects += '<rect class="pixel-dot" x="' + (d.col*PX - 2) + '" y="' + (d.row*PX - 2) + '" width="' + (PX+4) + '" height="' + (PX+4) + '" fill="#ff2244" opacity="0" style="animation: pixelDotIn 0.5s ease-out ' + (i*120) + 'ms forwards;"/>';
+  });
+
   stage.innerHTML = `
     <div class="counter-stage" style="width:100%;">
-      <p class="counter-label" style="margin-bottom: 18px;">Cada punto: una vida destrozada</p>
-      <div class="africa-map">
-        <svg class="africa-svg" viewBox="365 405 220 285" preserveAspectRatio="xMidYMid meet">
-          <defs>
-            <linearGradient id="africa-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="rgba(255,200,150,0.18)" />
-              <stop offset="100%" stop-color="rgba(255,80,0,0.07)" />
-            </linearGradient>
-          </defs>
-          <g fill="url(#africa-grad)" stroke="rgba(255,215,0,0.5)" stroke-width="0.45" stroke-linejoin="round">
-            ${AFRICA_PATHS}
-          </g>
-          <g class="africa-dots">
-            ${AFRICA_DOTS_REAL.map((d, i) => '<circle cx="' + d.x + '" cy="' + d.y + '" r="3" fill="var(--blood)" opacity="0" style="filter: drop-shadow(0 0 6px var(--blood));"><animate attributeName="opacity" from="0" to="0.95" dur="0.45s" begin="' + (i*130) + 'ms" fill="freeze" /><animate attributeName="r" values="0;7;3" dur="0.8s" begin="' + (i*130) + 'ms" fill="freeze" /></circle>').join('')}
-          </g>
+      <p class="counter-label" style="font-family:'Press Start 2P',monospace;font-size:10px;letter-spacing:0.15em;margin-bottom:18px;">CADA PIXEL · UNA VIDA DESTROZADA</p>
+      <div class="africa-pixel-wrap">
+        <svg class="africa-pixel-svg" viewBox="0 0 ${W} ${H}" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">
+          ${landRects}
+          ${dotRects}
         </svg>
       </div>
     </div>
   `;
-  for (let i = 0; i < AFRICA_DOTS_REAL.length; i++) setTimeout(() => sfx.tick(), i * 130);
-  await sleep(3500);
+  for (let i = 0; i < AFRICA_PIXEL_DOTS.length; i++) setTimeout(() => sfx.tick(), i * 120);
+  await sleep(4200);
 
   // Phase 4: WANTED
   stage.innerHTML = `
@@ -2364,6 +2612,7 @@ async function startIntro() {
   sfx.whoosh();
   await sleep(22000);
 
+  await showPlaneScene();
   goToVictims();
 }
 
@@ -2406,7 +2655,7 @@ function goToVictims() {
     <div class="victim-card" style="transition-delay: ${i * 80}ms">
       <div class="head">
         <div class="victim-avatar">
-          <img src="${v.avatar}" alt="${v.name}" onerror="this.style.display='none';this.parentElement.innerHTML='👤';" />
+          <img src="${avatarUrl(v.name)}" alt="${v.name}" class="${isCustomPhoto(v.name) ? 'moreno' : ''}" onerror="this.style.display='none';this.parentElement.innerHTML='👤';" />
         </div>
         <div class="victim-meta">
           <div class="v-name">${v.name}</div>
@@ -2473,16 +2722,19 @@ function openLobby() {
 // ============================================
 // ROUND ORCHESTRATION
 // ============================================
-function startRounds() {
+async function startRounds() {
   initAudio();
   state.currentRound = 0;
   state.shots = 0;
   state.groupShots = 0;
   document.getElementById('hud').classList.remove('hidden');
-  // Request fullscreen for mobile
   if (document.documentElement.requestFullscreen && /Android|iPhone/i.test(navigator.userAgent)) {
     document.documentElement.requestFullscreen().catch(() => {});
   }
+  state.currentRound = 1;
+  updateHud();
+  await showMap();
+  state.currentRound = 0; // nextRound will increment
   nextRound();
 }
 
@@ -2490,6 +2742,10 @@ async function nextRound() {
   state.currentRound++;
   updateHud();
   if (state.currentRound > 12) return goToFinal();
+  // Show map briefly between rounds (skip on round 1, lobby already showed it)
+  if (state.currentRound > 1) {
+    await showMap({ autoAdvanceAfter: 1800 });
+  }
   show('screen-game');
   await showTransitionCard(VICTIMS[state.currentRound - 1]);
   startGame(VICTIMS[state.currentRound - 1]);
@@ -2501,7 +2757,7 @@ async function showTransitionCard(v) {
     <div class="transition-card">
       <div class="round-num">▸ RONDA ${state.currentRound} / 12 — DEUDA ${v.debt} CHUPITOS ◂</div>
       <div class="victim-big-avatar">
-        <img src="${v.avatar}" alt="${v.name}" onerror="this.style.display='none';this.parentElement.innerHTML='👤';" />
+        <img src="${avatarUrl(v.name)}" alt="${v.name}" class="${isCustomPhoto(v.name) ? 'moreno' : ''}" onerror="this.style.display='none';this.parentElement.innerHTML='👤';" />
       </div>
       <h2>${v.name.toUpperCase()}</h2>
       <div class="victim-loc-big">${v.loc}</div>
