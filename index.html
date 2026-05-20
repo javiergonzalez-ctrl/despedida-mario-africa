@@ -1845,33 +1845,6 @@
   </div>
 </div>
 
-<!-- ============ PLANE SCENE (pixel art) ============ -->
-<div class="screen hidden" id="screen-plane">
-  <div class="plane-stage">
-    <div class="plane-sky-pixel"></div>
-    <div class="plane-clouds-pixel">
-      <div class="pixel-cloud pc1"></div>
-      <div class="pixel-cloud pc2"></div>
-      <div class="pixel-cloud pc3"></div>
-    </div>
-    <div class="plane-mountains-pixel"></div>
-    <div class="plane-text-overlay">
-      <div class="plane-flight-no">VUELO 482 · ÁFRICA → TFS</div>
-      <div class="plane-destination">DESTINO: <span class="accent">TENERIFE</span></div>
-    </div>
-    <div class="biplane-wrap" id="biplane-wrap">
-      <svg class="biplane-svg" id="biplane-svg" shape-rendering="crispEdges"></svg>
-      <div class="banner-pixel">¡ AFRICA STRIKES BACK !</div>
-    </div>
-  </div>
-</div>
-
-    <svg class="plane-icon" viewBox="0 0 16 16" fill="currentColor">
-      <path d="M6.428 1.151C6.708.591 7.213 0 8 0s1.292.592 1.572 1.151C9.861 1.73 10 2.431 10 3v3.691l5.17 2.585a1.5 1.5 0 0 1 .83 1.342V12a.5.5 0 0 1-.582.493l-5.507-.918-.375 2.253 1.318.878a.5.5 0 0 1 .222.416v.5a.5.5 0 0 1-.641.479L8 15.071l-2.434.696A.5.5 0 0 1 5 15.286v-.5a.5.5 0 0 1 .222-.415l1.318-.879-.375-2.253-5.507.918A.5.5 0 0 1 0 12v-1.382a1.5 1.5 0 0 1 .83-1.342L6 6.691V3c0-.568.14-1.271.428-1.849Z"/>
-    </svg>
-  </div>
-</div>
-
 <!-- ============ TENERIFE MAP ============ -->
 <div class="screen hidden" id="screen-map">
   <div class="map-header">
@@ -2103,43 +2076,7 @@ function toast(msg, kind = '') {
 }
 
 
-// ============================================
-// PLANE SCENE
-// ============================================
-async function showPlaneScene() {
-  initAudio();
-  show('screen-plane');
-
-  const PX = 8;
-  const cols = BIPLANE_GRID[0].length;
-  const rows = BIPLANE_GRID.length;
-  const palette = {
-    'B': '#c81d1d',
-    'C': '#5bd0ff',
-    'W': '#1a5bb8',
-    'S': '#2a1810',
-    'P': '#ffd700',
-    'R': '#888'
-  };
-  let rects = '';
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      const ch = BIPLANE_GRID[r][c];
-      if (palette[ch]) {
-        rects += '<rect x="' + (c*PX) + '" y="' + (r*PX) + '" width="' + PX + '" height="' + PX + '" fill="' + palette[ch] + '"/>';
-      }
-    }
-  }
-  const svg = document.getElementById('biplane-svg');
-  if (svg) {
-    svg.setAttribute('viewBox', '0 0 ' + (cols*PX) + ' ' + (rows*PX));
-    svg.innerHTML = rects;
-  }
-
-  sweep(60, 80, 7, 'sawtooth', 0.04);
-  setTimeout(() => sweep(80, 40, 1.5, 'sawtooth', 0.05), 7000);
-  return new Promise(resolve => setTimeout(resolve, 8500));
-}
+// Plane scene removed entirely (user feedback).
 
 // ============================================
 // TENERIFE MAP
@@ -2396,13 +2333,11 @@ const AFRICA_PIXEL_DOTS = [
   {col: 28, row: 44, c: "JOBURG",     pos: 'R'},
   {col: 27, row: 31, c: "KINSHASA",   pos: 'R'},
   {col: 28, row: 8,  c: "CAIRO",      pos: 'R'},
-  {col: 7,  row: 2,  c: "TÁNGER",     pos: 'L', dy:  1},
-  {col: 6,  row: 0,  c: "ISLAS CÍES", pos: 'L', dy: -3},
+  {col: 7,  row: 2,  c: "TÁNGER",     pos: 'R', dy:  0},
+  {col: 6,  row: 0,  c: "ISLAS CÍES", pos: 'L', dy:  0},
   {col: 39, row: 22, c: "ADDIS",      pos: 'R'},
   {col: 6,  row: 3,  c: "CASA",       pos: 'L', dy:  5}
 ];
-const BIPLANE_GRID = ['............................','.............R..............','....WWWWWWWWWWWWWWWWWW......','....WWWWWWWWWWWWWWWWWW......','.........S......S...........','.........S......S...........','........BBBBBBBBBBBBP.......','........BCCBBBBBBBBPRRRRR...','........BCCBBBBBBBBP........','........BBBBBBBBBBBBP.......','.........S......S...........','.........S......S...........','....WWWWWWWWWWWWWWWWWW......','....WWWWWWWWWWWWWWWWWW......'];
-
 // ===== AFRICA SVG (paths from flekschas/simple-world-map, CC BY-SA 3.0) =====
 const AFRICA_PATHS = `<path d="M512.674,502.797l3.526,2.403l1.046-0.052l8.757-3.008l0.994,3.206l-0.701,2.706l-1.893,1.503l-4.729-0.302l-6.769-4.158L512.674,502.797L512.674,502.797z"/>
 <path d="M404.493,493.496l3.146-0.25l5.16,7.295l-4.789,3.613l-3.466-0.892l-4.66,0.062l-0.752,2.73l-3.907,0.19l-1.071-1.461l1.385-4.442L404.493,493.496L404.493,493.496z"/>
@@ -2654,8 +2589,8 @@ async function startIntro() {
     </div>
   `;
   sfx.tick();
-  // Hold so user can read all 12 labels
-  await sleep(6500);
+  // Hold so user can read all 12 labels comfortably
+  await sleep(10000);
 
   // Phase 4: WANTED
   stage.innerHTML = `
