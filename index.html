@@ -124,9 +124,18 @@
     0%   { opacity: 0; }
     100% { opacity: 1; }
   }
-  @media (max-width: 480px) {
-    .pin-label { font-size: 7px; padding: 3px 5px; border-width: 1px; box-shadow: 2px 2px 0 #000; }
+  @media (max-width: 720px) {
+    .africa-pixel-wrap { width: min(560px, 60vw); }
+    .pin-label { font-size: 6.5px; padding: 2px 4px; border-width: 1px; box-shadow: 2px 2px 0 #000; letter-spacing: 0; }
+    .pin-label .lbl-arrow { font-size: 0.9em; }
   }
+  @media (max-width: 480px) {
+    .africa-pixel-wrap { width: 54vw; }
+    .pin-label { font-size: 5.5px; padding: 2px 3px; }
+  }
+  /* Allow pin labels to overflow the screen edge by lifting the clipper */
+  #screen-intro { overflow-x: visible; }
+  #screen-intro .counter-stage { overflow: visible; }
 
   /* ============ SCREENS ============ */
   .screen {
