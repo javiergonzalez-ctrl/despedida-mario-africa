@@ -38,6 +38,11 @@
     user-select: none;
     -webkit-font-smoothing: antialiased;
   }
+  /* Allow selecting URLs / shareable text */
+  input, textarea, a, .selectable, [contenteditable], #lobby-url, #lobby-url a {
+    user-select: text;
+    -webkit-user-select: text;
+  }
   body { overflow-y: hidden; }
   body {
     background:
@@ -2314,17 +2319,33 @@ function quickStart() {
   goToVictims();
 }
 
+function renderQR(targetEl, url, size = 260) {
+  const api = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&margin=8&data=${encodeURIComponent(url)}`;
+  targetEl.innerHTML = `<img src="${api}" alt="QR · escanea con la cámara" style="display:block;width:${size}px;height:${size}px;max-width:80vw;" />`;
+}
+function copyToClip(text, btn) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓ Copiado';
+      setTimeout(() => btn.textContent = orig, 1500);
+    });
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); btn.textContent = '✓ Copiado'; } catch(e) {}
+    ta.remove();
+  }
+}
 function openLobby() {
   initFirebase();
   show('screen-lobby');
   document.getElementById('lobby-room').textContent = ROOM_ID;
   const url = `${location.origin}${location.pathname}?vote=1&room=${ROOM_ID}`;
-  document.getElementById('lobby-url').textContent = url;
-  const qrEl = document.getElementById('lobby-qr');
-  qrEl.innerHTML = '';
-  if (window.QRCode) {
-    QRCode.toCanvas(url, { width: 260, margin: 2 }, (err, canvas) => { if (!err) qrEl.appendChild(canvas); });
-  }
+  const urlEl = document.getElementById('lobby-url');
+  urlEl.innerHTML = `<a href="${url}" target="_blank" style="color:var(--gold);text-decoration:underline;user-select:text;-webkit-user-select:text;word-break:break-all;">${url}</a>
+    <button onclick="copyToClip('${url}', this)" style="margin-left:8px;background:var(--gold);color:#000;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">📋 Copiar</button>`;
+  renderQR(document.getElementById('lobby-qr'), url);
   if (FIREBASE_ENABLED && firebaseDB) {
     firebaseDB.ref('rooms/' + ROOM_ID + '/players').on('value', snap => {
       const players = snap.val() || {};
@@ -3866,14 +3887,7 @@ function openVoteModal() {
 
   const url = `${location.origin}${location.pathname}?vote=1&room=${ROOM_ID}`;
   const codeEl = document.getElementById('qr-code');
-  codeEl.innerHTML = '';
-  if (window.QRCode) {
-    QRCode.toCanvas(url, { width: 280, margin: 2 }, (err, canvas) => {
-      if (!err) codeEl.appendChild(canvas);
-    });
-  } else {
-    codeEl.innerHTML = `<div style="color:#000;padding:24px;font-size:12px;">${url}</div>`;
-  }
+  renderQR(codeEl, url, 280);
 
   modal.classList.add('active');
 
@@ -4146,6 +4160,7 @@ window.castVote = castVote;
 window.toggleMute = toggleMute;
 window.openLobby = openLobby;
 window.joinRoom = joinRoom;
+window.copyToClip = copyToClip;
 </script>
 </body>
 </html>
