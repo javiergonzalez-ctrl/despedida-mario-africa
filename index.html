@@ -2548,13 +2548,13 @@ function startGame(v) {
 function gameRush(v) {
   const stage = document.getElementById('game-stage');
   let attempt = 0;
-  const maxAttempts = 5;
+  const maxAttempts = 4;
   const results = [];
   let cursorPos = Math.random() * 100;
   let dir = Math.random() > 0.5 ? 1 : -1;
-  let speed = 1.4;
+  let speed = 1.0;
   let running = true;
-  let zoneWidth = 14;
+  let zoneWidth = 18;
   let zoneStart = Math.random() * (100 - zoneWidth);
 
   stage.innerHTML = `
@@ -2593,8 +2593,8 @@ function gameRush(v) {
     else { sfx.miss(); flash('red'); shake('light'); }
     attempt++;
     if (attempt < maxAttempts) {
-      speed += 0.45;
-      zoneWidth = Math.max(5, zoneWidth - 1.8);
+      speed += 0.3;
+      zoneWidth = Math.max(8, zoneWidth - 1.5);
       zoneStart = Math.random() * (100 - zoneWidth);
       dir = Math.random() > 0.5 ? 1 : -1;
       const zEl = document.getElementById('rush-zone');
@@ -2630,16 +2630,16 @@ function gameMango(v) {
   const stage = document.getElementById('game-stage');
   const colors = ['green', 'yellow', 'orange', 'red'];
   const freqs = { green: 392, yellow: 523, orange: 659, red: 784 };
-  const seq = Array.from({length: 7}, () => colors[Math.floor(Math.random() * 4)]);
+  const seq = Array.from({length: 6}, () => colors[Math.floor(Math.random() * 4)]);
   let userIdx = 0;
-  let lives = 2;
+  let lives = 3;
   let mistakes = 0;
   let playing = false;
 
   stage.innerHTML = `
     <div style="text-align:center; width:100%;">
       <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:8px;">MANGO MEMORY</div>
-      <div style="color:var(--text-dim);margin-bottom:16px;">Vidas: <span id="mango-lives">❤❤</span> · Secuencia: ${seq.length} mangos</div>
+      <div style="color:var(--text-dim);margin-bottom:16px;">Vidas: <span id="mango-lives">❤❤❤</span> · Secuencia: ${seq.length} mangos</div>
       <div class="mango-grid" id="mango-grid">
         ${colors.map(c => `<div class="mango" data-color="${c}">🥭</div>`).join('')}
       </div>
@@ -2653,10 +2653,10 @@ function gameMango(v) {
     for (const c of seq) {
       const el = document.querySelector(`.mango[data-color="${c}"]`);
       el.classList.add('active');
-      beep(freqs[c], 0.18, 'sine', 0.08);
-      await sleep(280);
+      beep(freqs[c], 0.22, 'sine', 0.09);
+      await sleep(380);
       el.classList.remove('active');
-      await sleep(80);
+      await sleep(120);
     }
     document.getElementById('mango-msg').textContent = 'Tu turno. Repite la secuencia.';
     playing = false;
@@ -2681,9 +2681,9 @@ function gameMango(v) {
         lives--;
         mistakes++;
         sfx.miss(); flash('red'); shake('light');
-        document.getElementById('mango-lives').textContent = '❤'.repeat(Math.max(0,lives)) + '🖤'.repeat(2 - Math.max(0,lives));
+        document.getElementById('mango-lives').textContent = '❤'.repeat(Math.max(0,lives)) + '🖤'.repeat(3 - Math.max(0,lives));
         if (lives <= 0) {
-          showResult(4, 'Grace se va furiosa. 4 chupitos.');
+          showResult(3, 'Grace se va furiosa. 3 chupitos.');
         } else {
           userIdx = 0;
           document.getElementById('mango-msg').textContent = `¡Fallo! Reinicia. ${lives} vida(s).`;
@@ -2702,17 +2702,17 @@ function gameMango(v) {
 function gameRhythm(v) {
   const stage = document.getElementById('game-stage');
   const keys = ['d', 'f', 'j', 'k'];
-  const noteCount = 22;
+  const noteCount = 16;
   const notes = [];
-  let nextSpawn = 600;
+  let nextSpawn = 750;
   let lastT = 0;
   let spawned = 0;
   let running = true;
   let misses = 0;
   let hits = 0;
-  const fallSpeed = 0.5;
-  const hitWindow = 35;
-  const perfectWindow = 14;
+  const fallSpeed = 0.38;
+  const hitWindow = 50;
+  const perfectWindow = 22;
 
   stage.innerHTML = `
     <div style="text-align:center; width:100%; max-width: 600px;">
@@ -2754,7 +2754,7 @@ function gameRhythm(v) {
       note.el = el;
       spawned++;
       // Occasional double-note for difficulty
-      if (Math.random() < 0.18 && spawned < noteCount) {
+      if (Math.random() < 0.10 && spawned < noteCount) {
         let lane2 = Math.floor(Math.random() * 4);
         if (lane2 === lane) lane2 = (lane2 + 1) % 4;
         const note2 = { lane: lane2, y: -50, spawnT: t, hit: false };
@@ -2766,7 +2766,7 @@ function gameRhythm(v) {
         note2.el = el2;
         spawned++;
       }
-      nextSpawn = 380 + Math.random() * 260;
+      nextSpawn = 500 + Math.random() * 300;
       sfx.tick();
     }
 
@@ -2932,9 +2932,9 @@ function gameSlot(v) {
 // ============================================
 function gameTyping(v) {
   const stage = document.getElementById('game-stage');
-  const target = 'Perdon Aminata por arruinar la boda de tu hija mayor el sabado en Dakar';
-  const timeLimit = 20;
-  const previewTime = 4;
+  const target = 'Perdon Aminata por arruinar la boda de tu hija en Dakar';
+  const timeLimit = 25;
+  const previewTime = 6;
   let timeLeft = timeLimit;
   let interval;
 
@@ -2992,7 +2992,7 @@ function gameQuiz(v) {
   let idx = 0;
   let wrong = 0;
   let timer;
-  const QTIME = 3.5;
+  const QTIME = 4.5;
   let timeLeft = QTIME;
 
   function render() {
@@ -3065,16 +3065,16 @@ function gameQuiz(v) {
 // ============================================
 function gameClicker(v) {
   const stage = document.getElementById('game-stage');
-  const target = 150;
+  const target = 110;
   let count = 0;
-  let timeLeft = 12;
+  let timeLeft = 14;
   let done = false;
   let buttonScale = 1;
 
   stage.innerHTML = `
     <div class="clicker-stage">
       <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:8px;">COLTÁN CLICKER</div>
-      <div class="clicker-target">Objetivo: ${target} clicks en <span id="c-time">12</span>s · botón <strong style="color:var(--blood)">encoge</strong></div>
+      <div class="clicker-target">Objetivo: ${target} clicks en <span id="c-time">14</span>s · botón <strong style="color:var(--blood)">encoge</strong></div>
       <div class="clicker-count" id="c-count">0</div>
       <div class="clicker-bar"><div class="clicker-fill" id="c-fill"></div></div>
       <div style="display:flex;justify-content:center;align-items:center;height:300px;">
@@ -3093,8 +3093,8 @@ function gameClicker(v) {
     countEl.textContent = count;
     fill.style.width = Math.min(100, (count / target) * 100) + '%';
     if (count % 5 === 0) sfx.click();
-    if (count % 25 === 0) {
-      buttonScale = Math.max(0.45, buttonScale - 0.12);
+    if (count % 30 === 0) {
+      buttonScale = Math.max(0.6, buttonScale - 0.08);
       btn.style.transform = `scale(${buttonScale})`;
     }
     if (count >= target) finish();
@@ -3132,17 +3132,17 @@ function gameDrift(v) {
   const stage = document.getElementById('game-stage');
   let carX = 50;
   let crashes = 0;
-  let timeLeft = 30;
+  let timeLeft = 22;
   let obstacles = [];
   let running = true;
   let lastSpawn = 0;
-  let spawnGap = 450;
-  let fallSpeed = 5;
+  let spawnGap = 600;
+  let fallSpeed = 4;
 
   stage.innerHTML = `
     <div style="text-align:center;">
       <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:8px;">DRIFT SAHARA</div>
-      <div style="color:var(--text-dim);margin-bottom:16px;">[←] [→] o toca lados · Tiempo: <span id="d-time">30</span>s · Choques: <span id="d-crash">0</span></div>
+      <div style="color:var(--text-dim);margin-bottom:16px;">[←] [→] o toca lados · Tiempo: <span id="d-time">22</span>s · Choques: <span id="d-crash">0</span></div>
       <div class="drift-stage" id="d-stage">
         <div class="drift-road"></div>
         <div class="drift-car" id="d-car" style="left: 50%;">🚗</div>
@@ -3181,8 +3181,8 @@ function gameDrift(v) {
     if (!te) { clearInterval(interval); return; }
     te.textContent = timeLeft;
     if (timeLeft % 6 === 0) {
-      spawnGap = Math.max(220, spawnGap - 50);
-      fallSpeed = Math.min(8.5, fallSpeed + 0.6);
+      spawnGap = Math.max(330, spawnGap - 35);
+      fallSpeed = Math.min(7, fallSpeed + 0.4);
     }
     if (timeLeft <= 0) finish();
   }, 1000);
@@ -3204,8 +3204,8 @@ function gameDrift(v) {
     if (t - lastSpawn > spawnGap) {
       const lane = 25 + Math.random() * 50;
       spawnObstacle(lane);
-      // 35% chance to spawn a second obstacle further down
-      if (Math.random() < 0.35) {
+      // 18% chance to spawn a second obstacle further down
+      if (Math.random() < 0.18) {
         let lane2 = 25 + Math.random() * 50;
         if (Math.abs(lane2 - lane) < 18) lane2 = lane + (lane < 50 ? 25 : -25);
         spawnObstacle(lane2);
@@ -3255,13 +3255,13 @@ function gameWhack(v) {
     DICEBEAR('Fake-Senora-3', 'avataaars'),
     DICEBEAR('Fake-Senora-4', 'avataaars')
   ];
-  let timeLeft = 30;
+  let timeLeft = 22;
   let wrongHits = 0;
   let missedFakes = 0;
   let goodHits = 0;
   let running = true;
-  let popSpeed = 750;
-  let stayUp = 950;
+  let popSpeed = 950;
+  let stayUp = 1200;
 
   stage.innerHTML = `
     <div class="whack-stage">
@@ -3270,7 +3270,7 @@ function gameWhack(v) {
         <div style="color:var(--text-dim);margin-bottom:8px;">Pega SOLO a las fakes. Si pegas a Paz: chupito x2. <strong style="color:var(--blood)">Acelera con el tiempo.</strong></div>
         <div class="whack-hud">
           <span class="good">✓ FAKES: <span id="w-good">0</span></span>
-          <span>⏱ <span id="w-time">30</span>s</span>
+          <span>⏱ <span id="w-time">22</span>s</span>
           <span class="bad">⚠ PAZ HIT: <span id="w-bad">0</span></span>
         </div>
       </div>
@@ -3289,9 +3289,9 @@ function gameWhack(v) {
     const te = document.getElementById('w-time');
     if (!te) { clearInterval(interval); return; }
     te.textContent = timeLeft;
-    if (timeLeft % 5 === 0) {
-      popSpeed = Math.max(280, popSpeed - 100);
-      stayUp = Math.max(550, stayUp - 80);
+    if (timeLeft % 6 === 0) {
+      popSpeed = Math.max(450, popSpeed - 80);
+      stayUp = Math.max(750, stayUp - 60);
     }
     if (timeLeft <= 0) finish();
   }, 1000);
@@ -3304,7 +3304,7 @@ function gameWhack(v) {
     });
     if (empty.length === 0) { setTimeout(popRandom, 200); return; }
     const i = empty[Math.floor(Math.random() * empty.length)];
-    const isPaz = Math.random() < 0.62;
+    const isPaz = Math.random() < 0.5;
     const t = document.getElementById('w-t-' + i);
     if (!t) return;
     t.dataset.type = isPaz ? 'paz' : 'fake';
@@ -3365,9 +3365,9 @@ function gamePress(v) {
   const stage = document.getElementById('game-stage');
   let qIdx = 0;
   let totalViolations = 0;
-  let timer, timeLeft = 14;
-  const Q_TIME = 14;
-  const HIDE_AFTER = 3;
+  let timer, timeLeft = 18;
+  const Q_TIME = 18;
+  const HIDE_AFTER = 5;
 
   function renderQ() {
     if (qIdx >= PRESS_QUESTIONS.length) {
@@ -3383,7 +3383,7 @@ function gamePress(v) {
         <div class="press-forbidden">Palabras prohibidas: ${FORBIDDEN_WORDS.map(w => `<span>${w}</span>`).join('')}</div>
         <textarea class="press-input" id="p-input" placeholder="Responde como un señor formal..."></textarea>
         <div class="press-meta">
-          <span>Mínimo 8 palabras</span>
+          <span>Mínimo 6 palabras</span>
           <span>Tiempo: <span id="p-time">${Q_TIME}</span>s</span>
         </div>
         <div style="margin-top:16px;text-align:center;">
@@ -3418,7 +3418,7 @@ function gamePress(v) {
       const matches = txt.match(re);
       if (matches) violations += matches.length;
     });
-    if (words.length < 8) violations += 1;
+    if (words.length < 6) violations += 1;
     totalViolations += violations;
     if (violations > 0) { sfx.fail(); flash('red'); }
     else { sfx.success(); flash('green'); }
@@ -3577,7 +3577,7 @@ function gamePoligrafo(v) {
   let totalShots = 0;
   let savedByVote = false;
   let answerTimer = null;
-  const ANSWER_TIME = 3.5;
+  const ANSWER_TIME = 5;
 
   function render() {
     if (idx >= PAZ_ACCUSATIONS.length) {
@@ -3713,7 +3713,7 @@ function gameAnnaBoss(v) {
   let totalShots = 0;
   let answerTimer = null;
   let yesCount = 0;
-  const ANSWER_TIME = 4;
+  const ANSWER_TIME = 5.5;
 
   function render() {
     if (idx >= ANNA_VOWS.length) {
