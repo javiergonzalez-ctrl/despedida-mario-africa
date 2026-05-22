@@ -767,18 +767,19 @@
     text-transform: uppercase;
   }
   .transition-card .victim-big-avatar {
-    /* Bigger on both mobile (140-180px) and desktop (~240px) so real friend
-       photos are clearly recognizable. */
-    width: clamp(160px, 26vh, 260px);
-    height: clamp(160px, 26vh, 260px);
+    /* XL size on every screen so friend faces are unmistakable. Mobile
+       portrait baseline 220 px (≈ 56 % of 390-wide viewport); scales up on
+       desktop while never overflowing tall windows. */
+    width: clamp(220px, 36vh, 340px);
+    height: clamp(220px, 36vh, 340px);
     border-radius: 50%;
-    margin: 0 auto 16px;
+    margin: 0 auto 18px;
     border: 4px solid var(--blood);
-    box-shadow: 0 0 50px rgba(255, 23, 68, 0.5);
+    box-shadow: 0 0 60px rgba(255, 23, 68, 0.55);
     overflow: hidden;
     background: linear-gradient(135deg, var(--bg-3), var(--dark-blood));
     display: flex; align-items: center; justify-content: center;
-    font-size: clamp(80px, 14vh, 130px);
+    font-size: clamp(110px, 18vh, 170px);
     animation: float 3s ease-in-out infinite;
   }
   @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
@@ -981,19 +982,20 @@
     background: linear-gradient(90deg, transparent, var(--cyan), transparent);
     box-shadow: 0 0 20px var(--cyan);
   }
-  /* Hold-note tail — renders as a vertical "rope" hanging from the head.
-     Width matches the note, height proportional to (dur / LEAD_TIME) * fallDist.
-     The DOM child is added by the JS renderer when the note has a `dur`. */
+  /* Hold-note tail — the visual "ribbon" of a sustain. It hangs ABOVE the
+     head (the head is the part that arrives at the hit zone first; the
+     ribbon trails behind it on the way down, i.e. visually higher in the
+     lane). The DOM child is added by the JS renderer when dur is set. */
   .note .tail {
     position: absolute;
     left: 50%; transform: translateX(-50%);
-    top: 100%;
+    bottom: 100%;
     width: 28px;
-    background: linear-gradient(180deg, rgba(255,23,68,0.85), rgba(255,23,68,0.25));
+    background: linear-gradient(180deg, rgba(255,23,68,0.25), rgba(255,23,68,0.85));
     border-radius: 6px;
     pointer-events: none;
   }
-  .note.held .tail { background: linear-gradient(180deg, rgba(0,255,65,0.95), rgba(0,255,65,0.35)); }
+  .note.held .tail { background: linear-gradient(180deg, rgba(0,255,65,0.35), rgba(0,255,65,0.95)); }
   .note {
     position: absolute;
     width: 80%; left: 10%;
@@ -3241,10 +3243,10 @@ async function jumpToRound(n) {
   const v = VICTIMS[n - 1];
   // Show the transition card first (story + quote + bets + optional practice
   // button) so the user reads context and can warm up. The card resolves when
-  // either "EMPEZAR" or "EMPEZAR CON PRÁCTICA" is pressed.
-  await showTransitionCard(v);
-  // After the transition card a click already happened on EMPEZAR — that handler
-  // primed the rhythm audio inside the gesture. Now start the game proper.
+  // EMPEZAR is pressed, or returns { cancelled: true } if the user clicked
+  // VOLVER AL MENÚ — in that case we bail out before launching the game.
+  const result = await showTransitionCard(v);
+  if (result && result.cancelled) return;
   startGame(v);
 }
 
@@ -3375,7 +3377,8 @@ async function nextRound() {
     await showMap({ autoAdvanceAfter: 1800 });
   }
   show('screen-game');
-  await showTransitionCard(VICTIMS[state.currentRound - 1]);
+  const result = await showTransitionCard(VICTIMS[state.currentRound - 1]);
+  if (result && result.cancelled) return;
   startGame(VICTIMS[state.currentRound - 1]);
 }
 
@@ -3385,8 +3388,9 @@ const PRACTICE_SUPPORTED = new Set(['rhythm', 'clicker', 'drift', 'whack', 'pena
 
 async function showTransitionCard(v) {
   const stage = document.getElementById('game-stage');
-  const practiceBtn = PRACTICE_SUPPORTED.has(v.game)
-    ? `<button class="btn-secondary" id="transition-practice-btn" style="margin-right:8px;">🎓 PRACTICAR PRIMERO</button>`
+  const hasPractice = PRACTICE_SUPPORTED.has(v.game);
+  const practiceBtn = hasPractice
+    ? `<button class="btn-secondary" id="transition-practice-btn" style="border-color:var(--gold);color:var(--gold);">🎓 PRACTICAR PRIMERO</button>`
     : '';
   stage.innerHTML = `
     <div class="transition-card">
@@ -3407,31 +3411,39 @@ async function showTransitionCard(v) {
         </div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:'JetBrains Mono',monospace;">esperando móviles · cierra al pulsar EMPEZAR</div>
       </div>
-      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:stretch;">
+        <button class="btn-secondary" id="transition-back-btn">◀ VOLVER AL MENÚ</button>
         ${practiceBtn}
-        <button class="btn-primary" id="transition-start-btn">▶ CERRAR APUESTAS + EMPEZAR</button>
+        <button class="btn-primary" id="transition-start-btn">▶ EMPEZAR PRUEBA REAL</button>
       </div>
+      ${hasPractice ? `<p style="color:var(--text-dim);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:10px;letter-spacing:0.1em;">💡 Prueba sin consecuencias para coger el ritmo antes de la real.</p>` : ''}
     </div>
   `;
+  // Declare resolveOuter + promise FIRST so all handlers can reach it.
+  let resolveOuter;
+  const promise = new Promise(resolve => { resolveOuter = resolve; });
+
   sfx.whoosh();
   openPrediction(v);
 
-  // Practice button — launches the game in practice mode, then re-shows the
-  // transition card so the user can either practice again or start the real
-  // round. Practice does NOT modify chupitos / Firebase / showResult.
+  // BACK button — aborts the round, returns to the victim menu.
+  const backBtn = document.getElementById('transition-back-btn');
+  if (backBtn) backBtn.addEventListener('click', () => {
+    closePrediction();
+    backToVictims();
+    resolveOuter({ cancelled: true });
+  }, { once: true });
+
+  // PRACTICE button — runs the practice version, then re-shows this card.
   const pBtn = document.getElementById('transition-practice-btn');
   if (pBtn) pBtn.addEventListener('click', async () => {
     if (v.game === 'rhythm') primeRhythmAudio();
     closePrediction();
     await runPracticeRound(v);
-    // After practice, re-render the transition card and re-open predictions
-    return showTransitionCard(v).then(resolveOuter);
+    showTransitionCard(v).then(resolveOuter);
   }, { once: true });
 
-  let resolveOuter;
-  const promise = new Promise(resolve => { resolveOuter = resolve; });
-
-  // Real start — primes audio inside the gesture (iOS Safari requirement)
+  // REAL START — primes audio inside the gesture (iOS Safari requirement)
   const startBtn = document.getElementById('transition-start-btn');
   if (startBtn) startBtn.addEventListener('click', () => {
     if (v.game === 'rhythm') primeRhythmAudio();
