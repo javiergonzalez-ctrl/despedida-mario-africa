@@ -246,6 +246,11 @@
     transition: all 0.15s;
   }
   .back-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--gold); }
+  /* While a game is running (not transition card, not result), HIDE the
+     back button — fat-finger on mobile was sending players to the menu
+     mid-game (bug repro: runner on phone, last seconds). The transition
+     card has its own VOLVER AL MENÚ button. */
+  body.game-running #screen-game .back-btn { display: none; }
   @media (max-width: 480px) {
     .back-btn { top: 8px; left: 8px; padding: 5px 10px; font-size: 10px; }
   }
@@ -3704,6 +3709,7 @@ function backToVictims() {
   if (qrm && qrm.classList.contains('active')) qrm.classList.remove('active');
   document.getElementById('hud').classList.add('hidden');
   document.body.classList.remove('hud-active');
+  document.body.classList.remove('game-running');
   show('screen-victims');
   goToVictims();
 }
@@ -3712,6 +3718,7 @@ function backToStart() {
   if (window.__rhythmAudio) { try { window.__rhythmAudio.pause(); } catch(e){} window.__rhythmAudio = null; }
   document.getElementById('hud').classList.add('hidden');
   document.body.classList.remove('hud-active');
+  document.body.classList.remove('game-running');
   show('screen-start');
 }
 window.jumpToRound = jumpToRound;
@@ -3952,6 +3959,8 @@ async function resolvePrediction(passed) {
 }
 
 async function showResult(shotsTaken, msg = '') {
+  // Result screen visible -> game NOT running anymore, restore the back btn
+  document.body.classList.remove('game-running');
   const stage = document.getElementById('game-stage');
   const passed = shotsTaken <= 1;
   const good = shotsTaken === 0;
@@ -4001,6 +4010,10 @@ async function showResult(shotsTaken, msg = '') {
 }
 
 function startGame(v) {
+  // While a real game is running, hide the back button — fat-finger taps
+  // were sending mobile players to the menu mid-game. The transition card
+  // (which is NOT running a game yet) keeps its own VOLVER AL MENÚ button.
+  document.body.classList.add('game-running');
   switch (v.game) {
     case 'rush': return gameRush(v);
     case 'mango': return gameMango(v);
@@ -5327,13 +5340,14 @@ function gameRunner(v) {
   const FLY_H = 60;
   const START_LIVES = 3;
   const PASS_THRESHOLD = 0.70;       // dodged / total >= 70 % to pass
-  const INVULN_MS = 1200;            // after a hit, brief invulnerability
-  let scrollSpeed = 6.5;
-  const MAX_SPEED = 14.0;            // higher cap (was 11)
-  const SPEED_RAMP_PER_SEC = 0.11;   // more aggressive (was 0.05)
-  let spawnGapMs = 1700;
-  const MIN_SPAWN_GAP_MS = 750;      // closer to back-to-back at the end (was 950)
-  const SPAWN_RAMP_PER_SEC = 22;     // faster ramp (was 12)
+  const INVULN_MS = 900;             // shorter invuln window (was 1200)
+  let scrollSpeed = 7.0;             // faster opening (was 6.5)
+  const MAX_SPEED = 17.5;            // sprint speed at the end (was 14)
+  const SPEED_RAMP_PER_SEC = 0.19;   // ramps faster (was 0.11)
+  let spawnGapMs = 1500;             // tighter opening (was 1700)
+  const MIN_SPAWN_GAP_MS = 600;      // can spawn back-to-back at the end (was 750)
+  const SPAWN_RAMP_PER_SEC = 32;     // gap shrinks fast (was 22)
+  const FLY_RATIO = 0.40;            // 40 % flying (was 30 %) — more duck pressure
 
   stage.innerHTML = `
     <div style="text-align:center; width:100%; max-width: 900px;">
@@ -5444,10 +5458,10 @@ function gameRunner(v) {
   }
 
   function spawnObstacle() {
-    // 70% ground (jump over), 30% fly (must duck under).
+    // Mix of ground (jump) and flying (duck). FLY_RATIO drives the split.
     // Fly height tuned so it hits standing Mario but cleanly clears ducking
     // Mario; setting it visibly above the head makes "agacharse" feel right.
-    const fly = Math.random() < 0.30;
+    const fly = Math.random() < FLY_RATIO;
     if (fly) {
       obstacles.push({
         x: W + 20,
@@ -5791,12 +5805,15 @@ function gameRunner(v) {
     else { sfx.fail(); flash('red'); if (!reachedEnd) shake('heavy'); }
     overlay.style.display = 'flex';
     overlay.innerHTML = `<div style="color:${passed ? 'var(--terminal)' : 'var(--blood)'};">${title}</div><div style="font-size:18px;font-family:'JetBrains Mono',monospace;color:var(--gold);margin-top:8px;">${pct}% · ${dodged} ✓ / ${hits} ✗</div>`;
-    setTimeout(() => showResult(shots, msg), 1300);
+    finishTimer = setTimeout(() => showResult(shots, msg), 1300);
   }
+  let finishTimer = null;
 
-  // Cleanup on game switch
+  // Cleanup on game switch — also kill any pending finish timer so we don't
+  // write a stale result over a screen the user already navigated away from.
   document.addEventListener('start-game', () => {
     running = false;
+    if (finishTimer) { clearTimeout(finishTimer); finishTimer = null; }
     document.removeEventListener('keydown', keyHandler);
     document.removeEventListener('keyup', keyUpHandler);
   }, { once: true });
