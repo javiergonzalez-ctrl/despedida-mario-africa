@@ -2298,6 +2298,22 @@
     <div style="margin:16px 0;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--gold);">🥃 Tus chupitos: <span id="vote-myshots" style="font-size:28px;font-family:'Bebas Neue';color:var(--blood);">0</span></div>
     <h1 id="vote-state-title">ESPERANDO</h1>
     <p class="vote-q" id="vote-question">El partido está en marcha. Mira la TV.</p>
+    <div id="vote-amount-block" style="display:none; margin: 12px auto 18px; max-width: 320px;">
+      <div style="font-family:'JetBrains Mono',monospace; font-size: 11px; letter-spacing: 0.18em; color: var(--gold); text-transform: uppercase; margin-bottom: 6px;">
+        🥃 ¿Cuánto apuestas?
+      </div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:12px;">
+        <input type="range" id="bet-amount" min="1" max="5" step="1" value="2"
+          style="flex:1; accent-color: var(--gold);" oninput="document.getElementById('bet-amount-out').textContent=this.value" />
+        <div style="display:flex; align-items:baseline; gap:4px; min-width: 70px; justify-content:flex-end;">
+          <span id="bet-amount-out" style="font-family:'Bebas Neue'; font-size: 40px; line-height: 1; color: var(--gold);">2</span>
+          <span style="font-size: 22px;">🥃</span>
+        </div>
+      </div>
+      <div style="font-family:'JetBrains Mono',monospace; font-size: 10px; color: var(--text-dim); text-align: center; margin-top: 4px;">
+        Si fallas, bebes el doble.
+      </div>
+    </div>
     <div class="vote-buttons" id="vote-buttons" style="display:none;">
       <button class="vote-btn si" onclick="castVote(1)">SÍ</button>
       <button class="vote-btn no" onclick="castVote(0)">NO</button>
@@ -3929,7 +3945,7 @@ function closePrediction() {
 }
 
 async function resolvePrediction(passed) {
-  if (!FIREBASE_ENABLED || !firebaseDB) return { losers: [], si: 0, no: 0 };
+  if (!FIREBASE_ENABLED || !firebaseDB) return { losers: [], si: 0, no: 0, shotsEach: passed ? 1 : 2 };
   const roundId = state.currentRound;
   const [predsSnap, playersSnap] = await Promise.all([
     firebaseDB.ref('rooms/' + ROOM_ID + '/round/' + roundId + '/predictions').once('value'),
@@ -3937,19 +3953,35 @@ async function resolvePrediction(passed) {
   ]);
   const preds = predsSnap.val() || {};
   const players = playersSnap.val() || {};
+  // Backwards-compatible: prediction value may be a plain number (legacy
+  // SI=1 / NO=0) OR an object { choice, amount }. Amount defaults to 1.
+  const norm = (raw) => {
+    if (raw && typeof raw === 'object') {
+      return { choice: raw.choice, amount: Math.max(1, Math.min(10, raw.amount || 1)) };
+    }
+    return { choice: raw, amount: 1 };
+  };
   let si = 0, no = 0;
-  Object.values(preds).forEach(c => c === 1 ? si++ : no++);
+  Object.values(preds).forEach(raw => {
+    const { choice } = norm(raw);
+    if (choice === 1) si++; else if (choice === 0) no++;
+  });
   const loserSide = passed ? 0 : 1;
-  const shotsEach = passed ? 1 : 2;
+  const baseShotsEach = passed ? 1 : 2;
   const losers = [];
-  for (const [pid, choice] of Object.entries(preds)) {
+  for (const [pid, raw] of Object.entries(preds)) {
+    const { choice, amount } = norm(raw);
     if (choice === loserSide) {
+      // Each invitee drinks baseShotsEach * how-much-they-bet.
+      const shotsForThis = baseShotsEach * amount;
       const p = players[pid] || {};
-      const newShots = (p.chupitos || 0) + shotsEach;
+      const newShots = (p.chupitos || 0) + shotsForThis;
       await firebaseDB.ref('rooms/' + ROOM_ID + '/players/' + pid + '/chupitos').set(newShots);
-      losers.push({ name: p.name || '?', shots: shotsEach, total: newShots });
+      losers.push({ name: p.name || '?', shots: shotsForThis, total: newShots, bet: amount });
     }
   }
+  // shotsEach in the response is just the multiplier; ranking shows per-person above.
+  const shotsEach = baseShotsEach;
   await firebaseDB.ref('rooms/' + ROOM_ID + '/activeRound').update({
     state: 'result',
     lastResult: `Mario ${passed ? '✅ PASÓ' : '❌ FALLÓ'} · ${losers.length === 0 ? 'Nadie bebe esta ronda.' : `bebes ${shotsEach} si votaste ${loserSide ? 'SÍ' : 'NO'}.`}`
@@ -3970,36 +4002,69 @@ async function showResult(shotsTaken, msg = '') {
 
   const resolution = await resolvePrediction(passed);
 
-  const losersHTML = resolution.losers.length === 0
-    ? `<div style="color:var(--text-dim);font-style:italic;">${t('nobody_lost')}</div>`
-    : resolution.losers.map(l => `
-        <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,23,68,0.15);border:1px solid var(--blood);padding:8px 14px;border-radius:999px;margin:4px;">
-          <strong style="font-family:'Bebas Neue';font-size:20px;letter-spacing:0.05em;">${esc(l.name)}</strong>
-          <span style="color:var(--blood);font-family:'JetBrains Mono',monospace;font-weight:800;">+${l.shots}🥃</span>
-          <span style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;">total ${l.total}</span>
-        </div>
-      `).join('');
+  // BIG win/lose banner (always shown — was easy to miss before).
+  const bannerWin = state.lang === 'gl' ? '🏆 MARIO PASOU' : (state.lang === 'ng' ? '🏆 MARIO PASS' : '🏆 MARIO PASÓ');
+  const bannerLose = state.lang === 'gl' ? '🩸 MARIO FALLOU' : (state.lang === 'ng' ? '🩸 MARIO FAIL' : '🩸 MARIO FALLÓ');
+  const bannerColor = passed ? 'var(--terminal)' : 'var(--blood)';
+  const bannerBg = passed ? 'rgba(0,255,65,0.12)' : 'rgba(255,23,68,0.12)';
+  const bannerHTML = `
+    <div style="background:${bannerBg}; border:3px solid ${bannerColor}; border-radius:20px; padding:18px 24px; margin:8px auto 18px; max-width:600px; text-align:center; box-shadow:0 0 40px ${bannerColor}33;">
+      <div style="font-family:'Bebas Neue';font-size:clamp(38px,7vw,68px); letter-spacing:0.06em; color:${bannerColor}; line-height:1;">
+        ${passed ? bannerWin : bannerLose}
+      </div>
+    </div>
+  `;
 
-  const predBlock = (resolution.si + resolution.no) === 0 ? '' : `
-    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:16px;padding:20px;margin:24px auto;max-width:680px;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px;">${t('bets_label')}</div>
-      <div style="display:flex;justify-content:space-around;margin-bottom:16px;">
-        <div><span style="color:var(--terminal);font-family:'Bebas Neue';font-size:36px;">${resolution.si}</span> <span style="color:var(--text-dim);font-size:12px;">SI</span></div>
-        <div><span style="color:var(--blood);font-family:'Bebas Neue';font-size:36px;">${resolution.no}</span> <span style="color:var(--text-dim);font-size:12px;">NO</span></div>
+  // Drinkers ranking — sorted by who drinks the most. Always shown, with a
+  // clear empty-state when no phones / no bets came in.
+  const lblWhoDrinks = state.lang === 'gl' ? 'QUEN BEBE' : (state.lang === 'ng' ? 'WHO DEY DRINK' : 'QUIÉN BEBE');
+  const lblShotsEach = state.lang === 'gl' ? 'beben' : (state.lang === 'ng' ? 'go drink' : 'beben');
+  const lblNoBets = state.lang === 'gl' ? 'Ninguén apostou — Mario bebe por libre.'
+                   : state.lang === 'ng' ? 'Nobody bet — Mario dey drink alone.'
+                   : 'Nadie apostó — Mario bebe por libre.';
+  // Sort losers by shots descending so the "ranking" feels real
+  const sortedLosers = [...(resolution.losers || [])].sort((a, b) => b.shots - a.shots);
+  const losersRankHTML = sortedLosers.length === 0
+    ? `<div style="color:var(--text-dim);font-style:italic;text-align:center;padding:10px;">${lblNoBets}</div>`
+    : sortedLosers.map((l, i) => {
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+        return `
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:rgba(255,23,68,0.12);border:1px solid var(--blood);padding:10px 14px;border-radius:12px;margin:6px 0;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-size:22px;line-height:1;">${medal}</span>
+              <strong style="font-family:'Bebas Neue';font-size:22px;letter-spacing:0.05em;">${esc(l.name)}</strong>
+            </div>
+            <div style="display:flex;align-items:baseline;gap:8px;">
+              <span style="color:var(--blood);font-family:'Bebas Neue';font-size:30px;line-height:1;">+${l.shots}</span>
+              <span style="font-size:18px;">🥃</span>
+              <span style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;margin-left:6px;">total ${l.total}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+  const drinkersBlock = `
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:16px;padding:18px;margin:18px auto;max-width:600px;text-align:left;">
+      <div style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.25em;color:var(--gold);text-transform:uppercase;margin-bottom:10px;text-align:center;">
+        🥃 ${lblWhoDrinks}
       </div>
-      <div style="font-family:'Bebas Neue';font-size:24px;letter-spacing:0.05em;color:${passed?'var(--terminal)':'var(--blood)'};margin-bottom:8px;">
-        ${passed ? t('mario_passed_short') : t('mario_failed_short')} — ${passed ? t('bets_drink_no') : t('bets_drink_yes')} (${resolution.shotsEach}🥃 c/u)
-      </div>
-      <div style="margin-top:12px;">${losersHTML}</div>
+      ${(resolution.si + resolution.no) > 0 ? `
+        <div style="display:flex;justify-content:space-around;margin-bottom:12px;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);">
+          <span><span style="color:var(--terminal);font-family:'Bebas Neue';font-size:24px;">${resolution.si}</span> SÍ</span>
+          <span style="color:${bannerColor};">${lblShotsEach} ${passed ? t('bets_drink_no').replace(/^[^A-Z]+/, '') : t('bets_drink_yes').replace(/^[^A-Z]+/, '')} · ${resolution.shotsEach}🥃</span>
+          <span><span style="color:var(--blood);font-family:'Bebas Neue';font-size:24px;">${resolution.no}</span> NO</span>
+        </div>
+      ` : ''}
+      ${losersRankHTML}
     </div>
   `;
 
   stage.innerHTML = `
     <div class="result-card">
-      <div class="result-label">${good ? t('mario_perfect') : (passed ? t('mario_passed') : t('mario_failed'))}</div>
-      <div class="result-shots ${good ? 'good' : ''}">${good ? '🍀' : '+' + shotsTaken}</div>
+      ${bannerHTML}
+      <div class="result-shots ${good ? 'good' : ''}">${good ? '🍀' : '+' + shotsTaken}🥃</div>
       ${msg ? `<div class="result-msg">${msg}</div>` : ''}
-      ${predBlock}
+      ${drinkersBlock}
       <div style="margin-top:24px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
         <button class="btn-primary" onclick="nextRound()">${t('next_round')}</button>
         <button class="btn-secondary" onclick="jumpToRound(state.currentRound)">${t('replay')}</button>
@@ -4014,6 +4079,11 @@ function startGame(v) {
   // were sending mobile players to the menu mid-game. The transition card
   // (which is NOT running a game yet) keeps its own VOLVER AL MENÚ button.
   document.body.classList.add('game-running');
+  // Wipe whatever the previous round (or transition card) left behind, so
+  // when a new game's renderer runs we never see the old game's UI for a
+  // frame.
+  const _stage = document.getElementById('game-stage');
+  if (_stage) _stage.innerHTML = '';
   switch (v.game) {
     case 'rush': return gameRush(v);
     case 'mango': return gameMango(v);
@@ -6417,14 +6487,17 @@ function updatePhoneUI(ar, room, pid) {
   }
   if (ar.state === 'open') {
     firebaseDB.ref('rooms/' + room + '/round/' + ar.id + '/predictions/' + pid).once('value').then(s => {
+      const amountBlock = document.getElementById('vote-amount-block');
       if (s.val() !== null) {
         title.textContent = '✓ VOTADO';
         q.textContent = `Esperando que Mario juegue "${ar.gameName}"...`;
         btns.style.display = 'none'; thanks.classList.add('show');
+        if (amountBlock) amountBlock.style.display = 'none';
       } else {
         title.textContent = 'APUESTA YA';
         q.innerHTML = `Ronda ${esc(ar.id)}/12 — <strong style="color:var(--gold)">${esc(ar.gameName)}</strong><br/>¿Mario lo logra?`;
         btns.style.display = 'flex'; thanks.classList.remove('show');
+        if (amountBlock) amountBlock.style.display = 'block';
       }
     });
   }
@@ -6433,11 +6506,15 @@ function castVote(choice) {
   const room = getRoomFromURL();
   if (!room) return;
   const pid = getPlayerId(room);
+  // Read the chupitos amount the player picked (range input 1-5, default 2).
+  const amountInput = document.getElementById('bet-amount');
+  const amount = amountInput ? Math.max(1, Math.min(10, parseInt(amountInput.value) || 2)) : 2;
   if (FIREBASE_ENABLED && firebaseDB) {
     firebaseDB.ref('rooms/' + room + '/activeRound').once('value').then(snap => {
       const ar = snap.val();
       if (!ar || ar.state !== 'open') return;
-      firebaseDB.ref('rooms/' + room + '/round/' + ar.id + '/predictions/' + pid).set(choice);
+      // Store as { choice, amount } so we can multiply shots at resolve time.
+      firebaseDB.ref('rooms/' + room + '/round/' + ar.id + '/predictions/' + pid).set({ choice, amount });
     });
   }
   document.getElementById('vote-buttons').style.display = 'none';
