@@ -183,26 +183,53 @@
   .hud-pill.shots { border-color: var(--blood); color: var(--blood); }
   .hud-pill.round { border-color: var(--gold); color: var(--gold); }
 
-  /* ============ RUNNER TAP HINTS (only on touch screens) ============ */
-  .runner-hint {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.18em;
-    color: rgba(255,215,0,0.85);
-    background: rgba(0,0,0,0.55);
-    border: 1px solid rgba(255,215,0,0.6);
-    padding: 6px 14px;
-    margin: 8px;
-    border-radius: 999px;
-    pointer-events: none;   /* the parent div catches the touch */
-    opacity: 0.8;
-    animation: hintFade 4s ease-out forwards;
+  /* ============ RUNNER PHYSICAL CONTROL BUTTONS ============ */
+  /* Side-by-side under the canvas so the finger never blocks the play area.
+     On desktop (mouse + fine pointer) we hide them — the arrow keys are the
+     intended input and the buttons would just clutter the screen. */
+  .runner-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    max-width: 900px;
+    margin: 14px auto 0;
   }
-  @keyframes hintFade { from { opacity: 0.95; } 70% { opacity: 0.75; } to { opacity: 0.25; } }
-  /* Hide hints on desktop where keyboard is the obvious input */
   @media (hover: hover) and (pointer: fine) {
-    .runner-hint { display: none; }
+    .runner-controls { display: none; }
+  }
+  .runner-ctrl {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 4px;
+    padding: 18px 10px;
+    background: linear-gradient(180deg, rgba(255,215,0,0.15), rgba(255,215,0,0.05));
+    border: 2px solid var(--gold);
+    border-radius: 14px;
+    color: var(--gold);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    letter-spacing: 0.15em;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+    transition: transform 0.08s ease, background 0.08s ease;
+    min-height: 72px;
+  }
+  .runner-ctrl:active,
+  .runner-ctrl.pressed {
+    background: linear-gradient(180deg, rgba(255,215,0,0.45), rgba(255,215,0,0.2));
+    color: #000;
+    transform: translateY(2px);
+  }
+  .runner-ctrl-icon { font-size: 28px; line-height: 1; }
+  .runner-ctrl-label { font-size: 13px; }
+  @media (max-width: 480px) {
+    .runner-controls { gap: 10px; margin-top: 10px; }
+    .runner-ctrl { padding: 20px 8px; min-height: 78px; }
+    .runner-ctrl-icon { font-size: 32px; }
+    .runner-ctrl-label { font-size: 12px; }
   }
 
   /* ============ BACK BUTTON (top-left, mirrors lang picker) ============ */
@@ -3014,19 +3041,19 @@ const VICTIMS = [
     story: 'Marinero retirado en las Cíes. Mario le metió en "F1 Fantasy gallego edition" prometiendo cuotas inflated para pescaderos. Apostó la pensión entera al Verstappen-en-Vigo (un GP que no existía).',
     quote: '"Vas a saber por qué me llaman el Demonio de las Islas, Mariño."',
     debt: 5, game: 'runner', gameName: 'PERSECUCIÓN EN LAS CÍES',
-    instruction: '[SPACE] / [↑] saltar · [↓] agacharte · o toca arriba/abajo. Esquiva al Demonio durante 60 segundos.',
+    instruction: 'Ordenador: [↑] saltar · [↓] agacharte (flechas del teclado). Móvil: botones bajo el canvas. 60 s · 3 vidas · necesitas ≥70 % para pasar.',
     i18n: {
       gl: {
         story: 'Mariñeiro xubilado nas Cíes. Mario meteulle en "F1 Fantasy galega edition" prometendo cotas inflated para peixeiros. Apostou toda a pensión ao Verstappen-en-Vigo (un GP que non existía).',
         quote: '"Vas saber por que me chaman o Demo das Illas, Mariño."',
         gameName: 'PERSECUCIÓN NAS CÍES',
-        instruction: '[SPACE] / [↑] saltar · [↓] agacharse · ou toca arriba/abaixo. Esquiva o Demo durante 60 s.'
+        instruction: 'Computador: [↑] saltar · [↓] agacharse (frechas do teclado). Móbil: botóns baixo o canvas. 60 s · 3 vidas · precisas ≥70 % para pasar.'
       },
       ng: {
         story: 'Retired sailor for di Cíes islands. Mario sign am up for "F1 Fantasy Galician edition" with inflated odds for fishmongers. E gamble di full pension on Verstappen-for-Vigo (one GP wey no exist).',
         quote: '"You go soon understand why dem dey call me di Demon of di Islands, Mariño."',
         gameName: 'CHASE FOR DI CÍES',
-        instruction: '[SPACE] / [↑] jump · [↓] duck · or tap top/bottom. Dodge di Demon for 60 s.'
+        instruction: 'PC: [↑] jump · [↓] duck (arrow keys). Phone: buttons under di canvas. 60 s · 3 lives · you need ≥70 % to pass.'
       }
     }
   },
@@ -4204,13 +4231,13 @@ function gameRhythm(v, opts = {}) {
     { t: 3459, lane: 2, dur: 1400 },
     { t: 5363, lane: 1, dur: 450 },
     { t: 6013, lane: 3 },
-    { t: 6664, lane: 3, dur: 427 },
+    { t: 6664, lane: 2, dur: 427 },
     { t: 7291, lane: 0, dur: 403 },
     { t: 7894, lane: 2 },
     { t: 8219, lane: 1 },
     { t: 8544, lane: 3 },
     { t: 9195, lane: 1 },
-    { t: 9822, lane: 1, dur: 426 },
+    { t: 9822, lane: 0, dur: 426 },
     { t: 10448, lane: 2 },
     { t: 10785, lane: 1 },
     { t: 11122, lane: 3 },
@@ -4220,11 +4247,11 @@ function gameRhythm(v, opts = {}) {
     { t: 13676, lane: 2 },
     { t: 14883, lane: 2 },
     { t: 15173, lane: 1 },
-    { t: 15464, lane: 2 },
-    { t: 15789, lane: 1 },
-    { t: 16114, lane: 0 },
+    { t: 15464, lane: 3 },
+    { t: 15789, lane: 0 },
+    { t: 16114, lane: 1 },
     { t: 16416, lane: 2 },
-    { t: 17008, lane: 2 },
+    { t: 17008, lane: 1 },
     { t: 17298, lane: 3 },
     { t: 17600, lane: 2 },
     { t: 17902, lane: 1 },
@@ -4253,20 +4280,20 @@ function gameRhythm(v, opts = {}) {
     { t: 33703, lane: 1 },
     { t: 34945, lane: 2 },
     { t: 35247, lane: 3 },
-    { t: 35572, lane: 2 },
-    { t: 35898, lane: 1, dur: 473 },
-    { t: 36571, lane: 2 },
+    { t: 35572, lane: 1 },
+    { t: 35898, lane: 2, dur: 473 },
+    { t: 36571, lane: 1 },
     { t: 36873, lane: 3 },
-    { t: 37175, lane: 1 },
+    { t: 37175, lane: 0 },
     { t: 37732, lane: 2 },
-    { t: 38336, lane: 2, dur: 716 },
+    { t: 38336, lane: 1, dur: 716 },
     { t: 39252, lane: 3 },
     { t: 39566, lane: 2 },
     { t: 40193, lane: 0 },
     { t: 40820, lane: 2, dur: 427 },
     { t: 41447, lane: 3 },
     { t: 41760, lane: 2 },
-    { t: 42074, lane: 3 },
+    { t: 42074, lane: 1 },
     { t: 42655, lane: 2 },
     { t: 42945, lane: 1 },
     { t: 43235, lane: 3 },
@@ -4274,21 +4301,21 @@ function gameRhythm(v, opts = {}) {
     { t: 44442, lane: 1, dur: 764 },
     { t: 45406, lane: 3 },
     { t: 45720, lane: 2 },
-    { t: 46300, lane: 2 },
+    { t: 46300, lane: 1 },
     { t: 46625, lane: 3 },
     { t: 46950, lane: 2, dur: 404 },
     { t: 47554, lane: 1 },
-    { t: 48134, lane: 1 },
-    { t: 48447, lane: 0 },
+    { t: 48134, lane: 0 },
+    { t: 48447, lane: 1 },
     { t: 50039, lane: 2 },
     { t: 50329, lane: 3 },
-    { t: 50619, lane: 2, dur: 404 },
+    { t: 50619, lane: 1, dur: 404 },
     { t: 51223, lane: 0 },
     { t: 51536, lane: 2 },
     { t: 51850, lane: 3 },
-    { t: 52151, lane: 2 },
-    { t: 52453, lane: 3, dur: 1008 },
-    { t: 53661, lane: 2 },
+    { t: 52151, lane: 1 },
+    { t: 52453, lane: 2, dur: 1008 },
+    { t: 53661, lane: 1 },
     { t: 54218, lane: 2 },
     { t: 54531, lane: 3 }
   ];
@@ -4568,10 +4595,16 @@ function gameRhythm(v, opts = {}) {
       }
       if (best.el) {
         best.el.classList.toggle('perfect', perfect);
-        // For hold notes we keep the tail visible (don't fade out yet)
         if (best.dur === 0) {
-          best.el.style.opacity = '0.5';
-          best.el.style.transform = 'scale(1.3)';
+          // Tap-note vanishes on hit (was a half-faded ghost before, which
+          // looked weird because it stayed visible past the hit zone).
+          best.el.style.transition = 'opacity 0.15s linear, transform 0.15s ease-out';
+          best.el.style.transform = 'scale(1.4)';
+          best.el.style.opacity = '0';
+          // Remove from DOM shortly after the fade so it can't catch the eye
+          const el = best.el;
+          setTimeout(() => { if (el && el.parentNode) el.parentNode.removeChild(el); }, 200);
+          best.el = null;
         }
       }
       const hEl = document.getElementById('r-hits');
@@ -5311,14 +5344,19 @@ function gameRunner(v) {
       </div>
       <div class="runner-stage" style="position:relative; max-width: ${W}px; margin: 0 auto; border: 2px solid var(--glass-border); border-radius: 16px; overflow: hidden;">
         <canvas id="runner-canvas" width="${W}" height="${H}" style="display:block; width:100%; height:auto; background: linear-gradient(180deg, #1a0808 0%, #2a0a0a 60%, #0a0606 100%);"></canvas>
-        <!-- Tap zones with VISIBLE labels on mobile so it's obvious where to touch -->
-        <div id="runner-tap-jump" style="position:absolute; left:0; right:0; top:0; height:55%; display:flex; align-items:flex-start; justify-content:center; pointer-events:auto;">
-          <div class="runner-hint runner-hint-top">↑ SALTAR / JUMP</div>
-        </div>
-        <div id="runner-tap-duck" style="position:absolute; left:0; right:0; bottom:0; height:45%; display:flex; align-items:flex-end; justify-content:center; pointer-events:auto;">
-          <div class="runner-hint runner-hint-bot">↓ AGACHARSE / DUCK</div>
-        </div>
         <div id="runner-overlay" style="position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; background:rgba(0,0,0,0.7); color:white; font-family:'Bebas Neue';font-size:48px; letter-spacing:0.05em;"></div>
+      </div>
+      <!-- Physical buttons BELOW the canvas so the player's finger never covers
+           the play area. Side-by-side, big touch targets. -->
+      <div class="runner-controls">
+        <button id="runner-btn-jump" class="runner-ctrl runner-ctrl-jump" aria-label="${state.lang === 'gl' ? 'Saltar' : (state.lang === 'ng' ? 'Jump' : 'Saltar')}">
+          <span class="runner-ctrl-icon">↑</span>
+          <span class="runner-ctrl-label">${state.lang === 'gl' ? 'SALTAR' : (state.lang === 'ng' ? 'JUMP' : 'SALTAR')}</span>
+        </button>
+        <button id="runner-btn-duck" class="runner-ctrl runner-ctrl-duck" aria-label="${state.lang === 'gl' ? 'Agacharse' : (state.lang === 'ng' ? 'Duck' : 'Agacharse')}">
+          <span class="runner-ctrl-icon">↓</span>
+          <span class="runner-ctrl-label">${state.lang === 'gl' ? 'AGACHAR' : (state.lang === 'ng' ? 'DUCK' : 'AGACHAR')}</span>
+        </button>
       </div>
     </div>
   `;
@@ -5347,20 +5385,78 @@ function gameRunner(v) {
   let lives = START_LIVES;
   let invulnUntil = 0;
   let scrollX = 0;
+  let lastBannerSpawn = -3000;
+  // Background billboards (parallax mid-layer with cachondeo text).
+  const BANNER_TEXTS_BY_LANG = {
+    es: [
+      'F1 FANTASY — APUESTA SEGURA',
+      'DEPOSIT BOOST x10',
+      'VERSTAPPEN EN VIGO 2026 ⛽',
+      'PAZ PADILLA TE OBSERVA 👁',
+      'GANA UN LAMBO 🏎️',
+      'MARIO INVITA A CHUPITOS',
+      'NONINÁ',
+      'CASA EN VILLAVICIOSA — DESDE 2M€',
+      'BARÇA = MIERDA — Albert F.',
+      'SUEGRA MODE: ACTIVATED',
+    ],
+    gl: [
+      'F1 FANTASY — APOSTA SEGURA',
+      'DEPOSIT BOOST x10',
+      'VERSTAPPEN EN VIGO 2026 ⛽',
+      'MARIÑO, VOLVE Á CASA',
+      'O DEMO PERSÉGUETE',
+      'PERCEBES = ORO 🟡',
+      'GAÑA UN LAMBO 🏎️',
+      'BARÇA = MERDA — Albert F.',
+      'OZÚ MEU',
+      'CASA EN VIGO — 2M€',
+    ],
+    ng: [
+      'F1 FANTASY — SAFE BET',
+      'DEPOSIT BOOST x10',
+      'VERSTAPPEN FOR VIGO 2026 ⛽',
+      'PAZ PADILLA DEY WATCH YOU 👁',
+      'WIN ONE LAMBO 🏎️',
+      'MARIO DEY BUY SHOTS',
+      'NONINÁ',
+      'NA SCAM BE THIS',
+      'BARÇA = TRASH — Albert F.',
+      'WHERE MY MONEY GO?',
+    ],
+  };
+  const banners = []; // {x, y, w, h, text, color}
+  function bannerTexts() { return BANNER_TEXTS_BY_LANG[state.lang] || BANNER_TEXTS_BY_LANG.es; }
+  function spawnBanner() {
+    const texts = bannerTexts();
+    const text = texts[Math.floor(Math.random() * texts.length)];
+    const colors = ['#FFD700', '#FF1744', '#00E5FF', '#C724FF'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const bw = Math.max(180, text.length * 9 + 40);
+    const by = 60 + Math.floor(Math.random() * 100);  // sky band
+    banners.push({ x: W + 30, y: by, w: bw, h: 38, text, color });
+  }
+  // Seagulls — random flying silhouettes (cosmetic only)
+  const gulls = [];
+  function spawnGull() {
+    const gy = 30 + Math.random() * 90;
+    gulls.push({ x: W + 10, y: gy, vy: (Math.random() - 0.5) * 0.6, flap: Math.random() * Math.PI });
+  }
 
   function spawnObstacle() {
-    // 70% ground (duck-around-or-jump-over), 30% fly (must duck)
+    // 70% ground (jump over), 30% fly (must duck under).
+    // Fly height tuned so it hits standing Mario but cleanly clears ducking
+    // Mario; setting it visibly above the head makes "agacharse" feel right.
     const fly = Math.random() < 0.30;
     if (fly) {
       obstacles.push({
         x: W + 20,
-        y: GROUND_Y - PLAYER_H + 6, // hovering at "head" height — must duck
+        y: GROUND_Y - PLAYER_H - 30, // floats well above Mario's head
         w: OBST_W, h: FLY_H,
         kind: 'fly',
         passed: false,
       });
     } else {
-      // Sometimes double-stacked vertically? No — keep medium difficulty
       obstacles.push({
         x: W + 20,
         y: GROUND_Y - OBST_H,
@@ -5394,19 +5490,27 @@ function gameRunner(v) {
   document.addEventListener('keydown', keyHandler);
   document.addEventListener('keyup', keyUpHandler);
 
-  // Touch / mouse: top half = jump, bottom half = duck (while pressed)
-  const tapJump = document.getElementById('runner-tap-jump');
-  const tapDuck = document.getElementById('runner-tap-duck');
-  const onTapJump = (e) => { e.preventDefault(); jump(); };
-  const onDuckStart = (e) => { e.preventDefault(); duck(true); };
-  const onDuckEnd = (e) => { e.preventDefault(); duck(false); };
-  tapJump.addEventListener('touchstart', onTapJump, { passive: false });
-  tapJump.addEventListener('mousedown', onTapJump);
-  tapDuck.addEventListener('touchstart', onDuckStart, { passive: false });
-  tapDuck.addEventListener('touchend', onDuckEnd, { passive: false });
-  tapDuck.addEventListener('mousedown', onDuckStart);
-  tapDuck.addEventListener('mouseup', onDuckEnd);
-  tapDuck.addEventListener('mouseleave', onDuckEnd);
+  // Physical buttons below the canvas (no in-canvas tap zones — those put
+  // the finger in front of the action).
+  const btnJump = document.getElementById('runner-btn-jump');
+  const btnDuck = document.getElementById('runner-btn-duck');
+  const onJumpDown = (e) => { e.preventDefault(); btnJump.classList.add('pressed'); jump(); };
+  const onJumpUp = () => { btnJump.classList.remove('pressed'); };
+  const onDuckStart = (e) => { e.preventDefault(); btnDuck.classList.add('pressed'); duck(true); };
+  const onDuckEnd = (e) => { e && e.preventDefault && e.preventDefault(); btnDuck.classList.remove('pressed'); duck(false); };
+  // Jump = momentary press
+  btnJump.addEventListener('touchstart', onJumpDown, { passive: false });
+  btnJump.addEventListener('touchend', onJumpUp, { passive: false });
+  btnJump.addEventListener('mousedown', onJumpDown);
+  btnJump.addEventListener('mouseup', onJumpUp);
+  btnJump.addEventListener('mouseleave', onJumpUp);
+  // Duck = hold while pressed
+  btnDuck.addEventListener('touchstart', onDuckStart, { passive: false });
+  btnDuck.addEventListener('touchend', onDuckEnd, { passive: false });
+  btnDuck.addEventListener('touchcancel', onDuckEnd, { passive: false });
+  btnDuck.addEventListener('mousedown', onDuckStart);
+  btnDuck.addEventListener('mouseup', onDuckEnd);
+  btnDuck.addEventListener('mouseleave', onDuckEnd);
 
   // === Loop ===
   function loop(now) {
@@ -5473,16 +5577,88 @@ function gameRunner(v) {
     document.getElementById('runner-time').textContent = (remaining / 1000).toFixed(1);
     document.getElementById('runner-dodged').textContent = dodged;
 
+    // Spawn banner every 2.5-4 s, gull every 1.2-2.4 s
+    if (elapsed - lastBannerSpawn > 2500 + Math.random() * 1500) {
+      spawnBanner();
+      lastBannerSpawn = elapsed;
+    }
+    if (Math.random() < 0.012) spawnGull();
+
     // === Render ===
     ctx.clearRect(0, 0, W, H);
 
     // Stars / floating particles (cheap parallax)
     scrollX = (scrollX + scrollSpeed * 0.3) % 60;
-    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    ctx.fillStyle = 'rgba(255,255,255,0.08)';
     for (let i = 0; i < 30; i++) {
       const x = (i * 60 - scrollX + (i * 17) % 30) % W;
       const y = ((i * 43) % (H - 80));
       ctx.fillRect(x, y, 2, 2);
+    }
+
+    // Far skyline — silhouettes of the Cíes islands + a tiny lighthouse
+    // Slowest parallax so they look distant.
+    const sxFar = (scrollX * 0.15) % W;
+    ctx.fillStyle = 'rgba(40,15,15,0.85)';
+    for (let i = 0; i < 6; i++) {
+      const baseX = (i * 180 - sxFar) % (W + 180) - 90;
+      const peak = 70 + (i * 23) % 50;
+      ctx.beginPath();
+      ctx.moveTo(baseX, GROUND_Y);
+      ctx.quadraticCurveTo(baseX + 40, GROUND_Y - peak, baseX + 80, GROUND_Y - peak * 0.7);
+      ctx.quadraticCurveTo(baseX + 130, GROUND_Y - peak * 1.1, baseX + 180, GROUND_Y);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // Lighthouse (blinking) every ~3rd hill — only one drawn for cheapness
+    const lhX = ((W * 0.7) - sxFar * 0.5) % W;
+    ctx.fillStyle = 'rgba(255,255,255,0.6)';
+    ctx.fillRect(lhX, GROUND_Y - 95, 4, 25);
+    if (Math.floor(elapsed / 400) % 2 === 0) {
+      ctx.fillStyle = 'rgba(255,215,0,0.7)';
+      ctx.beginPath(); ctx.arc(lhX + 2, GROUND_Y - 95, 5, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Mid-layer — billboards with cachondeo text floating past
+    banners.forEach(b => {
+      b.x -= scrollSpeed * 0.55;
+      // Pole
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      ctx.fillRect(b.x + b.w / 2 - 2, b.y + b.h, 4, GROUND_Y - (b.y + b.h));
+      // Sign
+      ctx.fillStyle = 'rgba(0,0,0,0.7)';
+      ctx.fillRect(b.x, b.y, b.w, b.h);
+      ctx.strokeStyle = b.color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(b.x + 1, b.y + 1, b.w - 2, b.h - 2);
+      ctx.fillStyle = b.color;
+      ctx.font = 'bold 14px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(b.text, b.x + b.w / 2, b.y + b.h / 2);
+    });
+    for (let i = banners.length - 1; i >= 0; i--) {
+      if (banners[i].x + banners[i].w < -10) banners.splice(i, 1);
+    }
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
+
+    // Seagulls — simple "M" shape, flap animated, drift across the sky
+    gulls.forEach(g => {
+      g.x -= scrollSpeed * 0.7;
+      g.y += g.vy * 0.4;
+      g.flap += 0.18;
+      const wing = Math.sin(g.flap) * 6;
+      ctx.strokeStyle = 'rgba(245,245,245,0.55)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(g.x - 10, g.y);
+      ctx.quadraticCurveTo(g.x - 5, g.y - wing, g.x, g.y);
+      ctx.quadraticCurveTo(g.x + 5, g.y - wing, g.x + 10, g.y);
+      ctx.stroke();
+    });
+    for (let i = gulls.length - 1; i >= 0; i--) {
+      if (gulls[i].x < -20) gulls.splice(i, 1);
     }
 
     // Ground line + stripes (Cíes-rocky stylised)

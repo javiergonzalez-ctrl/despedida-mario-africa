@@ -36,10 +36,10 @@ START_AT_MS = 1500
 STOP_AT_MS = 55_000
 SUBDIVISIONS = 2          # 1 = note per beat, 2 = also half-beats, 4 = quarter
 SNAP_TOLERANCE_MS = 110   # onset must be within this of a (sub)beat to qualify
-MIN_GAP_MS = 130          # global minimum gap (any lane)
-MIN_SAME_LANE_GAP_MS = 400  # minimum gap between consecutive notes in the SAME lane
-HOLD_TAIL_BUFFER_MS = 260   # how long after a hold ends before same lane can fire
-CLUSTER_MS = 320            # within this window, every note must be on a different lane
+MIN_GAP_MS = 200          # global minimum gap (any lane)
+MIN_SAME_LANE_GAP_MS = 800  # minimum gap between consecutive notes in the SAME lane
+HOLD_TAIL_BUFFER_MS = 400   # how long after a hold ends before same lane can fire
+CLUSTER_MS = 500            # within this window, every note must be on a different lane
 
 HOLD_MIN_MS = 600
 HOLD_CAP_MS = 1400
@@ -190,8 +190,12 @@ def analyse(audio_path: Path) -> list[dict]:
     #   (b) Cluster rule: notes within CLUSTER_MS of EACH OTHER must use four
     #       different lanes (no repeats inside a fast cluster).
     # If a wanted lane is blocked, hop to the nearest free lane.
+    # If NO lane is free (would force a same-lane overlap), DROP the note
+    # entirely. Fewer notes > unplayable chart.
     lane_busy_until = [0, 0, 0, 0]
-    recent_window: list[tuple[int, int]] = []  # [(t, lane), ...] for cluster check
+    recent_window: list[tuple[int, int]] = []
+    out2 = []
+    dropped = 0
     for n in out:
         t = n["t"]
         wanted = n["lane"]
@@ -206,21 +210,26 @@ def analyse(audio_path: Path) -> list[dict]:
                 chosen = L
                 break
         if chosen is None:
-            # Relax cluster rule first
+            # Relax cluster rule, still require same-lane spacing
             for L in candidates:
                 if t >= lane_busy_until[L]:
                     chosen = L
                     break
         if chosen is None:
-            chosen = min(range(4), key=lambda L: lane_busy_until[L])
+            # No lane available without violating same-lane spacing -> drop.
+            dropped += 1
+            continue
         if chosen != wanted:
             n["lane"] = int(chosen)
-        # Reserve
         if "dur" in n:
             lane_busy_until[chosen] = t + int(n["dur"]) + HOLD_TAIL_BUFFER_MS
         else:
             lane_busy_until[chosen] = t + MIN_SAME_LANE_GAP_MS
         recent_window.append((t, chosen))
+        out2.append(n)
+    out = out2
+    if dropped:
+        print(f"[info] dropped {dropped} unplayable notes (same-lane spam)", file=sys.stderr)
 
     # Truncate hold tails that would still extend into a subsequent same-lane note
     by_lane: dict[int, list[dict]] = {0: [], 1: [], 2: [], 3: []}
