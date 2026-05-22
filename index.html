@@ -1018,8 +1018,17 @@
   .note.perfect { background: linear-gradient(180deg, var(--terminal), #00aa28); box-shadow: 0 0 30px var(--terminal); }
   .lulu-goat {
     position: absolute; top: 16px; right: 16px;
-    font-size: 48px;
+    /* Lulu's real-life mugshot — the goat Aitor Tilla had to sell. */
+    width: 64px; height: 64px;
+    background: url('assets/lulu-goat.jpg') center/cover no-repeat;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 14px rgba(255,215,0,0.5);
+    font-size: 0; /* hide the fallback emoji text */
     animation: bounce 0.5s ease-in-out infinite;
+  }
+  @media (max-width: 480px) {
+    .lulu-goat { width: 48px; height: 48px; }
   }
   @keyframes bounce { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-8px) rotate(5deg); } }
   .rhythm-feedback {
