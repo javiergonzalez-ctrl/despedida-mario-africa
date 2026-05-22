@@ -183,6 +183,28 @@
   .hud-pill.shots { border-color: var(--blood); color: var(--blood); }
   .hud-pill.round { border-color: var(--gold); color: var(--gold); }
 
+  /* ============ RUNNER TAP HINTS (only on touch screens) ============ */
+  .runner-hint {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    color: rgba(255,215,0,0.85);
+    background: rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,215,0,0.6);
+    padding: 6px 14px;
+    margin: 8px;
+    border-radius: 999px;
+    pointer-events: none;   /* the parent div catches the touch */
+    opacity: 0.8;
+    animation: hintFade 4s ease-out forwards;
+  }
+  @keyframes hintFade { from { opacity: 0.95; } 70% { opacity: 0.75; } to { opacity: 0.25; } }
+  /* Hide hints on desktop where keyboard is the obvious input */
+  @media (hover: hover) and (pointer: fine) {
+    .runner-hint { display: none; }
+  }
+
   /* ============ BACK BUTTON (top-left, mirrors lang picker) ============ */
   .back-btn {
     position: fixed; top: 14px; left: 14px; z-index: 200;
@@ -3208,69 +3230,194 @@ function avatarUrl(name, style) {
 function isCustomPhoto(name) { return !!VICTIM_IMAGES[name]; }
 
 // Quiz F1 questions
-const F1_QUESTIONS = [
-  { q: '¿Año de debut de Hamilton en F1?', opts: ['2005', '2006', '2007', '2008'], correct: 2 },
-  { q: '¿Mundiales de Verstappen a final 2024?', opts: ['2', '3', '4', '5'], correct: 2 },
-  { q: '¿Equipo de Alonso en 2024?', opts: ['Alpine', 'Aston Martin', 'McLaren', 'Ferrari'], correct: 1 },
-  { q: '¿Padre piloto de Verstappen?', opts: ['Marc', 'Jos', 'Erik', 'Hans'], correct: 1 },
-  { q: '¿Récord poles de Hamilton?', opts: ['98', '101', '104', '108'], correct: 2 },
-  { q: '¿GPs en la temporada 2024?', opts: ['22', '23', '24', '25'], correct: 2 },
-  { q: '¿Color del Ferrari F1?', opts: ['Negro', 'Rosso Corsa', 'Tifosi Blue', 'Blanco'], correct: 1 },
-  { q: '¿Campeón constructores 2024?', opts: ['Red Bull', 'McLaren', 'Ferrari', 'Mercedes'], correct: 1 },
-  { q: '¿En qué circuito Senna murió en 1994?', opts: ['Spa', 'Monza', 'Imola', 'Monaco'], correct: 2 },
-  { q: '¿Sobrenombre del Spa-Francorchamps?', opts: ['Templo', 'Catedral', 'Coliseo', 'Bosque'], correct: 1 },
-  { q: '¿Equipo F1 con sede en Maranello?', opts: ['Ferrari', 'McLaren', 'Williams', 'Renault'], correct: 0 },
-  { q: '¿Nº de victorias de Schumacher?', opts: ['78', '91', '99', '103'], correct: 1 }
-];
+// Helper: pick the language-appropriate array (falls back to es).
+function tList(byLang) { return byLang[state.lang] || byLang.es; }
 
-// Press conference questions
-const PRESS_QUESTIONS = [
-  'Mario, ¿qué le aporta usted a la familia Padilla?',
-  '¿Cómo justifica cobrar comisión de gente sin agua corriente?',
-  '¿Cuál es su mensaje a las víctimas africanas de su app?',
-  '¿Su suegra le da miedo? Sea sincero.',
-  '¿Por qué Villaviciosa y no Madrid centro?'
-];
-const FORBIDDEN_WORDS = ['vale', 'tio', 'tío', 'macho', 'joder', 'bro', 'na', 'osea', 'o sea', 'pues', 'eh', 'rollo', 'literal', 'tipo', 'wey'];
+const F1_QUESTIONS = {
+  es: [
+    { q: '¿Año de debut de Hamilton en F1?', opts: ['2005', '2006', '2007', '2008'], correct: 2 },
+    { q: '¿Mundiales de Verstappen a final 2024?', opts: ['2', '3', '4', '5'], correct: 2 },
+    { q: '¿Equipo de Alonso en 2024?', opts: ['Alpine', 'Aston Martin', 'McLaren', 'Ferrari'], correct: 1 },
+    { q: '¿Padre piloto de Verstappen?', opts: ['Marc', 'Jos', 'Erik', 'Hans'], correct: 1 },
+    { q: '¿Récord poles de Hamilton?', opts: ['98', '101', '104', '108'], correct: 2 },
+    { q: '¿GPs en la temporada 2024?', opts: ['22', '23', '24', '25'], correct: 2 },
+    { q: '¿Color del Ferrari F1?', opts: ['Negro', 'Rosso Corsa', 'Tifosi Blue', 'Blanco'], correct: 1 },
+    { q: '¿Campeón constructores 2024?', opts: ['Red Bull', 'McLaren', 'Ferrari', 'Mercedes'], correct: 1 },
+    { q: '¿En qué circuito Senna murió en 1994?', opts: ['Spa', 'Monza', 'Imola', 'Monaco'], correct: 2 },
+    { q: '¿Sobrenombre del Spa-Francorchamps?', opts: ['Templo', 'Catedral', 'Coliseo', 'Bosque'], correct: 1 },
+    { q: '¿Equipo F1 con sede en Maranello?', opts: ['Ferrari', 'McLaren', 'Williams', 'Renault'], correct: 0 },
+    { q: '¿Nº de victorias de Schumacher?', opts: ['78', '91', '99', '103'], correct: 1 }
+  ],
+  gl: [
+    { q: 'Ano do debut de Hamilton na F1?', opts: ['2005', '2006', '2007', '2008'], correct: 2 },
+    { q: 'Mundiais de Verstappen a finais de 2024?', opts: ['2', '3', '4', '5'], correct: 2 },
+    { q: 'Equipo de Alonso en 2024?', opts: ['Alpine', 'Aston Martin', 'McLaren', 'Ferrari'], correct: 1 },
+    { q: 'Pai piloto de Verstappen?', opts: ['Marc', 'Jos', 'Erik', 'Hans'], correct: 1 },
+    { q: 'Récord de poles de Hamilton?', opts: ['98', '101', '104', '108'], correct: 2 },
+    { q: 'GPs na tempada 2024?', opts: ['22', '23', '24', '25'], correct: 2 },
+    { q: 'Cor do Ferrari F1?', opts: ['Negro', 'Rosso Corsa', 'Tifosi Blue', 'Branco'], correct: 1 },
+    { q: 'Campión de construtores 2024?', opts: ['Red Bull', 'McLaren', 'Ferrari', 'Mercedes'], correct: 1 },
+    { q: 'En que circuito morreu Senna en 1994?', opts: ['Spa', 'Monza', 'Imola', 'Monaco'], correct: 2 },
+    { q: 'Alcume de Spa-Francorchamps?', opts: ['Templo', 'Catedral', 'Coliseo', 'Bosque'], correct: 1 },
+    { q: 'Equipo F1 con sede en Maranello?', opts: ['Ferrari', 'McLaren', 'Williams', 'Renault'], correct: 0 },
+    { q: 'Nº de vitorias de Schumacher?', opts: ['78', '91', '99', '103'], correct: 1 }
+  ],
+  ng: [
+    { q: 'Wetin year Hamilton debut for F1?', opts: ['2005', '2006', '2007', '2008'], correct: 2 },
+    { q: 'How many world titles Verstappen don get by end of 2024?', opts: ['2', '3', '4', '5'], correct: 2 },
+    { q: 'Alonso team for 2024?', opts: ['Alpine', 'Aston Martin', 'McLaren', 'Ferrari'], correct: 1 },
+    { q: 'Wetin be Verstappen papa name (e too be driver)?', opts: ['Marc', 'Jos', 'Erik', 'Hans'], correct: 1 },
+    { q: 'Hamilton pole record?', opts: ['98', '101', '104', '108'], correct: 2 },
+    { q: 'How many GP for di 2024 season?', opts: ['22', '23', '24', '25'], correct: 2 },
+    { q: 'Ferrari F1 colour?', opts: ['Black', 'Rosso Corsa', 'Tifosi Blue', 'White'], correct: 1 },
+    { q: 'Constructors champ 2024?', opts: ['Red Bull', 'McLaren', 'Ferrari', 'Mercedes'], correct: 1 },
+    { q: 'For which track Senna die for 1994?', opts: ['Spa', 'Monza', 'Imola', 'Monaco'], correct: 2 },
+    { q: 'Wetin dem dey call Spa-Francorchamps?', opts: ['Temple', 'Cathedral', 'Coliseum', 'Forest'], correct: 1 },
+    { q: 'F1 team based for Maranello?', opts: ['Ferrari', 'McLaren', 'Williams', 'Renault'], correct: 0 },
+    { q: 'Schumacher win count?', opts: ['78', '91', '99', '103'], correct: 1 }
+  ]
+};
 
-// Paz Padilla accusations (penúltima)
-const PAZ_ACCUSATIONS = [
-  '¿Le has dicho a mi hija que su madre cuenta chistes malos?',
-  '¿Has usado mi nombre para conseguir mesa en Dani García?',
-  '¿Has llamado "pesado" a Albert por seguir hablando del Barça?',
-  '¿Te casas con mi hija por la herencia de Noniná?',
-  '¿Has buscado en Google "cuánto cobra Paz Padilla por evento"?'
-];
+const PRESS_QUESTIONS = {
+  es: [
+    'Mario, ¿qué le aporta usted a la familia Padilla?',
+    '¿Cómo justifica cobrar comisión de gente sin agua corriente?',
+    '¿Cuál es su mensaje a las víctimas africanas de su app?',
+    '¿Su suegra le da miedo? Sea sincero.',
+    '¿Por qué Villaviciosa y no Madrid centro?'
+  ],
+  gl: [
+    'Mario, que lle aporta vostede á familia Padilla?',
+    'Como xustifica cobrar comisión a xente sen auga corrente?',
+    'Cal é a súa mensaxe ás vítimas africanas da súa app?',
+    'A súa sogra dálle medo? Sexa sincero.',
+    'Por que Villaviciosa e non Madrid centro?'
+  ],
+  ng: [
+    'Mario, wetin you really bring give di Padilla family?',
+    'How you wan justify say you dey collect commission from people wey no even get pipe water?',
+    'Wetin be your message to di African victims of your app?',
+    'Your mother-in-law dey fear you? Be sincere.',
+    'Why Villaviciosa and no be Madrid centre?'
+  ]
+};
 
-// Anna Ferrer vows (final final boss) — preguntas matrimoniales
-const ANNA_VOWS = [
-  '¿Prometes no volver a tocar tu app de F1 en la luna de miel?',
-  '¿Prometes llamar a mi madre "Pacita" sin que se te note el cringe?',
-  '¿Prometes mirar mis reels de Noniná todos. los. días?',
-  '¿Prometes no llorar viendo el Barça si mi padre está delante?',
-  '¿Prometes dejar Villaviciosa cuando yo te diga?',
-  '¿Me querrás MIL VECES como en el anuncio?'
-];
+const FORBIDDEN_WORDS = {
+  es: ['vale', 'tio', 'tío', 'macho', 'joder', 'bro', 'na', 'osea', 'o sea', 'pues', 'eh', 'rollo', 'literal', 'tipo', 'wey'],
+  gl: ['vale', 'tio', 'home', 'cona', 'carallo', 'bro', 'pois', 'eh', 'rollo', 'literal', 'tipo'],
+  ng: ['like', 'yeah', 'man', 'dude', 'literally', 'basically', 'whatever', 'shit', 'fuck', 'bro', 'na', 'sha', 'abeg']
+};
 
-const CRAWL_TEXT_HTML = `
+const PAZ_ACCUSATIONS = {
+  es: [
+    '¿Le has dicho a mi hija que su madre cuenta chistes malos?',
+    '¿Has usado mi nombre para conseguir mesa en Dani García?',
+    '¿Has llamado "pesado" a Albert por seguir hablando del Barça?',
+    '¿Te casas con mi hija por la herencia de Noniná?',
+    '¿Has buscado en Google "cuánto cobra Paz Padilla por evento"?'
+  ],
+  gl: [
+    'Dixécheslle á miña filla que a súa nai conta chistes malos?',
+    'Usaches o meu nome para conseguir mesa no Dani García?',
+    'Chamáchelle "pesado" a Albert por seguir falando do Barça?',
+    'Cásaste coa miña filla pola herdanza de Noniná?',
+    'Buscaches en Google "canto cobra Paz Padilla por evento"?'
+  ],
+  ng: [
+    'You don tell my daughter say her mama dey crack bad jokes?',
+    'You don use my name to get table for Dani García?',
+    'You don call Albert "boring" becos e dey talk Barça non-stop?',
+    'You wan marry my daughter just becos of Noniná inheritance?',
+    'You don Google "how much Paz Padilla dey charge per event"?'
+  ]
+};
+
+const ANNA_VOWS = {
+  es: [
+    '¿Prometes no volver a tocar tu app de F1 en la luna de miel?',
+    '¿Prometes llamar a mi madre "Pacita" sin que se te note el cringe?',
+    '¿Prometes mirar mis reels de Noniná todos. los. días?',
+    '¿Prometes no llorar viendo el Barça si mi padre está delante?',
+    '¿Prometes dejar Villaviciosa cuando yo te diga?',
+    '¿Me querrás MIL VECES como en el anuncio?'
+  ],
+  gl: [
+    'Prometes non volver tocar a túa app de F1 na lúa de mel?',
+    'Prometes chamarlle "Pacita" á miña nai sen que se che note o cringe?',
+    'Prometes mirar os meus reels de Noniná tódolos. días?',
+    'Prometes non chorar vendo o Barça se meu pai está diante?',
+    'Prometes deixar Villaviciosa cando eu cho diga?',
+    'Quereraseme MIL VECES como no anuncio?'
+  ],
+  ng: [
+    'You promise say you no go touch your F1 app for di honeymoon?',
+    'You promise to call my mama "Pacita" without di cringe showing?',
+    'You promise to watch my Noniná reels every. single. day?',
+    'You promise no go cry watching Barça if my papa dey near you?',
+    'You promise to leave Villaviciosa wen I talk?',
+    'You go love me A THOUSAND TIMES like for di advert?'
+  ]
+};
+
+const CRAWL_TEXT_HTML = {
+  es: `
   <h2>EPISODIO XII</h2>
   <h2>OPERACIÓN CRISTÓBAL</h2>
   <p>Año 2026. Desde su oficina en Madrid, MARIO CRISTÓBAL — hijo de Villaviciosa, novio de Anna Ferrer y futuro yerno de PAZ PADILLA — lleva años extrayendo riqueza del continente africano mediante una aplicación de F1 Fantasy.</p>
   <p>4.732.891 familias arruinadas. Vendedoras de mango, taxistas, mineros del coltán, granjeros, madres de boda. Diez representantes han aterrizado en TENERIFE para cobrar.</p>
   <p>Pero la verdadera prueba viene al final. Su SUEGRA y SU NOVIA. La última palabra no la tendrá ni la justicia ni el continente. La tendrá ANNA FERRER.</p>
   <p>¿Habrá boda en Cádiz? Eso lo decide hoy el público de la despedida.</p>
-`;
+`,
+  gl: `
+  <h2>EPISODIO XII</h2>
+  <h2>OPERACIÓN CRISTÓBAL</h2>
+  <p>Ano 2026. Dende a súa oficina en Madrid, MARIO CRISTÓBAL — fillo de Villaviciosa, mozo de Anna Ferrer e futuro xenro de PAZ PADILLA — leva anos extraendo riqueza do continente africano mediante unha app de F1 Fantasy.</p>
+  <p>4.732.891 familias arruinadas. Vendedoras de mango, taxistas, mineiros do coltán, granxeiros, nais de voda. Dez representantes aterraron en TENERIFE para cobrar.</p>
+  <p>Pero a verdadeira proba vén ao final. A súa SOGRA e a súa MOZA. A última palabra non a terá nin a xustiza nin o continente. Teraa ANNA FERRER.</p>
+  <p>Haberá voda en Cádiz? Iso decídeo hoxe o público da despedida.</p>
+`,
+  ng: `
+  <h2>EPISODE XII</h2>
+  <h2>OPERATION CRISTÓBAL</h2>
+  <p>Year 2026. From im office for Madrid, MARIO CRISTÓBAL — son of Villaviciosa, Anna Ferrer boyfriend and future son-in-law of PAZ PADILLA — don dey extract money from di African continent for years through one F1 Fantasy app.</p>
+  <p>4,732,891 families don scatter. Mango sellers, taxi drivers, coltan miners, farmers, wedding mothers. Ten representatives don land for TENERIFE to collect.</p>
+  <p>But di real test go come for di end. Im MOTHER-IN-LAW and im GIRLFRIEND. Di last word no go come from court or from di continent. E go come from ANNA FERRER.</p>
+  <p>Wedding go hold for Cádiz? Na di despedida crowd go decide am today.</p>
+`
+};
 
-const TERMINAL_LINES = [
-  { text: '<span class="term-prompt">$</span> initializing AFRICA-STRIKES-BACK v1.0...', delay: 400 },
-  { text: '<span class="term-prompt">$</span> connecting to victim_database.gov.africa...', delay: 500 },
-  { text: '<span class="term-prompt">[</span><span style="color:var(--terminal)">OK</span><span class="term-prompt">]</span> connection established', delay: 350 },
-  { text: '<span class="term-prompt">$</span> querying ruined_lives WHERE perpetrator = "Mario Cristóbal";', delay: 500 },
-  { text: '<span class="term-prompt">$</span> processing ████████░░ 80%', delay: 400 },
-  { text: '<span class="term-prompt">$</span> processing ██████████ 100%', delay: 400 },
-  { text: '<span class="term-warn">⚠ HIGH-IMPACT MATCH DETECTED</span>', delay: 600 },
-  { text: '<span class="term-error">▸ RESULT:</span>', delay: 400 }
-];
+const TERMINAL_LINES = {
+  es: [
+    { text: '<span class="term-prompt">$</span> initializing AFRICA-STRIKES-BACK v1.0...', delay: 400 },
+    { text: '<span class="term-prompt">$</span> connecting to victim_database.gov.africa...', delay: 500 },
+    { text: '<span class="term-prompt">[</span><span style="color:var(--terminal)">OK</span><span class="term-prompt">]</span> connection established', delay: 350 },
+    { text: '<span class="term-prompt">$</span> querying ruined_lives WHERE perpetrator = "Mario Cristóbal";', delay: 500 },
+    { text: '<span class="term-prompt">$</span> processing ████████░░ 80%', delay: 400 },
+    { text: '<span class="term-prompt">$</span> processing ██████████ 100%', delay: 400 },
+    { text: '<span class="term-warn">⚠ HIGH-IMPACT MATCH DETECTED</span>', delay: 600 },
+    { text: '<span class="term-error">▸ RESULT:</span>', delay: 400 }
+  ],
+  gl: [
+    { text: '<span class="term-prompt">$</span> inicializando AFRICA-STRIKES-BACK v1.0...', delay: 400 },
+    { text: '<span class="term-prompt">$</span> conectando con victim_database.gov.africa...', delay: 500 },
+    { text: '<span class="term-prompt">[</span><span style="color:var(--terminal)">OK</span><span class="term-prompt">]</span> conexión establecida', delay: 350 },
+    { text: '<span class="term-prompt">$</span> consultando ruined_lives WHERE perpetrator = "Mario Cristóbal";', delay: 500 },
+    { text: '<span class="term-prompt">$</span> procesando ████████░░ 80%', delay: 400 },
+    { text: '<span class="term-prompt">$</span> procesando ██████████ 100%', delay: 400 },
+    { text: '<span class="term-warn">⚠ COINCIDENCIA DE ALTO IMPACTO DETECTADA</span>', delay: 600 },
+    { text: '<span class="term-error">▸ RESULTADO:</span>', delay: 400 }
+  ],
+  ng: [
+    { text: '<span class="term-prompt">$</span> starting AFRICA-STRIKES-BACK v1.0...', delay: 400 },
+    { text: '<span class="term-prompt">$</span> connecting to victim_database.gov.africa...', delay: 500 },
+    { text: '<span class="term-prompt">[</span><span style="color:var(--terminal)">OK</span><span class="term-prompt">]</span> connection don land', delay: 350 },
+    { text: '<span class="term-prompt">$</span> querying ruined_lives WHERE perpetrator = "Mario Cristóbal";', delay: 500 },
+    { text: '<span class="term-prompt">$</span> processing ████████░░ 80%', delay: 400 },
+    { text: '<span class="term-prompt">$</span> processing ██████████ 100%', delay: 400 },
+    { text: '<span class="term-warn">⚠ BIG MATCH DETECTED</span>', delay: 600 },
+    { text: '<span class="term-error">▸ RESULT:</span>', delay: 400 }
+  ]
+};
 
 // ============================================
 // INTRO CINEMATIC
@@ -3284,7 +3431,7 @@ async function startIntro() {
   stage.innerHTML = '<div class="terminal" id="term"></div>';
   const term = document.getElementById('term');
   sfx.heartbeat();
-  for (const line of TERMINAL_LINES) {
+  for (const line of tList(TERMINAL_LINES)) {
     const el = document.createElement('div');
     el.className = 'terminal-line visible';
     el.innerHTML = line.text;
@@ -3400,7 +3547,7 @@ async function startIntro() {
   // Phase 5: Crawl
   stage.innerHTML = `
     <div class="crawl-wrap">
-      <div class="crawl">${CRAWL_TEXT_HTML}</div>
+      <div class="crawl">${tList(CRAWL_TEXT_HTML)}</div>
     </div>
   `;
   sfx.whoosh();
@@ -4637,7 +4784,7 @@ function gameTyping(v) {
 // ============================================
 function gameQuiz(v) {
   const stage = document.getElementById('game-stage');
-  const qs = F1_QUESTIONS;
+  const qs = tList(F1_QUESTIONS);
   let idx = 0;
   let wrong = 0;
   let timer;
@@ -5039,24 +5186,36 @@ function gamePress(v) {
 
   function renderQ() {
     if (!alive) return;
-    if (qIdx >= PRESS_QUESTIONS.length) {
-      showResult(Math.min(totalViolations, 6), `${totalViolations} violación(es) totales.`);
+    const qs = tList(PRESS_QUESTIONS);
+    const forbidden = tList(FORBIDDEN_WORDS);
+    if (qIdx >= qs.length) {
+      const violationMsg = state.lang === 'gl' ? `${totalViolations} violación(s) totais.`
+                         : state.lang === 'ng' ? `${totalViolations} total violations.`
+                         : `${totalViolations} violación(es) totales.`;
+      showResult(Math.min(totalViolations, 6), violationMsg);
       return;
     }
     timeLeft = Q_TIME;
+    const lblQuestion = state.lang === 'gl' ? 'Pregunta' : (state.lang === 'ng' ? 'Question' : 'Pregunta');
+    const lblDisappears = state.lang === 'gl' ? 'a pregunta desaparece en' : (state.lang === 'ng' ? 'di question go disappear in' : 'pregunta desaparece en');
+    const lblForbidden = state.lang === 'gl' ? 'Palabras prohibidas' : (state.lang === 'ng' ? 'Forbidden words' : 'Palabras prohibidas');
+    const lblPlaceholder = state.lang === 'gl' ? 'Responde coma un señor formal...' : (state.lang === 'ng' ? 'Answer like a formal big man...' : 'Responde como un señor formal...');
+    const lblMin = state.lang === 'gl' ? 'Mínimo 6 palabras' : (state.lang === 'ng' ? 'Minimum 6 words' : 'Mínimo 6 palabras');
+    const lblTime = state.lang === 'gl' ? 'Tempo' : (state.lang === 'ng' ? 'Time' : 'Tiempo');
+    const lblSubmit = state.lang === 'gl' ? '▸ ENTREGAR' : (state.lang === 'ng' ? '▸ SUBMIT' : '▸ ENTREGAR');
     stage.innerHTML = `
       <div class="press-stage">
         <div style="font-family:'Bebas Neue';font-size:42px;letter-spacing:0.05em;margin-bottom:8px;">PRESS CONFERENCE MADRID</div>
-        <div style="color:var(--text-dim);margin-bottom:8px;font-size:13px;">Pregunta ${qIdx+1}/${PRESS_QUESTIONS.length} · pregunta desaparece en ${HIDE_AFTER}s</div>
-        <div class="press-question" id="p-q">"${PRESS_QUESTIONS[qIdx]}"</div>
-        <div class="press-forbidden">Palabras prohibidas: ${FORBIDDEN_WORDS.map(w => `<span>${w}</span>`).join('')}</div>
-        <textarea class="press-input" id="p-input" placeholder="Responde como un señor formal..."></textarea>
+        <div style="color:var(--text-dim);margin-bottom:8px;font-size:13px;">${lblQuestion} ${qIdx+1}/${qs.length} · ${lblDisappears} ${HIDE_AFTER}s</div>
+        <div class="press-question" id="p-q">"${qs[qIdx]}"</div>
+        <div class="press-forbidden">${lblForbidden}: ${forbidden.map(w => `<span>${w}</span>`).join('')}</div>
+        <textarea class="press-input" id="p-input" placeholder="${lblPlaceholder}"></textarea>
         <div class="press-meta">
-          <span>Mínimo 6 palabras</span>
-          <span>Tiempo: <span id="p-time">${Q_TIME}</span>s</span>
+          <span>${lblMin}</span>
+          <span>${lblTime}: <span id="p-time">${Q_TIME}</span>s</span>
         </div>
         <div style="margin-top:16px;text-align:center;">
-          <button class="btn-primary" onclick="document.dispatchEvent(new CustomEvent('press-submit'))">▸ ENTREGAR</button>
+          <button class="btn-primary" onclick="document.dispatchEvent(new CustomEvent('press-submit'))">${lblSubmit}</button>
         </div>
       </div>
     `;
@@ -5064,7 +5223,8 @@ function gamePress(v) {
     setT(() => inp && inp.focus(), 100);
     setT(() => {
       const q = document.getElementById('p-q');
-      if (q) q.innerHTML = '<em style="color:var(--blood);font-style:normal;">[ PREGUNTA OCULTA ]</em>';
+      const hidden = state.lang === 'gl' ? '[ PREGUNTA AGOCHADA ]' : (state.lang === 'ng' ? '[ QUESTION HIDDEN ]' : '[ PREGUNTA OCULTA ]');
+      if (q) q.innerHTML = `<em style="color:var(--blood);font-style:normal;">${hidden}</em>`;
     }, HIDE_AFTER * 1000);
     if (timer) clearInterval(timer);
     timer = setInterval(() => {
@@ -5089,7 +5249,7 @@ function gamePress(v) {
     const txt = (document.getElementById('p-input')?.value || '').toLowerCase();
     const words = txt.split(/\s+/).filter(Boolean);
     let violations = 0;
-    FORBIDDEN_WORDS.forEach(w => {
+    tList(FORBIDDEN_WORDS).forEach(w => {
       const re = new RegExp(`\\b${w.replace(' ','\\s+')}\\b`, 'g');
       const matches = txt.match(re);
       if (matches) violations += matches.length;
@@ -5121,9 +5281,9 @@ function gamePress(v) {
 function gameRunner(v) {
   const stage = document.getElementById('game-stage');
 
-  // === Config (medium difficulty) ===
+  // === Config (medium difficulty, with lives, aggressive speed ramp) ===
   const DURATION_MS = 60_000;
-  const W = 900, H = 320;            // logical canvas size (CSS will scale)
+  const W = 900, H = 320;
   const GROUND_Y = H - 50;
   const GRAVITY = 0.95;
   const JUMP_VY = -17;
@@ -5131,25 +5291,33 @@ function gameRunner(v) {
   const PLAYER_X = 90;
   const DUCK_H = 55;
   const OBST_W = 60, OBST_H = 90;
-  const FLY_H = 60;                  // height of flying obstacles (need to duck)
-  let scrollSpeed = 6.5;             // px/frame at the start
-  const MAX_SPEED = 11.0;
-  const SPEED_RAMP_PER_SEC = 0.05;
-  let spawnGapMs = 1700;             // gap between obstacles
-  const MIN_SPAWN_GAP_MS = 950;
+  const FLY_H = 60;
+  const START_LIVES = 3;
+  const PASS_THRESHOLD = 0.70;       // dodged / total >= 70 % to pass
+  const INVULN_MS = 1200;            // after a hit, brief invulnerability
+  let scrollSpeed = 6.5;
+  const MAX_SPEED = 14.0;            // higher cap (was 11)
+  const SPEED_RAMP_PER_SEC = 0.11;   // more aggressive (was 0.05)
+  let spawnGapMs = 1700;
+  const MIN_SPAWN_GAP_MS = 750;      // closer to back-to-back at the end (was 950)
+  const SPAWN_RAMP_PER_SEC = 22;     // faster ramp (was 12)
 
   stage.innerHTML = `
     <div style="text-align:center; width:100%; max-width: 900px;">
-      <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:4px;">PERSECUCIÓN EN LAS CÍES</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.2em;margin-bottom:10px;">♛ EL DEMONIO TE PERSIGUE ♛</div>
+      <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:4px;">${vt(v, 'gameName')}</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.2em;margin-bottom:10px;">♛ ${state.lang === 'gl' ? 'O DEMO PERSÉGUETE' : (state.lang === 'ng' ? 'DI DEMON DEY CHASE YOU' : 'EL DEMONIO TE PERSIGUE')} ♛</div>
       <div style="color:var(--text-dim);margin-bottom:10px;font-size:13px;">
-        [SPACE] / [↑] saltar · [↓] agacharse · o toca arriba/abajo ·
-        ⏱ <span id="runner-time">60.0</span>s · ✓ <span id="runner-dodged">0</span>
+        ⏱ <span id="runner-time">60.0</span>s · ❤ <span id="runner-lives">${'❤'.repeat(START_LIVES)}</span> · ✓ <span id="runner-dodged">0</span> · ✗ <span id="runner-hits">0</span>
       </div>
       <div class="runner-stage" style="position:relative; max-width: ${W}px; margin: 0 auto; border: 2px solid var(--glass-border); border-radius: 16px; overflow: hidden;">
         <canvas id="runner-canvas" width="${W}" height="${H}" style="display:block; width:100%; height:auto; background: linear-gradient(180deg, #1a0808 0%, #2a0a0a 60%, #0a0606 100%);"></canvas>
-        <div id="runner-tap-jump" style="position:absolute; left:0; right:0; top:0; height:55%;"></div>
-        <div id="runner-tap-duck" style="position:absolute; left:0; right:0; bottom:0; height:45%;"></div>
+        <!-- Tap zones with VISIBLE labels on mobile so it's obvious where to touch -->
+        <div id="runner-tap-jump" style="position:absolute; left:0; right:0; top:0; height:55%; display:flex; align-items:flex-start; justify-content:center; pointer-events:auto;">
+          <div class="runner-hint runner-hint-top">↑ SALTAR / JUMP</div>
+        </div>
+        <div id="runner-tap-duck" style="position:absolute; left:0; right:0; bottom:0; height:45%; display:flex; align-items:flex-end; justify-content:center; pointer-events:auto;">
+          <div class="runner-hint runner-hint-bot">↓ AGACHARSE / DUCK</div>
+        </div>
         <div id="runner-overlay" style="position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; background:rgba(0,0,0,0.7); color:white; font-family:'Bebas Neue';font-size:48px; letter-spacing:0.05em;"></div>
       </div>
     </div>
@@ -5173,9 +5341,12 @@ function gameRunner(v) {
   let startT = 0;
   let lastSpawn = 0;
   let player = { x: PLAYER_X, y: GROUND_Y - PLAYER_H, vy: 0, ducking: false };
-  let obstacles = []; // {x, y, w, h, kind: 'ground'|'fly'}
+  let obstacles = [];
   let dodged = 0;
-  let scrollX = 0;   // for parallax ground stripes
+  let hits = 0;
+  let lives = START_LIVES;
+  let invulnUntil = 0;
+  let scrollX = 0;
 
   function spawnObstacle() {
     // 70% ground (duck-around-or-jump-over), 30% fly (must duck)
@@ -5244,10 +5415,10 @@ function gameRunner(v) {
     const elapsed = now - startT;
     const remaining = Math.max(0, DURATION_MS - elapsed);
 
-    // Difficulty ramp
+    // Difficulty ramp — speed grows faster, gap shrinks faster
     const secs = elapsed / 1000;
     scrollSpeed = Math.min(MAX_SPEED, 6.5 + secs * SPEED_RAMP_PER_SEC);
-    spawnGapMs = Math.max(MIN_SPAWN_GAP_MS, 1700 - secs * 12);
+    spawnGapMs = Math.max(MIN_SPAWN_GAP_MS, 1700 - secs * SPAWN_RAMP_PER_SEC);
 
     // Spawn
     if (elapsed - lastSpawn > spawnGapMs) {
@@ -5265,26 +5436,37 @@ function gameRunner(v) {
     const py = player.ducking ? (GROUND_Y - DUCK_H) : player.y;
     const playerBox = { x: player.x + 8, y: py + 6, w: PLAYER_W - 16, h: ph - 12 };
 
-    // Move obstacles + collide. Since the obstacles render as CIRCLES, we
-    // inset the AABB so collision matches the visible disc (the rectangle
-    // corners outside the disc would otherwise kill the player unfairly).
+    // Move obstacles + collide. NOT all-or-nothing: each hit subtracts one
+    // life and triggers brief invulnerability so a string of obstacles can't
+    // drain you in one frame. Game ends when lives==0 OR the 60 s clock runs out.
+    const isInvuln = elapsed < invulnUntil;
     obstacles.forEach(o => {
       o.x -= scrollSpeed;
       const inset = Math.min(o.w, o.h) * 0.18;
       const oBox = { x: o.x + inset, y: o.y + inset, w: o.w - inset * 2, h: o.h - inset * 2 };
-      if (!o.passed && rectOverlap(playerBox, oBox)) {
-        // Collision — game over
-        running = false;
-        finish(false, elapsed);
+      if (!o.hit && !o.passed && rectOverlap(playerBox, oBox)) {
+        o.hit = true;          // mark this specific obstacle as consumed
+        if (!isInvuln) {
+          hits++;
+          lives--;
+          invulnUntil = elapsed + INVULN_MS;
+          sfx.fail(); flash('red'); shake('light');
+          document.getElementById('runner-lives').textContent = '❤'.repeat(Math.max(0, lives)) + '🖤'.repeat(START_LIVES - Math.max(0, lives));
+          document.getElementById('runner-hits').textContent = hits;
+        }
       }
-      if (!o.passed && o.x + o.w < player.x) { o.passed = true; dodged++; }
+      if (!o.passed && o.x + o.w < player.x) {
+        o.passed = true;
+        if (!o.hit) dodged++;
+      }
     });
     obstacles = obstacles.filter(o => o.x + o.w > -20);
 
-    // Win
-    if (elapsed >= DURATION_MS) {
+    // End condition: lives ran out OR clock finished. The player ALWAYS gets
+    // a result screen — there's no instant fail.
+    if (lives <= 0 || elapsed >= DURATION_MS) {
       running = false;
-      finish(true, elapsed);
+      finish(elapsed);
     }
 
     // HUD
@@ -5316,27 +5498,27 @@ function gameRunner(v) {
       ctx.fillRect(sx, GROUND_Y + 4, 30, 3);
     }
 
-    // Player
+    // Player (flickers while invulnerable)
     const drawH = player.ducking ? DUCK_H : PLAYER_H;
     const drawY = player.ducking ? (GROUND_Y - DUCK_H) : player.y;
+    const flicker = isInvuln && Math.floor(elapsed / 80) % 2 === 0;
+    ctx.save();
+    if (flicker) ctx.globalAlpha = 0.35;
     if (playerReady) {
-      // Slight tilt while in air
-      ctx.save();
       const inAir = player.y < GROUND_Y - PLAYER_H - 2;
       if (inAir) {
         ctx.translate(player.x + PLAYER_W / 2, drawY + drawH / 2);
         ctx.rotate(-0.18);
         ctx.translate(-(player.x + PLAYER_W / 2), -(drawY + drawH / 2));
       }
-      // Background frame
       ctx.fillStyle = '#FFD700';
       ctx.fillRect(player.x - 2, drawY - 2, PLAYER_W + 4, drawH + 4);
       ctx.drawImage(playerImg, player.x, drawY, PLAYER_W, drawH);
-      ctx.restore();
     } else {
       ctx.fillStyle = '#FFD700';
       ctx.fillRect(player.x, drawY, PLAYER_W, drawH);
     }
+    ctx.restore();
 
     // Obstacles — drawn as circles (clipped image + glowing ring) so they
     // look like floating demon mugshots, not rectangles.
@@ -5382,29 +5564,57 @@ function gameRunner(v) {
   }
   requestAnimationFrame(loop);
 
-  function finish(survived, elapsedMs) {
+  function finish(elapsedMs) {
     // Stop input
     document.removeEventListener('keydown', keyHandler);
     document.removeEventListener('keyup', keyUpHandler);
+    const sec = elapsedMs / 1000;
+    const total = dodged + hits;
+    const accuracy = total > 0 ? dodged / total : 0;
+    const reachedEnd = elapsedMs >= DURATION_MS;
+    const passed = accuracy >= PASS_THRESHOLD && reachedEnd; // must FINISH + 70%+
     let shots;
-    let msg;
-    if (survived) {
+    if (passed) {
       shots = 0;
-      msg = '🏆 ¡Has sobrevivido al Demonio! Las Cíes te perdonan.';
-      sfx.success(); flash('green');
-      overlay.style.display = 'flex';
-      overlay.innerHTML = `<div style="color:var(--terminal);">¡SOBREVIVISTE!</div><div style="font-size:18px;font-family:'JetBrains Mono',monospace;color:var(--gold);margin-top:8px;">${dodged} obstáculos esquivados</div>`;
+    } else if (reachedEnd) {
+      // Finished but below 70% — partial penalty by accuracy bucket
+      if (accuracy >= 0.50) shots = 2;
+      else if (accuracy >= 0.30) shots = 3;
+      else shots = 4;
     } else {
-      const sec = elapsedMs / 1000;
+      // Lost all lives before the clock — bigger penalty
       if (sec < 15) shots = 5;
       else if (sec < 30) shots = 4;
       else if (sec < 45) shots = 3;
       else shots = 2;
-      msg = `🩸 El Demonio te pilló a los ${sec.toFixed(1)}s. ${dodged} esquivados. Bebes ${shots}.`;
-      sfx.fail(); flash('red'); shake('heavy');
-      overlay.style.display = 'flex';
-      overlay.innerHTML = `<div style="color:var(--blood);">¡TE PILLÓ!</div><div style="font-size:18px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);margin-top:8px;">${sec.toFixed(1)}s · ${dodged} esquivados</div>`;
     }
+    const pct = (accuracy * 100).toFixed(0);
+    // Localised messages
+    const titleES = passed ? '¡SOBREVIVISTE!' : (reachedEnd ? 'CASI...' : '¡TE PILLÓ!');
+    const titleGL = passed ? 'SOBREVIVICHES!' : (reachedEnd ? 'CASE...' : 'PILLOUTE!');
+    const titleNG = passed ? 'YOU SURVIVE!' : (reachedEnd ? 'NEAR MISS...' : 'DEM CATCH YOU!');
+    const title = state.lang === 'gl' ? titleGL : (state.lang === 'ng' ? titleNG : titleES);
+    const msgES = passed
+      ? `🏆 ¡Sobreviviste al Demonio con ${pct}% de aciertos! Las Cíes te perdonan.`
+      : reachedEnd
+        ? `🌊 Terminaste con ${pct}% de aciertos (necesitabas 70%). ${hits} golpes. Bebes ${shots}.`
+        : `🩸 El Demonio te tumbó a los ${sec.toFixed(1)}s con ${hits} golpes. Bebes ${shots}.`;
+    const msgGL = passed
+      ? `🏆 Sobreviviches o Demo con ${pct}% de acertos! As Cíes perdóanche.`
+      : reachedEnd
+        ? `🌊 Acabaches con ${pct}% de acertos (precisabas 70 %). ${hits} golpes. Bebes ${shots}.`
+        : `🩸 O Demo tumboute aos ${sec.toFixed(1)}s con ${hits} golpes. Bebes ${shots}.`;
+    const msgNG = passed
+      ? `🏆 You don survive di Demon with ${pct}% accuracy! Di Cíes don pardon you.`
+      : reachedEnd
+        ? `🌊 You finish with ${pct}% accuracy (you need 70 %). ${hits} hits. Drink ${shots}.`
+        : `🩸 Di Demon catch you for ${sec.toFixed(1)}s with ${hits} hits. Drink ${shots}.`;
+    const msg = state.lang === 'gl' ? msgGL : (state.lang === 'ng' ? msgNG : msgES);
+
+    if (passed) { sfx.success(); flash('green'); }
+    else { sfx.fail(); flash('red'); if (!reachedEnd) shake('heavy'); }
+    overlay.style.display = 'flex';
+    overlay.innerHTML = `<div style="color:${passed ? 'var(--terminal)' : 'var(--blood)'};">${title}</div><div style="font-size:18px;font-family:'JetBrains Mono',monospace;color:var(--gold);margin-top:8px;">${pct}% · ${dodged} ✓ / ${hits} ✗</div>`;
     setTimeout(() => showResult(shots, msg), 1300);
   }
 
@@ -5575,17 +5785,19 @@ function gamePoligrafo(v) {
   const ANSWER_TIME = 5;
 
   function render() {
-    if (idx >= PAZ_ACCUSATIONS.length) {
+    const accusations = tList(PAZ_ACCUSATIONS);
+    if (idx >= accusations.length) {
       return openVote();
     }
+    const lblAccusation = state.lang === 'gl' ? 'ACUSACIÓN' : (state.lang === 'ng' ? 'ACCUSATION' : 'ACUSACIÓN');
     stage.innerHTML = `
       <div class="poligrafo-stage">
         <div class="salvame-logo">▸ SÁLVAME DELUXE — POLÍGRAFO ◂</div>
         <div class="paz-card">
           <div class="paz-avatar"><img src="${pazImg}" alt="Paz Padilla" /></div>
           <div>
-            <div class="paz-name">PAZ PADILLA · ACUSACIÓN ${idx+1}/${PAZ_ACCUSATIONS.length} · <span id="paz-clock" style="color:var(--gold);">${ANSWER_TIME}s</span></div>
-            <div class="paz-quote">"${PAZ_ACCUSATIONS[idx]}"</div>
+            <div class="paz-name">PAZ PADILLA · ${lblAccusation} ${idx+1}/${accusations.length} · <span id="paz-clock" style="color:var(--gold);">${ANSWER_TIME}s</span></div>
+            <div class="paz-quote">"${accusations[idx]}"</div>
           </div>
         </div>
         <div class="poligrafo-machine">
@@ -5726,7 +5938,8 @@ function gameAnnaBoss(v) {
   const ANSWER_TIME = 5.5;
 
   function render() {
-    if (idx >= ANNA_VOWS.length) {
+    const vows = tList(ANNA_VOWS);
+    if (idx >= vows.length) {
       return openWeddingVote();
     }
     stage.innerHTML = `
@@ -5735,8 +5948,8 @@ function gameAnnaBoss(v) {
         <div class="paz-card" style="border-left-color: var(--gold);">
           <div class="paz-avatar" style="border-color: var(--gold); background: linear-gradient(135deg, #ff8eb6, var(--gold));"><img src="${annaImg}" alt="Anna Ferrer" /></div>
           <div>
-            <div class="paz-name" style="color: var(--gold);">ANNA FERRER · VOTO ${idx+1}/${ANNA_VOWS.length} · <span id="anna-clock" style="color:white;">${ANNA_TIME(ANSWER_TIME)}</span></div>
-            <div class="paz-quote">"${ANNA_VOWS[idx]}"</div>
+            <div class="paz-name" style="color: var(--gold);">ANNA FERRER · ${state.lang === 'gl' ? 'VOTO' : (state.lang === 'ng' ? 'VOW' : 'VOTO')} ${idx+1}/${vows.length} · <span id="anna-clock" style="color:white;">${ANNA_TIME(ANSWER_TIME)}</span></div>
+            <div class="paz-quote">"${vows[idx]}"</div>
           </div>
         </div>
         <div class="poligrafo-machine" style="border-color: rgba(255,215,0,0.4);">
@@ -5835,7 +6048,7 @@ function gameAnnaBoss(v) {
           <div class="paz-avatar" style="border-color: var(--gold);"><img src="${annaImg}" /></div>
           <div>
             <div class="paz-name" style="color: var(--gold);">ANNA FERRER</div>
-            <div class="paz-quote">"Mario ha sido sincero ${yesCount}/${ANNA_VOWS.length} veces. El público decide: ¿me caso con él o cancelo la boda?"</div>
+            <div class="paz-quote">"Mario ha sido sincero ${yesCount}/${tList(ANNA_VOWS).length} veces. El público decide: ¿me caso con él o cancelo la boda?"</div>
           </div>
         </div>
         <p style="color:var(--text-dim);margin:16px 0;">Escanea el QR. Vota <strong style="color:var(--terminal)">SI</strong> = boda sigue · <strong style="color:var(--blood)">NO</strong> = Anna cancela.</p>
