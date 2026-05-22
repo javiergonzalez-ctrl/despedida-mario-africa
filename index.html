@@ -28,11 +28,18 @@
     --cyan: #00E5FF;
     --magenta: #C724FF;
     --text: #F5F5F5;
-    --text-dim: rgba(245,245,245,0.6);
+    --text-dim: rgba(245,245,245,0.75);
     --glass: rgba(255,255,255,0.05);
     --glass-border: rgba(255,255,255,0.12);
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  /* Restore keyboard focus visibility (we kill the tap highlight for touch).
+     :focus-visible only fires for keyboard, so mouse/touch never see this. */
+  :focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
   html, body {
     height: 100%;
     overflow-x: hidden;
@@ -47,7 +54,8 @@
     user-select: text;
     -webkit-user-select: text;
   }
-  body { overflow-y: hidden; }
+  /* Don't lock body scroll — .screen { position:fixed } already covers it, and
+     locking the body breaks iOS keyboard inset and rubber-band feel. */
   body {
     background:
       radial-gradient(circle at 20% 20%, rgba(255, 23, 68, 0.12), transparent 50%),
@@ -168,6 +176,166 @@
   }
   .hud-pill.shots { border-color: var(--blood); color: var(--blood); }
   .hud-pill.round { border-color: var(--gold); color: var(--gold); }
+
+  /* ============ LANGUAGE SELECTOR (floating, always visible) ============ */
+  .lang-picker {
+    position: fixed; top: 14px; right: 14px; z-index: 200;
+    display: flex; gap: 4px;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid var(--glass-border);
+    border-radius: 999px; padding: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .lang-btn {
+    background: transparent; color: var(--text-dim);
+    border: none; cursor: pointer;
+    padding: 6px 10px; border-radius: 999px;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+  .lang-btn:hover { color: var(--text); }
+  .lang-btn.active {
+    background: var(--gold); color: #000;
+  }
+  @media (max-width: 480px) {
+    .lang-picker { top: 8px; right: 8px; padding: 3px; }
+    .lang-btn { padding: 5px 8px; font-size: 10px; }
+  }
+  /* Hide the floating language picker while the HUD is showing (during games)
+     to avoid the HUD chupitos pill overlapping it on mobile. */
+  body.hud-active .lang-picker { display: none; }
+
+  /* ============ DEDICATED LANG SELECT SCREEN ============ */
+  /* Inherits .screen layout (position:fixed, flex column, .hidden = opacity 0). */
+  #screen-lang {
+    padding: 60px 20px 40px;
+    text-align: center;
+    justify-content: flex-start;
+  }
+  .lang-pretitle {
+    color: var(--terminal);
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.4em; font-size: 12px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .lang-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(34px, 6vw, 64px);
+    line-height: 1.05; letter-spacing: 0.03em;
+    margin-bottom: 14px;
+    background: linear-gradient(180deg, var(--gold) 0%, var(--blood) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .lang-sub {
+    color: var(--text-dim);
+    font-size: 15px;
+    max-width: 640px;
+    margin-bottom: 28px;
+    font-style: italic;
+  }
+  .lang-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    max-width: 1100px;
+    width: 100%;
+    margin-bottom: 28px;
+  }
+  .lang-card {
+    background: rgba(255,255,255,0.03);
+    border: 2px solid var(--glass-border);
+    color: var(--text);
+    border-radius: 18px;
+    padding: 22px 18px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.22s ease;
+    font-family: inherit;
+    position: relative;
+    overflow: hidden;
+  }
+  .lang-card::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,215,0,0) 0%, rgba(255,23,68,0) 100%);
+    pointer-events: none;
+    transition: background 0.3s;
+  }
+  .lang-card:hover {
+    border-color: var(--gold);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(255,215,0,0.18);
+  }
+  .lang-card:hover::before {
+    background: linear-gradient(135deg, rgba(255,215,0,0.08) 0%, rgba(255,23,68,0.06) 100%);
+  }
+  .lang-card.selected {
+    border-color: var(--gold);
+    background: rgba(255,215,0,0.08);
+    box-shadow: 0 0 30px rgba(255,215,0,0.35), inset 0 0 30px rgba(255,215,0,0.05);
+  }
+  .lang-card.selected::before {
+    background: linear-gradient(135deg, rgba(255,215,0,0.18) 0%, rgba(255,23,68,0.10) 100%);
+  }
+  .lang-card-flag {
+    font-size: 56px; line-height: 1;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4));
+  }
+  .lang-card-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 0.05em;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .lang-card-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .lang-card-story {
+    color: var(--text);
+    font-size: 13px;
+    line-height: 1.55;
+    font-style: italic;
+  }
+  .lang-card-story strong {
+    color: var(--blood);
+    font-style: normal;
+    font-weight: 800;
+  }
+  .lang-actions {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    justify-content: center; margin-bottom: 16px;
+  }
+  #lang-continue:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    transform: none;
+  }
+  .lang-foot {
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+  }
+  @media (max-width: 760px) {
+    .lang-cards { grid-template-columns: 1fr; gap: 12px; }
+    #screen-lang { padding: 70px 16px 32px; }
+    .lang-card { padding: 18px 16px; }
+    .lang-card-flag { font-size: 44px; }
+    .lang-card-name { font-size: 26px; }
+  }
 
   /* ============ START SCREEN ============ */
   #screen-start {
@@ -717,7 +885,9 @@
   /* ============ MINI GAME: LULU RHYTHM ============ */
   .rhythm-stage {
     width: 100%; max-width: 600px;
-    height: 70vh; max-height: 600px;
+    height: 70vh;            /* fallback for browsers without dvh */
+    height: 70dvh;           /* iOS Safari: respects URL bar */
+    max-height: 600px;
     position: relative;
     background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.95) 100%);
     border: 2px solid var(--glass-border);
@@ -978,6 +1148,7 @@
   .drift-stage {
     width: min(440px, 90vw);
     height: 70vh;
+    height: 70dvh;
     max-height: 700px;
     position: relative;
     background: linear-gradient(180deg, #3a2a1a 0%, #1a0a05 100%);
@@ -1791,6 +1962,13 @@
 <div class="flash-overlay" id="flash"></div>
 <div class="toast" id="toast"></div>
 
+<!-- Language picker (always visible) -->
+<div class="lang-picker" id="lang-picker" role="group" aria-label="Language">
+  <button class="lang-btn" data-lang="es" onclick="setLang('es')" aria-label="Castellano">ES</button>
+  <button class="lang-btn" data-lang="gl" onclick="setLang('gl')" aria-label="Galego">GL</button>
+  <button class="lang-btn" data-lang="ng" onclick="setLang('ng')" aria-label="Nigerian Pidgin">NAIJA</button>
+</div>
+
 <div class="hud hidden" id="hud">
   <div class="hud-left">
     <div class="hud-pill round" id="hud-round">RONDA —</div>
@@ -1803,15 +1981,48 @@
 <!-- ============ START ============ -->
 <div class="screen" id="screen-start">
   <div class="title-grid"></div>
-  <div class="pretitle">▸ OPERACIÓN CRISTÓBAL — TENERIFE 2026 ◂</div>
+  <div class="pretitle" data-i18n="pretitle">▸ OPERACIÓN CRISTÓBAL — TENERIFE 2026 ◂</div>
   <h1>AFRICA<br/>STRIKES BACK</h1>
-  <p class="subtitle">El juicio popular a <strong style="color:var(--gold)">Mario Cristóbal</strong>, futuro yerno de Paz Padilla, por crímenes contra los apostadores del continente africano.</p>
-  <p class="credits">12 rondas. 12 víctimas. 1 hígado.</p>
-  <button class="btn-primary" onclick="startIntro()">▶ INICIAR EL JUICIO</button>
+  <p class="subtitle" data-i18n="subtitle">El juicio popular a <strong style="color:var(--gold)">Mario Cristóbal</strong>, futuro yerno de Paz Padilla, por crímenes contra los apostadores del continente africano.</p>
+  <p class="credits" data-i18n="credits">12 rondas. 12 víctimas. 1 hígado.</p>
+
+  <button class="btn-primary" onclick="goToLangSelect()" data-i18n="start_btn">▶ INICIAR EL JUICIO</button>
   <div style="margin-top:24px; display:flex; gap:8px;">
-    <button class="btn-secondary" onclick="quickStart()">Saltar intro</button>
+    <button class="btn-secondary" onclick="quickStart()" data-i18n="skip_intro">Saltar intro</button>
     <button class="btn-secondary" onclick="toggleMute()" id="mute-btn">🔊 Audio</button>
   </div>
+</div>
+
+<!-- ============ LANGUAGE SELECT (with Mario-mocking storytelling) ============ -->
+<div class="screen hidden" id="screen-lang">
+  <div class="lang-pretitle">▸ AUDITORÍA LINGÜÍSTICA ◂</div>
+  <h2 class="lang-title">¿EN QUÉ IDIOMA<br/>QUIERES VER A MARIO PAGAR?</h2>
+  <p class="lang-sub">Mario habla cinco idiomas. Cuatro son F1 Fantasy en redes sociales. Elige el quinto.</p>
+  <div class="lang-cards">
+    <button class="lang-card" data-lang="es" onclick="pickLang('es')">
+      <div class="lang-card-flag">🇪🇸</div>
+      <div class="lang-card-name">CASTELLANO</div>
+      <div class="lang-card-tag">El idioma de Paz Padilla</div>
+      <div class="lang-card-story">«Mario, mírame a los ojos, OZÚ. Tu madre te dijo que estudiaras Derecho y montaste F1 Fantasy. Cuatro punto siete millones de víctimas. <strong>Ar pasiyo arsobaco</strong>.»</div>
+    </button>
+    <button class="lang-card" data-lang="gl" onclick="pickLang('gl')">
+      <div class="lang-card-flag">🟦⬜🟦</div>
+      <div class="lang-card-name">GALEGO</div>
+      <div class="lang-card-tag">O idioma do Demonio das Illas Cíes</div>
+      <div class="lang-card-story">«Mariño, vendiches "F1 Fantasy gallego edition" a un pescadeiro de Vigo prometendo cuotas inflated. <strong>Vas saber por qué me chaman o Demonio das Illas</strong>, gilipollas.»</div>
+    </button>
+    <button class="lang-card" data-lang="ng" onclick="pickLang('ng')">
+      <div class="lang-card-flag">🇳🇬</div>
+      <div class="lang-card-name">NAIJA PIDGIN</div>
+      <div class="lang-card-tag">Di language of Elver Galarga</div>
+      <div class="lang-card-story">«Oga Mario, you carry 4.7 million Africans go enter F1 Fantasy Premium VIP Elite. Wetin you do with the money, my friend? <strong>Where my Lambo?</strong> We don land Tenerife make we collect.»</div>
+    </button>
+  </div>
+  <div class="lang-actions">
+    <button class="btn-secondary" onclick="show('screen-start')">◀ Atrás</button>
+    <button class="btn-primary" id="lang-continue" onclick="confirmLangAndStart()" disabled>▶ ACEPTAR Y EMPEZAR</button>
+  </div>
+  <p class="lang-foot">Podrás cambiarlo en cualquier momento con el botón flotante de arriba a la derecha.</p>
 </div>
 
 <!-- ============ INTRO ============ -->
@@ -1823,42 +2034,43 @@
 <!-- ============ VICTIMS REVEAL ============ -->
 <div class="screen hidden" id="screen-victims">
   <div class="victims-header">
-    <div class="label">Manifest de pasajeros — vuelo a TFS</div>
-    <h2>HAN VOLADO A TENERIFE</h2>
-    <p>12 personas. 12 vidas arruinadas. Quieren conocer a Mario.</p>
+    <div class="label" data-i18n="victims_label">Manifest de pasajeros — vuelo a TFS</div>
+    <h2 data-i18n="victims_title">HAN VOLADO A TENERIFE</h2>
+    <p data-i18n="victims_sub">12 personas. 12 vidas arruinadas. Quieren conocer a Mario.</p>
+    <p style="color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.05em;margin-top:8px;" data-i18n="victims_tip">💡 Pincha en cualquier víctima para saltar directamente a su prueba.</p>
   </div>
   <div class="victims-grid" id="victims-grid"></div>
   <div style="text-align:center; padding-bottom: 24px;">
-    <button class="btn-primary" onclick="openLobby()">⚖ EMPAREJAR MÓVILES + EMPEZAR</button>
+    <button class="btn-primary" onclick="openLobby()" data-i18n="pair_btn">⚖ EMPAREJAR MÓVILES + EMPEZAR</button>
   </div>
 </div>
 
 <!-- ============ LOBBY (QR pairing) ============ -->
 <div class="screen hidden" id="screen-lobby">
   <div style="text-align:center; max-width: 600px;">
-    <p style="color:var(--terminal);font-family:'JetBrains Mono',monospace;letter-spacing:0.3em;font-size:13px;margin-bottom:16px;">▸ EMPAREJAMIENTO ◂</p>
-    <h2 style="font-family:'Bebas Neue';font-size:clamp(40px,7vw,72px);margin-bottom:16px;">SALA <span id="lobby-room" style="color:var(--gold)"></span></h2>
-    <p style="color:var(--text-dim);margin-bottom:24px;">Cada amigo escanea UNA vez. Su móvil queda enlazado para todas las votaciones del juego.</p>
+    <p style="color:var(--terminal);font-family:'JetBrains Mono',monospace;letter-spacing:0.3em;font-size:13px;margin-bottom:16px;" data-i18n="lobby_pair">▸ EMPAREJAMIENTO ◂</p>
+    <h2 style="font-family:'Bebas Neue';font-size:clamp(40px,7vw,72px);margin-bottom:16px;"><span data-i18n="lobby_room">SALA</span> <span id="lobby-room" style="color:var(--gold)"></span></h2>
+    <p style="color:var(--text-dim);margin-bottom:24px;" data-i18n="lobby_help">Cada amigo escanea UNA vez. Su móvil queda enlazado para todas las votaciones del juego.</p>
     <div id="lobby-qr" style="background:white;padding:16px;border-radius:16px;display:inline-block;margin:8px 0;"></div>
     <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);margin-top:12px;word-break:break-all;" id="lobby-url"></p>
     <div style="margin-top:24px; background: rgba(255,255,255,0.04); border:1px solid var(--glass-border); border-radius:12px; padding:16px;">
-      <div style="color:var(--gold);font-family:'JetBrains Mono',monospace;letter-spacing:0.2em;font-size:12px;text-transform:uppercase;margin-bottom:8px;">Conectados</div>
+      <div style="color:var(--gold);font-family:'JetBrains Mono',monospace;letter-spacing:0.2em;font-size:12px;text-transform:uppercase;margin-bottom:8px;" data-i18n="lobby_connected">Conectados</div>
       <div style="font-family:'Bebas Neue';font-size:64px;line-height:1;color:var(--terminal);" id="lobby-count">0</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);margin-top:8px;" id="lobby-list">esperando móviles...</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);margin-top:8px;" id="lobby-list" data-i18n="lobby_waiting">esperando móviles...</div>
     </div>
-    <p style="color:var(--text-dim);font-size:13px;margin-top:20px;">⚠ Si Firebase no está configurado: voto manual con botones del portátil.</p>
+    <p style="color:var(--text-dim);font-size:13px;margin-top:20px;" data-i18n="lobby_no_fb">⚠ Si Firebase no está configurado: voto manual con botones del portátil.</p>
     <div style="margin-top: 24px;">
-      <button class="btn-primary" onclick="startRounds()">▶ EMPEZAR PARTIDA</button>
+      <button class="btn-primary" onclick="startRounds()" data-i18n="start_party">▶ EMPEZAR PARTIDA</button>
     </div>
-    <p style="margin-top: 12px;"><button class="btn-secondary" onclick="startRounds()">Saltar lobby</button></p>
+    <p style="margin-top: 12px;"><button class="btn-secondary" onclick="startRounds()" data-i18n="skip_lobby">Saltar lobby</button></p>
   </div>
 </div>
 
 <!-- ============ TENERIFE MAP ============ -->
 <div class="screen hidden" id="screen-map">
   <div class="map-header">
-    <h2>TENERIFE</h2>
-    <p>12 paradas · 12 vidas arruinadas · 1 boda en juego</p>
+    <h2 data-i18n="map_title">TENERIFE</h2>
+    <p data-i18n="map_sub">12 paradas · 12 vidas arruinadas · 1 boda en juego</p>
   </div>
   <div class="tenerife-container">
     <svg class="tenerife-svg" viewBox="0 0 600 340" preserveAspectRatio="xMidYMid meet">
@@ -1883,11 +2095,11 @@
       <g id="map-pins"></g>
     </svg>
     <div class="map-current-info" id="map-info" style="display:none;">
-      <div class="label">SIGUIENTE PARADA</div>
+      <div class="label" data-i18n="map_next">SIGUIENTE PARADA</div>
       <div class="name" id="map-current-name">—</div>
       <div class="game" id="map-current-game">—</div>
       <div class="map-actions">
-        <button class="btn-primary" id="map-go-btn" onclick="document.dispatchEvent(new CustomEvent('map-go'))">▶ EMPEZAR</button>
+        <button class="btn-primary" id="map-go-btn" onclick="document.dispatchEvent(new CustomEvent('map-go'))" data-i18n="map_go">▶ EMPEZAR</button>
       </div>
     </div>
   </div>
@@ -1900,12 +2112,12 @@
 
 <!-- ============ FINAL ============ -->
 <div class="screen hidden" id="screen-final">
-  <p class="pretitle">▸ DAMAGE REPORT — JUICIO CERRADO ◂</p>
+  <p class="pretitle" data-i18n="final_pretitle">▸ DAMAGE REPORT — JUICIO CERRADO ◂</p>
   <h2 id="final-title">MARIO HA PAGADO</h2>
-  <p class="final-label">Total chupitos consumidos</p>
+  <p class="final-label" data-i18n="final_label">Total chupitos consumidos</p>
   <div class="final-counter" id="final-counter">0</div>
   <p class="final-msg" id="final-msg"></p>
-  <button class="btn-primary" onclick="location.reload()">↻ OTRA RONDA</button>
+  <button class="btn-primary" onclick="location.reload()" data-i18n="final_again">↻ OTRA RONDA</button>
 </div>
 
 <!-- ============ VOTE (mobile) ============ -->
@@ -1931,8 +2143,8 @@
 </div>
 
 <!-- ============ QR MODAL ============ -->
-<div class="qr-modal" id="qr-modal">
-  <h2>EL PÚBLICO DECIDE</h2>
+<div class="qr-modal" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
+  <h2 id="qr-modal-title">EL PÚBLICO DECIDE</h2>
   <p class="qr-question" id="qr-question"></p>
   <div class="qr-code" id="qr-code"></div>
   <p class="qr-instructions">Escanea con el móvil → vota → vuelve a la mesa</p>
@@ -1981,21 +2193,212 @@ let state = {
   currentRound: 0,
   muted: false,
   votes: { yes: 0, no: 0 },
-  voteCallback: null,
-  weddingResult: null
+  weddingResult: null,
+  lang: (localStorage.getItem('asb-lang') || 'es')
 };
+// Vote callback is module-scoped (not in state). It is set by openVoteModal()
+// and fired exactly once by closeVote(), then nulled — no leak across games.
+let _voteCallback = null;
+
+// ============================================
+// I18N — castellano (es) / galego (gl) / Nigerian Pidgin (ng)
+// ============================================
+const I18N = {
+  es: {
+    pretitle: '▸ OPERACIÓN CRISTÓBAL — TENERIFE 2026 ◂',
+    subtitle: 'El juicio popular a <strong style="color:var(--gold)">Mario Cristóbal</strong>, futuro yerno de Paz Padilla, por crímenes contra los apostadores del continente africano.',
+    credits: '12 rondas. 12 víctimas. 1 hígado.',
+    start_btn: '▶ INICIAR EL JUICIO',
+    skip_intro: 'Saltar intro',
+    audio: '🔊 Audio',
+    audio_off: '🔇 Audio',
+    lang_label: 'IDIOMA',
+    victims_label: 'Manifest de pasajeros — vuelo a TFS',
+    victims_title: 'HAN VOLADO A TENERIFE',
+    victims_sub: '12 personas. 12 vidas arruinadas. Quieren conocer a Mario.',
+    victims_tip: '💡 Pincha en cualquier víctima para saltar directamente a su prueba.',
+    pair_btn: '⚖ EMPAREJAR MÓVILES + EMPEZAR',
+    lobby_pair: '▸ EMPAREJAMIENTO ◂',
+    lobby_room: 'SALA',
+    lobby_help: 'Cada amigo escanea UNA vez. Su móvil queda enlazado para todas las votaciones del juego.',
+    lobby_connected: 'Conectados',
+    lobby_waiting: 'esperando móviles...',
+    lobby_no_fb: '⚠ Si Firebase no está configurado: voto manual con botones del portátil.',
+    start_party: '▶ EMPEZAR PARTIDA',
+    skip_lobby: 'Saltar lobby',
+    map_title: 'TENERIFE',
+    map_sub: '12 paradas · 12 vidas arruinadas · 1 boda en juego',
+    map_next: 'SIGUIENTE PARADA',
+    map_go: '▶ EMPEZAR',
+    debt: 'DEUDA',
+    shots_word: 'chupitos',
+    hud_round_none: 'RONDA —',
+    hud_round: 'RONDA',
+    next_round: '▸ SIGUIENTE RONDA',
+    replay: '↻ REPETIR PRUEBA',
+    back_victims: '◀ VOLVER AL MENÚ',
+    final_pretitle: '▸ DAMAGE REPORT — JUICIO CERRADO ◂',
+    final_label: 'Total chupitos consumidos',
+    final_again: '↻ OTRA RONDA',
+    pick_victim: 'ELIGE A LA VÍCTIMA',
+    pick_victim_sub: 'Pincha en quien quieras jugar. Las pruebas se pueden repetir.'
+  },
+  gl: {
+    pretitle: '▸ OPERACIÓN CRISTÓBAL — TENERIFE 2026 ◂',
+    subtitle: 'O xuízo popular a <strong style="color:var(--gold)">Mario Cristóbal</strong>, futuro xenro de Paz Padilla, polos crimes contra os apostadores do continente africano.',
+    credits: '12 roldas. 12 vítimas. 1 fígado.',
+    start_btn: '▶ INICIAR O XUÍZO',
+    skip_intro: 'Saltar intro',
+    audio: '🔊 Son',
+    audio_off: '🔇 Son',
+    lang_label: 'IDIOMA',
+    victims_label: 'Manifest de pasaxeiros — voo a TFS',
+    victims_title: 'VOARON A TENERIFE',
+    victims_sub: '12 persoas. 12 vidas arruinadas. Queren coñecer a Mario.',
+    victims_tip: '💡 Picha en calquera vítima para saltar directamente á súa proba.',
+    pair_btn: '⚖ EMPAREXAR MÓBILES + EMPEZAR',
+    lobby_pair: '▸ EMPAREXAMENTO ◂',
+    lobby_room: 'SALA',
+    lobby_help: 'Cada amigo escanea UNHA vez. O seu móbil queda ligado para tódalas votacións do xogo.',
+    lobby_connected: 'Conectados',
+    lobby_waiting: 'agardando móbiles...',
+    lobby_no_fb: '⚠ Se Firebase non está configurado: voto manual cos botóns do portátil.',
+    start_party: '▶ EMPEZAR PARTIDA',
+    skip_lobby: 'Saltar lobby',
+    map_title: 'TENERIFE',
+    map_sub: '12 paradas · 12 vidas arruinadas · 1 voda en xogo',
+    map_next: 'SEGUINTE PARADA',
+    map_go: '▶ EMPEZAR',
+    debt: 'DÉBEDA',
+    shots_word: 'chupitos',
+    hud_round_none: 'ROLDA —',
+    hud_round: 'ROLDA',
+    next_round: '▸ SEGUINTE ROLDA',
+    replay: '↻ REPETIR PROBA',
+    back_victims: '◀ VOLVER AO MENÚ',
+    final_pretitle: '▸ DAMAGE REPORT — XUÍZO PECHADO ◂',
+    final_label: 'Total chupitos consumidos',
+    final_again: '↻ OUTRA ROLDA',
+    pick_victim: 'ESCOLLE Á VÍTIMA',
+    pick_victim_sub: 'Picha en quen queiras xogar. As probas pódense repetir.'
+  },
+  ng: {
+    pretitle: '▸ OPERATION CRISTÓBAL — TENERIFE 2026 ◂',
+    subtitle: 'Di people court for <strong style="color:var(--gold)">Mario Cristóbal</strong>, di future son-in-law of Paz Padilla, becos of wetin e do to all di gamblers for Africa.',
+    credits: '12 rounds. 12 victims. 1 liver.',
+    start_btn: '▶ START DI JUDGEMENT',
+    skip_intro: 'Skip intro',
+    audio: '🔊 Sound',
+    audio_off: '🔇 Sound',
+    lang_label: 'LANGUAGE',
+    victims_label: 'Passenger manifest — flight to TFS',
+    victims_title: 'DEM DON LAND TENERIFE',
+    victims_sub: '12 people. 12 life dem don scatter. Dem wan see Mario.',
+    victims_tip: '💡 Tap any victim make you jump straight go im game.',
+    pair_btn: '⚖ PAIR PHONES + START',
+    lobby_pair: '▸ PHONE PAIRING ◂',
+    lobby_room: 'ROOM',
+    lobby_help: 'Every padi go scan ONE time. Im phone go connect for all di voting.',
+    lobby_connected: 'Connected',
+    lobby_waiting: 'we dey wait phones...',
+    lobby_no_fb: '⚠ If Firebase no dey set: manual vote with laptop buttons.',
+    start_party: '▶ START DI PARTY',
+    skip_lobby: 'Skip lobby',
+    map_title: 'TENERIFE',
+    map_sub: '12 stops · 12 scattered life · 1 wedding for di game',
+    map_next: 'NEXT STOP',
+    map_go: '▶ START',
+    debt: 'DEBT',
+    shots_word: 'shots',
+    hud_round_none: 'ROUND —',
+    hud_round: 'ROUND',
+    next_round: '▸ NEXT ROUND',
+    replay: '↻ PLAY AM AGAIN',
+    back_victims: '◀ BACK TO MENU',
+    final_pretitle: '▸ DAMAGE REPORT — COURT CLOSED ◂',
+    final_label: 'Total shots wey Mario drink',
+    final_again: '↻ ANOTHER ROUND',
+    pick_victim: 'CHOOSE DI VICTIM',
+    pick_victim_sub: 'Tap who you wan play. You fit play any game again.'
+  }
+};
+function t(key) {
+  const L = I18N[state.lang] || I18N.es;
+  return L[key] !== undefined ? L[key] : (I18N.es[key] || key);
+}
+function applyI18n() {
+  document.documentElement.lang = state.lang;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (key) el.innerHTML = t(key);
+  });
+  // Re-render dynamic screens that show translated content
+  const victimsScreen = document.getElementById('screen-victims');
+  if (victimsScreen && !victimsScreen.classList.contains('hidden')) goToVictims();
+  // HUD round label
+  const hud = document.getElementById('hud-round');
+  if (hud) hud.textContent = state.currentRound > 0 ? `${t('hud_round')} ${state.currentRound}/12` : t('hud_round_none');
+  // Mute btn text
+  const mb = document.getElementById('mute-btn');
+  if (mb) mb.textContent = state.muted ? t('audio_off') : t('audio');
+  // Lang button highlight
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.lang === state.lang);
+  });
+}
+function setLang(l) {
+  if (!I18N[l]) return;
+  state.lang = l;
+  localStorage.setItem('asb-lang', l);
+  applyI18n();
+}
+function goToLangSelect() {
+  initAudio();
+  show('screen-lang');
+  // Pre-mark selected card if user already had a language saved
+  document.querySelectorAll('.lang-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.lang === state.lang);
+  });
+  // Enable continue if a lang is already chosen (returning user)
+  const cont = document.getElementById('lang-continue');
+  if (cont) cont.disabled = !state.lang;
+  sfx.tick();
+}
+function pickLang(l) {
+  setLang(l);
+  document.querySelectorAll('.lang-card').forEach(c => {
+    c.classList.toggle('selected', c.dataset.lang === l);
+  });
+  const cont = document.getElementById('lang-continue');
+  if (cont) cont.disabled = false;
+  sfx.hit();
+}
+function confirmLangAndStart() {
+  sfx.success();
+  startIntro();
+}
+window.setLang = setLang;
+window.goToLangSelect = goToLangSelect;
+window.pickLang = pickLang;
+window.confirmLangAndStart = confirmLangAndStart;
 
 // ============================================
 // AUDIO ENGINE
 // ============================================
 let audioCtx = null;
 function initAudio() {
-  if (audioCtx) return;
+  if (audioCtx) {
+    // Resume if it was suspended by mute (or by browser policy)
+    if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => {});
+    return;
+  }
   try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
   catch (e) {}
 }
+// Early return BEFORE creating oscillators — relevant when muted, avoiding the
+// per-call DOM-Node + GC churn (rhythm game can fire ~10 beeps/sec).
 function beep(freq, dur, type = 'square', vol = 0.08) {
-  if (!audioCtx || state.muted) return;
+  if (!audioCtx || state.muted || audioCtx.state === 'suspended') return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = type;
@@ -2008,7 +2411,7 @@ function beep(freq, dur, type = 'square', vol = 0.08) {
   osc.stop(audioCtx.currentTime + dur);
 }
 function sweep(from, to, dur, type='sawtooth', vol=0.06) {
-  if (!audioCtx || state.muted) return;
+  if (!audioCtx || state.muted || audioCtx.state === 'suspended') return;
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = type;
@@ -2021,6 +2424,7 @@ function sweep(from, to, dur, type='sawtooth', vol=0.06) {
   osc.stop(audioCtx.currentTime + dur);
 }
 function chord(freqs, dur, type='sine', vol=0.06) {
+  if (state.muted) return;
   freqs.forEach(f => beep(f, dur, type, vol));
 }
 const sfx = {
@@ -2078,11 +2482,26 @@ function particleBurst(x, y, count = 16, color = '#FF1744') {
   }
 }
 function toast(msg, kind = '') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast visible ' + kind;
-  setTimeout(() => t.classList.remove('visible'), 2400);
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast visible ' + kind;
+  setTimeout(() => el.classList.remove('visible'), 2400);
 }
+
+// HTML-escape for any user-controlled string (player names, room IDs, Firebase
+// content) before injecting into innerHTML. Mandatory at every interpolation
+// site, otherwise an invitee can paste <img src=x onerror=...> as their name
+// and trigger XSS on the host screen.
+function esc(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+window.esc = esc;
 
 
 // Plane scene removed entirely (user feedback).
@@ -2100,10 +2519,10 @@ function renderMapPins() {
     const active = i === (state.currentRound - 1);
     const cls = ['map-pin', done ? 'done' : '', active ? 'active' : ''].filter(Boolean).join(' ');
     const label = done ? '✓' : idx;
-    return `<g class="${cls}" data-i="${i}" transform="translate(${p.x},${p.y})">
+    return `<g class="${cls}" data-i="${i}" transform="translate(${p.x},${p.y})" style="cursor:pointer;" onclick="jumpToRound(${idx})">
       <circle class="pin-circle" r="18"/>
       <text class="pin-num">${label}</text>
-      <title>${v.name} · ${v.gameName}</title>
+      <title>${idx}. ${v.name} · ${v.gameName}</title>
     </g>`;
   }).join('');
 }
@@ -2138,8 +2557,8 @@ function show(screenId) {
 }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 function updateHud() {
-  document.getElementById('hud-shots').textContent = `🥃 ${state.shots} CHUPITOS`;
-  document.getElementById('hud-round').textContent = state.currentRound > 0 ? `RONDA ${state.currentRound}/12` : 'RONDA —';
+  document.getElementById('hud-shots').textContent = `🥃 ${state.shots} ${t('shots_word').toUpperCase()}`;
+  document.getElementById('hud-round').textContent = state.currentRound > 0 ? `${t('hud_round')} ${state.currentRound}/12` : t('hud_round_none');
 }
 function addShots(n) {
   state.shots += n;
@@ -2172,7 +2591,18 @@ function addGroupShots(n) {
 }
 function toggleMute() {
   state.muted = !state.muted;
-  document.getElementById('mute-btn').textContent = state.muted ? '🔇 Audio' : '🔊 Audio';
+  document.getElementById('mute-btn').textContent = state.muted ? t('audio_off') : t('audio');
+  // Suspend/resume the AudioContext so oscillators stop creating CPU/GC pressure
+  // even when callers forget to check state.muted.
+  if (audioCtx) {
+    if (state.muted) audioCtx.suspend().catch(() => {});
+    else audioCtx.resume().catch(() => {});
+  }
+  // Pause/resume song-audio (Cara Al Sol) if playing during rhythm game
+  if (window.__rhythmAudio) {
+    if (state.muted) window.__rhythmAudio.pause();
+    else window.__rhythmAudio.play().catch(()=>{});
+  }
 }
 
 // ============================================
@@ -2670,18 +3100,19 @@ function goToVictims() {
   show('screen-victims');
   const grid = document.getElementById('victims-grid');
   grid.innerHTML = VICTIMS.map((v, i) => `
-    <div class="victim-card" style="transition-delay: ${i * 80}ms">
+    <div class="victim-card" data-victim-idx="${i}" onclick="jumpToRound(${i + 1})" style="transition-delay: ${i * 80}ms; cursor: pointer;" title="${t('replay').replace(/[↻▸◀ ]/g,'').trim()}">
       <div class="head">
         <div class="victim-avatar">
           <img src="${avatarUrl(v.name)}" alt="${v.name}" class="${isCustomPhoto(v.name) ? 'moreno' : ''}" onerror="this.style.display='none';this.parentElement.innerHTML='👤';" />
         </div>
         <div class="victim-meta">
-          <div class="v-name">${v.name}</div>
+          <div class="v-name">${i + 1}. ${v.name}</div>
           <div class="v-loc">${v.loc}</div>
         </div>
       </div>
       <div class="victim-story">${v.story}</div>
-      <div class="victim-debt">DEUDA: ${v.debt} chupitos</div>
+      <div class="victim-debt">${t('debt')}: ${v.debt} ${t('shots_word')}</div>
+      <div style="margin-top:10px;padding:8px 10px;background:rgba(255,215,0,0.12);border:1px solid var(--gold);border-radius:8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;color:var(--gold);text-transform:uppercase;">▶ ${v.gameName}</div>
     </div>
   `).join('');
   setTimeout(() => {
@@ -2689,6 +3120,64 @@ function goToVictims() {
     for (let i = 0; i < 12; i++) setTimeout(() => sfx.tick(), i * 100);
   }, 100);
 }
+
+// Jump directly to a victim's round — used from victim-cards & map pins.
+// Sets currentRound and launches the game without the map transition.
+function jumpToRound(n) {
+  if (n < 1 || n > VICTIMS.length) return;
+  initAudio();
+  // Cancel any in-flight game (rhythm loop, key handlers, intervals) by firing
+  // the same teardown event used by the round flow.
+  document.dispatchEvent(new CustomEvent('start-game'));
+  if (window.__rhythmAudio) { try { window.__rhythmAudio.pause(); } catch(e){} window.__rhythmAudio = null; }
+  // Drop any pending vote callback from the previous round and close its modal
+  _voteCallback = null;
+  const qrm = document.getElementById('qr-modal');
+  if (qrm && qrm.classList.contains('active')) qrm.classList.remove('active');
+  state.currentRound = n;
+  updateHud();
+  document.getElementById('hud').classList.remove('hidden');
+  document.body.classList.add('hud-active');
+  show('screen-game');
+  const v = VICTIMS[n - 1];
+  // iOS Safari requires audio.play() to be called inside the same gesture
+  // tick. Prime it here (we're inside the click handler that called us).
+  if (v.game === 'rhythm') primeRhythmAudio();
+  // Defer one frame so the teardown listeners actually fire before re-mount
+  requestAnimationFrame(() => startGame(v));
+}
+
+// Pre-create and unlock the rhythm MP3 inside a user gesture. Subsequent
+// .play() calls (after the count-in setTimeout) will work on iOS Safari.
+//
+// We assign window.__rhythmAudio SYNCHRONOUSLY (not inside the .then) so that
+// the gameRhythm function — which runs one frame later via rAF — can find it.
+// The play() call kicks off the unlock; the .then just pauses+rewinds.
+function primeRhythmAudio() {
+  try {
+    const a = new Audio('assets/cara-al-sol.mp3');
+    a.preload = 'auto';
+    const wasMuted = state.muted;
+    a.volume = 0;
+    window.__rhythmAudio = a;       // <- expose BEFORE the async play()
+    const p = a.play();
+    const restore = () => {
+      try { a.pause(); a.currentTime = 0; } catch (e) {}
+      a.volume = wasMuted ? 0 : 0.8;
+    };
+    if (p && typeof p.then === 'function') {
+      p.then(restore).catch(() => { restore(); });
+    } else {
+      restore();
+    }
+  } catch (e) {}
+}
+function replayCurrent() { jumpToRound(state.currentRound); }
+function backToVictims() { show('screen-victims'); goToVictims(); }
+window.jumpToRound = jumpToRound;
+window.replayCurrent = replayCurrent;
+window.backToVictims = backToVictims;
+window.show = show;
 
 function quickStart() {
   show('screen-victims');
@@ -2746,6 +3235,7 @@ async function startRounds() {
   state.shots = 0;
   state.groupShots = 0;
   document.getElementById('hud').classList.remove('hidden');
+  document.body.classList.add('hud-active');
   if (document.documentElement.requestFullscreen && /Android|iPhone/i.test(navigator.userAgent)) {
     document.documentElement.requestFullscreen().catch(() => {});
   }
@@ -2790,9 +3280,16 @@ async function showTransitionCard(v) {
         </div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:'JetBrains Mono',monospace;">esperando móviles · cierra al pulsar EMPEZAR</div>
       </div>
-      <button class="btn-primary" onclick="document.dispatchEvent(new CustomEvent('start-game'))">▶ CERRAR APUESTAS + EMPEZAR</button>
+      <button class="btn-primary" id="transition-start-btn">▶ CERRAR APUESTAS + EMPEZAR</button>
     </div>
   `;
+  // Bind via addEventListener so we can call primeRhythmAudio() inside the
+  // same user-gesture tick (iOS Safari needs this for autoplay).
+  const startBtn = document.getElementById('transition-start-btn');
+  if (startBtn) startBtn.addEventListener('click', () => {
+    if (v.game === 'rhythm') primeRhythmAudio();
+    document.dispatchEvent(new CustomEvent('start-game'));
+  }, { once: true });
   sfx.whoosh();
   openPrediction(v);
   return new Promise(resolve => {
@@ -2874,7 +3371,7 @@ async function showResult(shotsTaken, msg = '') {
     ? `<div style="color:var(--text-dim);font-style:italic;">(nadie del grupo apostó al lado perdedor · o no había móviles)</div>`
     : resolution.losers.map(l => `
         <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,23,68,0.15);border:1px solid var(--blood);padding:8px 14px;border-radius:999px;margin:4px;">
-          <strong style="font-family:'Bebas Neue';font-size:20px;letter-spacing:0.05em;">${l.name}</strong>
+          <strong style="font-family:'Bebas Neue';font-size:20px;letter-spacing:0.05em;">${esc(l.name)}</strong>
           <span style="color:var(--blood);font-family:'JetBrains Mono',monospace;font-weight:800;">+${l.shots}🥃</span>
           <span style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:11px;">total ${l.total}</span>
         </div>
@@ -2900,8 +3397,10 @@ async function showResult(shotsTaken, msg = '') {
       <div class="result-shots ${good ? 'good' : ''}">${good ? '🍀' : '+' + shotsTaken}</div>
       ${msg ? `<div class="result-msg">${msg}</div>` : ''}
       ${predBlock}
-      <div style="margin-top:24px;">
-        <button class="btn-primary" onclick="nextRound()">▸ SIGUIENTE RONDA</button>
+      <div style="margin-top:24px; display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        <button class="btn-primary" onclick="nextRound()">${t('next_round')}</button>
+        <button class="btn-secondary" onclick="jumpToRound(state.currentRound)">${t('replay')}</button>
+        <button class="btn-secondary" onclick="show('screen-victims'); goToVictims();">${t('back_victims')}</button>
       </div>
     </div>
   `;
@@ -3018,6 +3517,9 @@ function gameMango(v) {
   let lives = 3;
   let mistakes = 0;
   let playing = false;
+  let alive = true;
+  const timers = new Set();
+  const setT = (fn, ms) => { const id = setTimeout(() => { timers.delete(id); if (alive) fn(); }, ms); timers.add(id); return id; };
 
   stage.innerHTML = `
     <div style="text-align:center; width:100%;">
@@ -3031,76 +3533,117 @@ function gameMango(v) {
   `;
 
   async function playSequence() {
+    if (!alive) return;
     playing = true;
     document.getElementById('mango-msg').textContent = 'Mira con atención...';
     for (const c of seq) {
+      if (!alive) return;
       const el = document.querySelector(`.mango[data-color="${c}"]`);
+      if (!el) return;
       el.classList.add('active');
       beep(freqs[c], 0.22, 'sine', 0.09);
       await sleep(380);
       el.classList.remove('active');
       await sleep(120);
     }
+    if (!alive) return;
     document.getElementById('mango-msg').textContent = 'Tu turno. Repite la secuencia.';
     playing = false;
   }
 
-  document.querySelectorAll('.mango').forEach(m => {
-    m.addEventListener('click', () => {
-      if (playing) return;
-      const c = m.dataset.color;
-      m.classList.add('active');
-      beep(freqs[c], 0.25, 'sine', 0.1);
-      setTimeout(() => m.classList.remove('active'), 200);
-      if (c === seq[userIdx]) {
-        userIdx++;
-        if (userIdx === seq.length) {
-          // Won
-          sfx.success(); flash('green');
-          setTimeout(() => showResult(mistakes, mistakes === 0 ? '¡Grace impresionada! No bebes nada.' : `Bebes ${mistakes} por los fallos.`), 800);
-        }
-      } else {
-        // Wrong
-        lives--;
-        mistakes++;
-        sfx.miss(); flash('red'); shake('light');
-        document.getElementById('mango-lives').textContent = '❤'.repeat(Math.max(0,lives)) + '🖤'.repeat(3 - Math.max(0,lives));
-        if (lives <= 0) {
-          showResult(3, 'Grace se va furiosa. 3 chupitos.');
-        } else {
-          userIdx = 0;
-          document.getElementById('mango-msg').textContent = `¡Fallo! Reinicia. ${lives} vida(s).`;
-          setTimeout(playSequence, 1000);
-        }
+  // Event delegation — single listener on the grid (no per-node leaks)
+  const grid = document.getElementById('mango-grid');
+  const onClick = (e) => {
+    if (!alive) return;
+    const m = e.target.closest('.mango');
+    if (!m || !grid.contains(m)) return;
+    if (playing) return;
+    const c = m.dataset.color;
+    m.classList.add('active');
+    beep(freqs[c], 0.25, 'sine', 0.1);
+    setT(() => m.classList.remove('active'), 200);
+    if (c === seq[userIdx]) {
+      userIdx++;
+      if (userIdx === seq.length) {
+        sfx.success(); flash('green');
+        setT(() => showResult(mistakes, mistakes === 0 ? '¡Grace impresionada! No bebes nada.' : `Bebes ${mistakes} por los fallos.`), 800);
       }
-    });
-  });
+    } else {
+      lives--;
+      mistakes++;
+      sfx.miss(); flash('red'); shake('light');
+      document.getElementById('mango-lives').textContent = '❤'.repeat(Math.max(0,lives)) + '🖤'.repeat(3 - Math.max(0,lives));
+      if (lives <= 0) {
+        showResult(3, 'Grace se va furiosa. 3 chupitos.');
+      } else {
+        userIdx = 0;
+        document.getElementById('mango-msg').textContent = `¡Fallo! Reinicia. ${lives} vida(s).`;
+        setT(playSequence, 1000);
+      }
+    }
+  };
+  grid.addEventListener('click', onClick);
 
-  setTimeout(playSequence, 1200);
+  setT(playSequence, 1200);
+
+  document.addEventListener('start-game', () => {
+    alive = false;
+    timers.forEach(clearTimeout); timers.clear();
+    grid.removeEventListener('click', onClick);
+  }, { once: true });
 }
 
 // ============================================
-// GAME 3 — LULU RHYTHM
+// GAME 3 — LULU RHYTHM (CARA AL SOL edition)
+//
+// Implementation follows the canonical rhythm-game pattern (osu! / Stepmania
+// / Frets-on-Fire style web clones):
+//   - The AUDIO clock is the source of truth (audio.currentTime). Never use
+//     performance.now() to position notes — it drifts vs the song.
+//   - Note Y is computed ABSOLUTELY from the song time, not by accumulating dt.
+//   - Hit detection is in MILLISECONDS (timing windows), not in pixels.
+//   - We wait for canplaythrough + a tiny lead-in countdown so the first note
+//     never spawns before audio is actually rolling.
+//   - Audio-lag offset is configurable via state.audioOffsetMs (positive
+//     value = compensate for audio playing later than expected).
+//
+// Beat map produced by scripts/analyze_rhythm.py from assets/cara-al-sol.mp3.
 // ============================================
 function gameRhythm(v) {
   const stage = document.getElementById('game-stage');
   const keys = ['d', 'f', 'j', 'k'];
-  const noteCount = 16;
-  const notes = [];
-  let nextSpawn = 750;
-  let lastT = 0;
-  let spawned = 0;
-  let running = true;
-  let misses = 0;
-  let hits = 0;
-  const fallSpeed = 0.38;
-  const hitWindow = 50;
-  const perfectWindow = 22;
+
+  // === Tuning ===
+  const LEAD_TIME_MS = 1700;       // how long a note spends falling
+  const HIT_WINDOW_MS = 180;       // ± window for a successful hit
+  const PERFECT_WINDOW_MS = 70;    // ± window for "PERFECT"
+  const COUNT_IN_MS = 1500;        // visual count-in before audio starts
+  const AUDIO_OFFSET_MS = (state.audioOffsetMs | 0); // user-adjustable lag fix
+  // Beat map (auto-generated; t = ms from audio start when note should reach hit-zone)
+  const beatMap = [
+    { t: 1880, lane: 3 }, { t: 2252, lane: 3 }, { t: 2693, lane: 0 },
+    { t: 3274, lane: 3 }, { t: 5363, lane: 0 }, { t: 7221, lane: 3 },
+    { t: 10425, lane: 0 }, { t: 11726, lane: 0 }, { t: 12353, lane: 1 },
+    { t: 12840, lane: 0 }, { t: 20363, lane: 1 }, { t: 21664, lane: 0 },
+    { t: 22267, lane: 0 }, { t: 22732, lane: 1 }, { t: 23289, lane: 2 },
+    { t: 24706, lane: 1 }, { t: 25309, lane: 2 }, { t: 25913, lane: 1 },
+    { t: 26517, lane: 1 }, { t: 27144, lane: 0 }, { t: 27747, lane: 0 },
+    { t: 28328, lane: 1 }, { t: 30302, lane: 0 }, { t: 30789, lane: 1 },
+    { t: 35224, lane: 2 }, { t: 40797, lane: 2 }, { t: 43792, lane: 1 },
+    { t: 45418, lane: 1 }, { t: 46277, lane: 2 }, { t: 48111, lane: 0 }
+  ];
+  const totalNotes = beatMap.length;
+
+  const tapWord = state.lang === 'ng' ? 'or tap' : (state.lang === 'gl' ? 'ou toca' : 'o toca');
+  const notesWord = state.lang === 'ng' ? 'notes' : 'notas';
 
   stage.innerHTML = `
     <div style="text-align:center; width:100%; max-width: 600px;">
-      <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:8px;">LULU'S REVENGE</div>
-      <div style="color:var(--text-dim);margin-bottom:16px;font-size:13px;">[D] [F] [J] [K] o toca · Hits: <span id="r-hits">0</span> · Misses: <span id="r-miss">0</span> · ${noteCount} notas</div>
+      <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:4px;">LULU'S REVENGE</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.2em;margin-bottom:10px;">♪ CARA AL SOL ♪</div>
+      <div style="color:var(--text-dim);margin-bottom:14px;font-size:13px;">
+        [D] [F] [J] [K] ${tapWord} · ✓ <span id="r-hits">0</span> · ✗ <span id="r-miss">0</span> · ${totalNotes} ${notesWord}
+      </div>
       <div class="rhythm-stage" id="rhythm-stage">
         <div class="lulu-goat">🐐</div>
         <div class="lanes">
@@ -3111,67 +3654,138 @@ function gameRhythm(v) {
           ${keys.map((k, i) => `<div class="rhythm-tap-zone" data-tap-lane="${i}"></div>`).join('')}
         </div>
         <div class="rhythm-feedback" id="r-fb"></div>
+        <div id="r-countdown" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:120px;color:var(--gold);text-shadow:0 0 30px var(--gold);pointer-events:none;z-index:10;"></div>
       </div>
     </div>
   `;
 
+  // === Layout snapshot (computed once after innerHTML paints) ===
   const stageEl = document.getElementById('rhythm-stage');
   const stageH = stageEl.offsetHeight;
   const hitZoneY = stageH - 60;
+  const SPAWN_Y = -50;
+  const fallDist = hitZoneY - SPAWN_Y; // px the note travels in LEAD_TIME_MS
 
-  function loop(t) {
+  // === Note state ===
+  // For each beat we keep: el (DOM), spawned, hit, judged ('perfect'|'good'|'miss'|null)
+  const notes = beatMap.map(b => ({ t: b.t, lane: b.lane, el: null, spawned: false, hit: false, judged: null }));
+  let hits = 0, misses = 0;
+  let running = true;
+  let audio = null;
+  let audioStarted = false;       // becomes true once audio.play() resolves
+  let audioStartPerfNow = 0;      // performance.now() when audio actually started
+  // Note: we don't trust audio.currentTime alone on every frame (it ticks coarsely
+  // on some browsers); we use performance.now() since audio start as the clock,
+  // and re-sync to audio.currentTime each frame to correct drift.
+
+  // === Audio load + play ===
+  // Prefer the audio element primed in the user-gesture handler (jumpToRound /
+  // transition-card click). Falls back to creating a fresh one if missing.
+  try {
+    if (window.__rhythmAudio) {
+      audio = window.__rhythmAudio;
+      try { audio.pause(); audio.currentTime = 0; } catch (e) {}
+      audio.volume = state.muted ? 0 : 0.8;
+    } else {
+      audio = new Audio('assets/cara-al-sol.mp3');
+      audio.preload = 'auto';
+      audio.volume = state.muted ? 0 : 0.8;
+      window.__rhythmAudio = audio;
+    }
+  } catch (e) { audio = null; }
+
+  function songTimeMs() {
+    if (!audioStarted) {
+      // Clamp at 0 so the chart never advances while audio is still loading.
+      return Math.min(0, -COUNT_IN_MS + (performance.now() - countdownStart));
+    }
+    return (performance.now() - audioStartPerfNow) + AUDIO_OFFSET_MS;
+  }
+
+  // === Count-in + audio start ===
+  let countdownStart = performance.now();
+  const cdEl = document.getElementById('r-countdown');
+
+  function startAudioWhenReady() {
+    if (!audio) { audioStarted = true; audioStartPerfNow = performance.now(); return; }
+    const begin = () => {
+      audio.play().then(() => {
+        audioStarted = true;
+        audioStartPerfNow = performance.now();
+      }).catch(() => {
+        // Autoplay was blocked. Mark as started anyway so the visual game runs,
+        // and the first tap (tryHit) will retry play.
+        audioStarted = true;
+        audioStartPerfNow = performance.now();
+      });
+    };
+    if (audio.readyState >= 3) begin();              // HAVE_FUTURE_DATA / better
+    else audio.addEventListener('canplaythrough', begin, { once: true });
+  }
+  // Trigger start after the COUNT_IN_MS window
+  setTimeout(startAudioWhenReady, COUNT_IN_MS);
+
+  // === Main loop ===
+  function loop() {
     if (!running) return;
-    if (!lastT) lastT = t;
-    const dt = t - lastT;
-    lastT = t;
+    const song = songTimeMs();
 
-    if (spawned < noteCount && t - (notes[notes.length-1]?.spawnT || 0) > nextSpawn) {
-      const lane = Math.floor(Math.random() * 4);
-      const note = { lane, y: -50, spawnT: t, hit: false };
-      notes.push(note);
-      const el = document.createElement('div');
-      el.className = 'note';
-      el.style.top = '0px';
-      const laneEl = document.querySelectorAll('.lane')[lane];
-      laneEl.appendChild(el);
-      note.el = el;
-      spawned++;
-      // Occasional double-note for difficulty
-      if (Math.random() < 0.10 && spawned < noteCount) {
-        let lane2 = Math.floor(Math.random() * 4);
-        if (lane2 === lane) lane2 = (lane2 + 1) % 4;
-        const note2 = { lane: lane2, y: -50, spawnT: t, hit: false };
-        notes.push(note2);
-        const el2 = document.createElement('div');
-        el2.className = 'note';
-        el2.style.top = '0px';
-        document.querySelectorAll('.lane')[lane2].appendChild(el2);
-        note2.el = el2;
-        spawned++;
-      }
-      nextSpawn = 500 + Math.random() * 300;
-      sfx.tick();
+    // Countdown overlay (3 · 2 · 1 · GO)
+    if (!audioStarted && cdEl) {
+      const remaining = Math.max(0, -song);
+      const sec = Math.ceil(remaining / 1000);
+      cdEl.textContent = sec > 0 ? String(sec) : 'GO';
+      cdEl.style.opacity = remaining > 0 ? '1' : (remaining > -400 ? '1' : '0');
+    } else if (cdEl && cdEl.textContent) {
+      cdEl.style.opacity = '0';
+      // Clear shortly to free repaints
+      if (song > 400) cdEl.textContent = '';
     }
 
+    // Spawn + position
     notes.forEach(n => {
-      if (n.hit) return;
-      n.y += dt * fallSpeed;
-      n.el.style.top = n.y + 'px';
-      if (n.y > hitZoneY + 25) {
-        n.hit = true;
-        misses++;
-        const mEl = document.getElementById('r-miss');
-        if (mEl) mEl.textContent = misses;
-        n.el.style.opacity = 0;
-        sfx.miss();
-        showFeedback('MISS', 'var(--blood)');
+      const tSpawn = n.t - LEAD_TIME_MS;
+      if (!n.spawned && song >= tSpawn) {
+        n.spawned = true;
+        const el = document.createElement('div');
+        el.className = 'note';
+        document.querySelectorAll('.lane')[n.lane].appendChild(el);
+        n.el = el;
+      }
+      if (n.spawned && !n.hit && n.el) {
+        // ABSOLUTE position from song time — no drift.
+        // y = SPAWN_Y at song = n.t - LEAD_TIME_MS, y = hitZoneY at song = n.t
+        const progress = (song - tSpawn) / LEAD_TIME_MS;
+        const y = SPAWN_Y + progress * fallDist;
+        n.el.style.top = y + 'px';
+
+        // MISS judgement is time-based, not pixel-based
+        if (!n.judged && song > n.t + HIT_WINDOW_MS) {
+          n.judged = 'miss';
+          n.hit = true;
+          misses++;
+          const mEl = document.getElementById('r-miss');
+          if (mEl) mEl.textContent = misses;
+          n.el.style.opacity = '0';
+          sfx.miss();
+          showFeedback('MISS', 'var(--blood)');
+        }
       }
     });
 
-    if (spawned >= noteCount && notes.every(n => n.hit || n.y > hitZoneY + 50)) {
+    // End condition: all notes judged + a small grace tail
+    const allJudged = notes.every(n => n.judged);
+    if (allJudged && song > beatMap[beatMap.length - 1].t + 600) {
       running = false;
-      const shots = Math.min(Math.ceil(misses / 2), 5);
-      setTimeout(() => showResult(shots, shots === 0 ? 'Lulu la cabra te perdona.' : `${misses} fallos. Bebes ${shots}.`), 800);
+      if (audio) { try { audio.pause(); } catch(e){} window.__rhythmAudio = null; }
+      const shots = misses <= 3 ? 0 : Math.min(Math.ceil((misses - 3) / 3), 4);
+      const msg = shots === 0
+        ? (state.lang === 'gl' ? 'Lulu a cabra perdóache.'
+          : state.lang === 'ng' ? 'Lulu di goat don forgive you.'
+          : 'Lulu la cabra te perdona.')
+        : (state.lang === 'ng' ? `${misses} misses. Drink ${shots}.`
+          : `${misses} fallos. ${state.lang === 'ng' ? 'Drink' : 'Bebes'} ${shots}.`);
+      setTimeout(() => showResult(shots, msg), 900);
       return;
     }
 
@@ -3188,18 +3802,36 @@ function gameRhythm(v) {
     fb.classList.add('show');
   }
 
+  // Hit detection in MS, not pixels. Picks the closest unjudged note in that lane.
   function tryHit(lane) {
-    const candidate = notes.find(n => !n.hit && n.lane === lane && Math.abs(n.y - hitZoneY) < hitWindow);
-    if (candidate) {
-      candidate.hit = true;
+    // First-tap unblocks audio if browser refused autoplay
+    if (audio && audio.paused && audioStarted) { audio.play().catch(()=>{}); }
+    if (!audioStarted) return;       // ignore taps during count-in
+    const song = songTimeMs();
+    let best = null;
+    let bestDiff = Infinity;
+    for (const n of notes) {
+      if (n.judged || n.lane !== lane) continue;
+      const diff = Math.abs(song - n.t);
+      if (diff <= HIT_WINDOW_MS && diff < bestDiff) { best = n; bestDiff = diff; }
+    }
+    if (best) {
+      const perfect = bestDiff <= PERFECT_WINDOW_MS;
+      best.judged = perfect ? 'perfect' : 'good';
+      best.hit = true;
       hits++;
-      const perfect = Math.abs(candidate.y - hitZoneY) < perfectWindow;
-      candidate.el.classList.toggle('perfect', perfect);
-      candidate.el.style.opacity = 0.5;
-      candidate.el.style.transform = 'scale(1.3)';
-      document.getElementById('r-hits').textContent = hits;
+      if (best.el) {
+        best.el.classList.toggle('perfect', perfect);
+        best.el.style.opacity = '0.5';
+        best.el.style.transform = 'scale(1.3)';
+      }
+      const hEl = document.getElementById('r-hits');
+      if (hEl) hEl.textContent = hits;
       sfx.hit();
-      showFeedback(perfect ? 'PERFECT' : 'GOOD', perfect ? 'var(--terminal)' : 'var(--gold)');
+      const label = state.lang === 'gl' ? (perfect ? 'PERFECTO' : 'BEN')
+                  : state.lang === 'ng' ? (perfect ? 'PERFECT' : 'NICE')
+                  : (perfect ? 'PERFECT' : 'GOOD');
+      showFeedback(label, perfect ? 'var(--terminal)' : 'var(--gold)');
       if (perfect) flash('green');
     }
   }
@@ -3214,9 +3846,12 @@ function gameRhythm(v) {
     z.addEventListener('touchstart', (e) => { e.preventDefault(); tryHit(parseInt(z.dataset.tapLane)); }, { passive: false });
     z.addEventListener('mousedown', () => tryHit(parseInt(z.dataset.tapLane)));
   });
+
+  // Cleanup on game switch (jumpToRound to a different victim)
   document.addEventListener('start-game', () => {
     running = false;
     document.removeEventListener('keydown', keyHandler);
+    if (audio) { try { audio.pause(); } catch(e){} window.__rhythmAudio = null; }
   }, { once: true });
 }
 
@@ -3320,6 +3955,9 @@ function gameTyping(v) {
   const previewTime = 6;
   let timeLeft = timeLimit;
   let interval;
+  let alive = true;
+  let previewTimeout;
+  let finished = false;
 
   stage.innerHTML = `
     <div class="typing-stage">
@@ -3330,15 +3968,17 @@ function gameTyping(v) {
       <p style="color:var(--text-dim);font-size:14px;margin-top:12px;">Memoriza la frase. Desaparece en ${previewTime}s. Sin acentos. Cada palabra incorrecta = chupito.</p>
     </div>
   `;
-  setTimeout(() => {
+  previewTimeout = setTimeout(() => {
+    if (!alive) return;
     const prompt = document.getElementById('t-prompt');
-    const input = document.getElementById('t-input');
+    const inp = document.getElementById('t-input');
     if (prompt) { prompt.innerHTML = '<em style="color:var(--blood);">[ MEMORIA ]</em>'; }
-    if (input) { input.disabled = false; input.placeholder = 'Escribe la frase...'; input.focus(); }
+    if (inp) { inp.disabled = false; inp.placeholder = 'Escribe la frase...'; inp.focus(); }
   }, previewTime * 1000);
   const input = document.getElementById('t-input');
 
   interval = setInterval(() => {
+    if (!alive) { clearInterval(interval); return; }
     timeLeft--;
     const tEl = document.getElementById('t-timer');
     if (!tEl) { clearInterval(interval); return; }
@@ -3349,6 +3989,8 @@ function gameTyping(v) {
   }, 1000);
 
   function finish() {
+    if (finished || !alive) return;
+    finished = true;
     clearInterval(interval);
     const typed = input.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
     const targetN = target.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
@@ -3361,9 +4003,15 @@ function gameTyping(v) {
     showResult(Math.min(mistakes, 6), mistakes === 0 ? 'Aminata acepta el perdón.' : `${mistakes} palabra(s) incorrecta(s).`);
   }
 
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') finish();
-  });
+  const onKey = (e) => { if (e.key === 'Enter') finish(); };
+  input.addEventListener('keydown', onKey);
+
+  document.addEventListener('start-game', () => {
+    alive = false;
+    clearInterval(interval);
+    clearTimeout(previewTimeout);
+    if (input) input.removeEventListener('keydown', onKey);
+  }, { once: true });
 }
 
 // ============================================
@@ -3667,7 +4315,11 @@ function gameWhack(v) {
     </div>
   `;
 
+  const timeouts = new Set();
+  const setT = (fn, ms) => { const id = setTimeout(() => { timeouts.delete(id); if (running) fn(); }, ms); timeouts.add(id); return id; };
+
   const interval = setInterval(() => {
+    if (!running) { clearInterval(interval); return; }
     timeLeft--;
     const te = document.getElementById('w-time');
     if (!te) { clearInterval(interval); return; }
@@ -3685,20 +4337,20 @@ function gameWhack(v) {
       const t = document.getElementById('w-t-' + i);
       return t && !t.classList.contains('up');
     });
-    if (empty.length === 0) { setTimeout(popRandom, 200); return; }
+    if (empty.length === 0) { setT(popRandom, 200); return; }
     const i = empty[Math.floor(Math.random() * empty.length)];
     const isPaz = Math.random() < 0.5;
     const t = document.getElementById('w-t-' + i);
     if (!t) return;
     t.dataset.type = isPaz ? 'paz' : 'fake';
     const img = isPaz ? pazImg : fakeImgs[Math.floor(Math.random() * fakeImgs.length)];
-    t.innerHTML = `<img src="${img}" />`;
+    t.innerHTML = `<img src="${img}" alt="" />`;
     t.classList.remove('struck');
     t.classList.add(isPaz ? 'real' : 'fake');
     t.classList.add('up');
     sfx.tick();
 
-    setTimeout(() => {
+    setT(() => {
       if (t.classList.contains('up') && !t.classList.contains('struck')) {
         t.classList.remove('up');
         if (t.dataset.type === 'fake') {
@@ -3707,38 +4359,49 @@ function gameWhack(v) {
       }
     }, stayUp);
 
-    setTimeout(popRandom, popSpeed - 150 + Math.random() * 300);
+    setT(popRandom, popSpeed - 150 + Math.random() * 300);
   }
-  setTimeout(popRandom, 600);
+  setT(popRandom, 600);
 
-  document.querySelectorAll('.whack-hole').forEach(h => {
-    h.addEventListener('click', () => {
-      if (!running) return;
-      const i = h.dataset.i;
-      const t = document.getElementById('w-t-' + i);
-      if (!t.classList.contains('up') || t.classList.contains('struck')) return;
-      t.classList.add('struck');
-      const isPaz = t.dataset.type === 'paz';
-      if (isPaz) {
-        wrongHits++;
-        sfx.fail(); flash('red'); shake('light');
-        document.getElementById('w-bad').textContent = wrongHits;
-      } else {
-        goodHits++;
-        sfx.hit(); flash('gold');
-        document.getElementById('w-good').textContent = goodHits;
-      }
-      setTimeout(() => { t.classList.remove('up'); }, 300);
-    });
-  });
+  // Event delegation — one listener (no per-node leaks)
+  const grid = document.getElementById('w-grid');
+  const onClick = (e) => {
+    if (!running) return;
+    const h = e.target.closest('.whack-hole');
+    if (!h || !grid.contains(h)) return;
+    const i = h.dataset.i;
+    const t = document.getElementById('w-t-' + i);
+    if (!t || !t.classList.contains('up') || t.classList.contains('struck')) return;
+    t.classList.add('struck');
+    const isPaz = t.dataset.type === 'paz';
+    if (isPaz) {
+      wrongHits++;
+      sfx.fail(); flash('red'); shake('light');
+      document.getElementById('w-bad').textContent = wrongHits;
+    } else {
+      goodHits++;
+      sfx.hit(); flash('gold');
+      document.getElementById('w-good').textContent = goodHits;
+    }
+    setT(() => { t.classList.remove('up'); }, 300);
+  };
+  grid.addEventListener('click', onClick);
 
   function finish() {
     if (!running) return;
     running = false;
     clearInterval(interval);
+    timeouts.forEach(clearTimeout); timeouts.clear();
     const shots = Math.min(8, wrongHits * 2 + Math.floor(missedFakes / 3));
     setTimeout(() => showResult(shots, `Pegaste a Paz ${wrongHits} veces. Te perdiste ${missedFakes} fakes.`), 600);
   }
+
+  document.addEventListener('start-game', () => {
+    running = false;
+    clearInterval(interval);
+    timeouts.forEach(clearTimeout); timeouts.clear();
+    grid.removeEventListener('click', onClick);
+  }, { once: true });
 }
 
 // ============================================
@@ -3751,8 +4414,13 @@ function gamePress(v) {
   let timer, timeLeft = 18;
   const Q_TIME = 18;
   const HIDE_AFTER = 5;
+  let alive = true;
+  const timeouts = new Set();
+  const setT = (fn, ms) => { const id = setTimeout(() => { timeouts.delete(id); if (alive) fn(); }, ms); timeouts.add(id); return id; };
+  let pressSubmitHandler = null;
 
   function renderQ() {
+    if (!alive) return;
     if (qIdx >= PRESS_QUESTIONS.length) {
       showResult(Math.min(totalViolations, 6), `${totalViolations} violación(es) totales.`);
       return;
@@ -3775,12 +4443,14 @@ function gamePress(v) {
       </div>
     `;
     const inp = document.getElementById('p-input');
-    setTimeout(() => inp.focus(), 100);
-    setTimeout(() => {
+    setT(() => inp && inp.focus(), 100);
+    setT(() => {
       const q = document.getElementById('p-q');
       if (q) q.innerHTML = '<em style="color:var(--blood);font-style:normal;">[ PREGUNTA OCULTA ]</em>';
     }, HIDE_AFTER * 1000);
+    if (timer) clearInterval(timer);
     timer = setInterval(() => {
+      if (!alive) { clearInterval(timer); return; }
       timeLeft--;
       const t = document.getElementById('p-time');
       if (!t) { clearInterval(timer); return; }
@@ -3788,10 +4458,15 @@ function gamePress(v) {
       if (timeLeft <= 0) submit();
     }, 1000);
 
-    document.addEventListener('press-submit', submit, { once: true });
+    // Remove any previous handler before adding the new one (we don't trust
+    // {once:true} here because alive=false should also remove it).
+    if (pressSubmitHandler) document.removeEventListener('press-submit', pressSubmitHandler);
+    pressSubmitHandler = () => submit();
+    document.addEventListener('press-submit', pressSubmitHandler, { once: true });
   }
 
   function submit() {
+    if (!alive) return;
     clearInterval(timer);
     const txt = (document.getElementById('p-input')?.value || '').toLowerCase();
     const words = txt.split(/\s+/).filter(Boolean);
@@ -3807,10 +4482,17 @@ function gamePress(v) {
     else { sfx.success(); flash('green'); }
     toast(violations > 0 ? `${violations} violación(es) detectada(s)` : '✓ Respuesta limpia', violations > 0 ? 'danger' : 'success');
     qIdx++;
-    setTimeout(renderQ, 800);
+    setT(renderQ, 800);
   }
 
   renderQ();
+
+  document.addEventListener('start-game', () => {
+    alive = false;
+    clearInterval(timer);
+    timeouts.forEach(clearTimeout); timeouts.clear();
+    if (pressSubmitHandler) document.removeEventListener('press-submit', pressSubmitHandler);
+  }, { once: true });
 }
 
 // ============================================
@@ -3856,9 +4538,9 @@ function gamePenalty(v) {
         <div id="p-phase-aim">
           <p style="text-align:center;color:var(--gold);margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:13px;">PASO 1 — ELIGE DIRECCIÓN</p>
           <div class="penalty-controls">
-            <button class="penalty-btn" onclick="window._penaltyAim('left')">◀ IZQ</button>
-            <button class="penalty-btn" onclick="window._penaltyAim('center')">⬆ CENTRO</button>
-            <button class="penalty-btn" onclick="window._penaltyAim('right')">▶ DER</button>
+            <button class="penalty-btn" data-aim="left">◀ IZQ</button>
+            <button class="penalty-btn" data-aim="center">⬆ CENTRO</button>
+            <button class="penalty-btn" data-aim="right">▶ DER</button>
           </div>
         </div>
         <div id="p-phase-power" style="display:none;">
@@ -3872,7 +4554,7 @@ function gamePenalty(v) {
     `;
   }
 
-  window._penaltyAim = (dir) => {
+  function aim(dir) {
     if (phase !== 'aim') return;
     chosenDir = dir;
     phase = 'power';
@@ -3889,7 +4571,7 @@ function gamePenalty(v) {
       powerAnim = requestAnimationFrame(tick);
     }
     tick();
-  };
+  }
 
   async function shoot() {
     if (phase !== 'power') return;
@@ -3933,19 +4615,28 @@ function gamePenalty(v) {
 
   const keyHandler = (e) => {
     if (phase === 'aim') {
-      if (e.key === 'ArrowLeft') window._penaltyAim('left');
-      if (e.key === 'ArrowUp') window._penaltyAim('center');
-      if (e.key === 'ArrowRight') window._penaltyAim('right');
+      if (e.key === 'ArrowLeft') aim('left');
+      if (e.key === 'ArrowUp') aim('center');
+      if (e.key === 'ArrowRight') aim('right');
     } else if (phase === 'power') {
       if (e.code === 'Space') { e.preventDefault(); shoot(); }
     }
   };
   document.addEventListener('keydown', keyHandler);
-  document.addEventListener('click', (e) => {
+
+  // Event delegation for aim buttons + power-meter tap — single listener so we
+  // can detach cleanly on teardown.
+  const stageEl = document.getElementById('game-stage');
+  const clickHandler = (e) => {
+    const aimBtn = e.target.closest('[data-aim]');
+    if (aimBtn && stageEl.contains(aimBtn)) { aim(aimBtn.dataset.aim); return; }
     if (phase === 'power' && e.target.classList && (e.target.classList.contains('power-meter') || e.target.classList.contains('power-fill'))) shoot();
-  });
+  };
+  stageEl.addEventListener('click', clickHandler);
+
   document.addEventListener('start-game', () => {
     document.removeEventListener('keydown', keyHandler);
+    stageEl.removeEventListener('click', clickHandler);
     cancelAnimationFrame(powerAnim);
   }, { once: true });
 }
@@ -3985,11 +4676,16 @@ function gamePoligrafo(v) {
           <div class="poligrafo-verdict" id="poli-verdict"></div>
         </div>
         <div class="paz-controls">
-          <button class="paz-btn yes" onclick="window._pazAnswer(1)">[Y] SÍ</button>
-          <button class="paz-btn no" onclick="window._pazAnswer(0)">[N] NO</button>
+          <button class="paz-btn yes" data-paz-yes>[Y] SÍ</button>
+          <button class="paz-btn no" data-paz-no>[N] NO</button>
         </div>
       </div>
     `;
+    // Bind via addEventListener (no inline onclick → no window._xxx pollution)
+    const yesBtn = stage.querySelector('[data-paz-yes]');
+    const noBtn = stage.querySelector('[data-paz-no]');
+    if (yesBtn) yesBtn.addEventListener('click', () => pazAnswer(1));
+    if (noBtn) noBtn.addEventListener('click', () => pazAnswer(0));
     animatePoligrafo();
     let t = ANSWER_TIME;
     if (answerTimer) clearInterval(answerTimer);
@@ -4002,7 +4698,7 @@ function gamePoligrafo(v) {
       if (t <= 0) {
         clearInterval(answerTimer);
         toast('⏱ TIMEOUT — Paz lo toma como mentira', 'danger');
-        window._pazAnswer(-1, true);
+        pazAnswer(-1, true);
       }
     }, 100);
   }
@@ -4024,7 +4720,9 @@ function gamePoligrafo(v) {
     setTimeout(() => clearInterval(interval), 30000);
   }
 
-  window._pazAnswer = async (yes, forced) => {
+  let alivePaz = true;
+  async function pazAnswer(yes, forced) {
+    if (!alivePaz) return;
     if (answerTimer) { clearInterval(answerTimer); answerTimer = null; }
     sfx.click();
     // Rigged: 85% lie, forced timeout = always lie
@@ -4032,15 +4730,17 @@ function gamePoligrafo(v) {
     const verdictEl = document.getElementById('poli-verdict');
     sfx.alarm();
     await sleep(800);
+    if (!alivePaz || !verdictEl) return;
     verdictEl.textContent = verdict === 'lie' ? 'MIENTE' : 'VERDAD';
     verdictEl.className = 'poligrafo-verdict show ' + verdict;
     flash(verdict === 'lie' ? 'red' : 'green');
     shake(verdict === 'lie' ? 'heavy' : 'light');
     if (verdict === 'lie') totalShots += 2;
     await sleep(2000);
+    if (!alivePaz) return;
     idx++;
     render();
-  };
+  }
 
   function openVote() {
     stage.innerHTML = `
@@ -4055,13 +4755,15 @@ function gamePoligrafo(v) {
         </div>
         <p style="color:var(--text-dim);margin:16px 0;">El público escanea el QR y vota en vivo.</p>
         <div style="margin-top:24px;">
-          <button class="btn-primary" onclick="openVoteModal()">▶ ABRIR VOTACIÓN</button>
+          <button class="btn-primary" id="paz-open-vote">▶ ABRIR VOTACIÓN</button>
         </div>
       </div>
     `;
+    const openBtn = document.getElementById('paz-open-vote');
+    if (openBtn) openBtn.addEventListener('click', () => openVoteModal(onPazVote), { once: true });
   }
 
-  state.voteCallback = (yes, no) => {
+  function onPazVote(yes, no) {
     let extra;
     if (yes > no) {
       extra = -Math.min(3, totalShots);
@@ -4074,14 +4776,18 @@ function gamePoligrafo(v) {
     }
     const finalShots = Math.max(0, totalShots + extra);
     setTimeout(() => showResult(finalShots, `Paz ha dictado sentencia. ${yes} SÍ vs ${no} NO.`), 1500);
-  };
+  }
 
   const keyHandler = (e) => {
-    if (e.key === 'y' || e.key === 'Y') window._pazAnswer(1);
-    if (e.key === 'n' || e.key === 'N') window._pazAnswer(0);
+    if (e.key === 'y' || e.key === 'Y') pazAnswer(1);
+    if (e.key === 'n' || e.key === 'N') pazAnswer(0);
   };
   document.addEventListener('keydown', keyHandler);
-  document.addEventListener('start-game', () => document.removeEventListener('keydown', keyHandler), { once: true });
+  document.addEventListener('start-game', () => {
+    alivePaz = false;
+    if (answerTimer) clearInterval(answerTimer);
+    document.removeEventListener('keydown', keyHandler);
+  }, { once: true });
 
   render();
 }
@@ -4121,11 +4827,15 @@ function gameAnnaBoss(v) {
           <div class="poligrafo-verdict" id="poli-verdict"></div>
         </div>
         <div class="paz-controls">
-          <button class="paz-btn yes" onclick="window._annaAnswer(1)">[Y] PROMETO</button>
-          <button class="paz-btn no" onclick="window._annaAnswer(0)">[N] NO</button>
+          <button class="paz-btn yes" data-anna-yes>[Y] PROMETO</button>
+          <button class="paz-btn no" data-anna-no>[N] NO</button>
         </div>
       </div>
     `;
+    const yesBtn = stage.querySelector('[data-anna-yes]');
+    const noBtn = stage.querySelector('[data-anna-no]');
+    if (yesBtn) yesBtn.addEventListener('click', () => annaAnswer(1));
+    if (noBtn) noBtn.addEventListener('click', () => annaAnswer(0));
     animateGoldTrace();
     let t = ANSWER_TIME;
     if (answerTimer) clearInterval(answerTimer);
@@ -4138,7 +4848,7 @@ function gameAnnaBoss(v) {
       if (t <= 0) {
         clearInterval(answerTimer);
         toast('⏱ Mario duda → Anna lo toma como "NO"', 'danger');
-        window._annaAnswer(0, true);
+        annaAnswer(0, true);
       }
     }, 100);
   }
@@ -4160,7 +4870,9 @@ function gameAnnaBoss(v) {
     setTimeout(() => clearInterval(interval), 40000);
   }
 
-  window._annaAnswer = async (yes, forced) => {
+  let aliveAnna = true;
+  async function annaAnswer(yes, forced) {
+    if (!aliveAnna) return;
     if (answerTimer) { clearInterval(answerTimer); answerTimer = null; }
     sfx.click();
     let verdict, shotsThis;
@@ -4181,15 +4893,17 @@ function gameAnnaBoss(v) {
     const verdictEl = document.getElementById('poli-verdict');
     sfx.alarm();
     await sleep(700);
+    if (!aliveAnna || !verdictEl) return;
     verdictEl.textContent = verdict === 'lie' ? (forced ? 'INSEGURO' : 'MIENTE') : 'SINCERO';
     verdictEl.className = 'poligrafo-verdict show ' + verdict;
     if (verdict === 'lie') { flash('red'); shake(forced ? 'light' : 'heavy'); }
     else { flash('gold'); sfx.success(); }
     totalShots += shotsThis;
     await sleep(1800);
+    if (!aliveAnna) return;
     idx++;
     render();
-  };
+  }
 
   function openWeddingVote() {
     const lying = totalShots / 2;
@@ -4205,13 +4919,15 @@ function gameAnnaBoss(v) {
         </div>
         <p style="color:var(--text-dim);margin:16px 0;">Escanea el QR. Vota <strong style="color:var(--terminal)">SI</strong> = boda sigue · <strong style="color:var(--blood)">NO</strong> = Anna cancela.</p>
         <div style="margin-top:24px;">
-          <button class="btn-primary" onclick="openVoteModal()">▶ ABRIR VOTACIÓN POPULAR</button>
+          <button class="btn-primary" id="anna-open-vote">▶ ABRIR VOTACIÓN POPULAR</button>
         </div>
       </div>
     `;
+    const openBtn = document.getElementById('anna-open-vote');
+    if (openBtn) openBtn.addEventListener('click', () => openVoteModal(onAnnaVote), { once: true });
   }
 
-  state.voteCallback = (yes, no) => {
+  function onAnnaVote(yes, no) {
     let extra, msg;
     if (yes > no) {
       extra = Math.max(-totalShots, -3);
@@ -4232,14 +4948,15 @@ function gameAnnaBoss(v) {
     toast(msg, extra > 0 ? 'danger' : 'success');
     const finalShots = Math.max(0, totalShots + extra);
     setTimeout(() => showResult(finalShots, `Anna escuchó al público: ${yes} SÍ vs ${no} NO. ${msg}`), 1800);
-  };
+  }
 
   const keyHandler = (e) => {
-    if (e.key === 'y' || e.key === 'Y') window._annaAnswer(1);
-    if (e.key === 'n' || e.key === 'N') window._annaAnswer(0);
+    if (e.key === 'y' || e.key === 'Y') annaAnswer(1);
+    if (e.key === 'n' || e.key === 'N') annaAnswer(0);
   };
   document.addEventListener('keydown', keyHandler);
   document.addEventListener('start-game', () => {
+    aliveAnna = false;
     if (answerTimer) clearInterval(answerTimer);
     document.removeEventListener('keydown', keyHandler);
   }, { once: true });
@@ -4260,7 +4977,10 @@ function initFirebase() {
   } catch (e) { console.warn('Firebase init failed', e); }
 }
 
-function openVoteModal() {
+function openVoteModal(callback) {
+  // Replace any pending callback first (defensive: if the previous round didn't
+  // close its modal cleanly, we discard its callback rather than firing it now).
+  _voteCallback = (typeof callback === 'function') ? callback : null;
   initFirebase();
   const modal = document.getElementById('qr-modal');
   document.getElementById('qr-question').textContent = '¿Salvamos a Mario? Escanea, vota, vuelve.';
@@ -4303,9 +5023,9 @@ function closeVote() {
   if (FIREBASE_ENABLED && firebaseDB) {
     firebaseDB.ref('rooms/' + ROOM_ID + '/votes').off();
   }
-  if (state.voteCallback) {
-    const cb = state.voteCallback;
-    state.voteCallback = null;
+  if (_voteCallback) {
+    const cb = _voteCallback;
+    _voteCallback = null;
     cb(state.votes.yes, state.votes.no);
   }
 }
@@ -4323,7 +5043,11 @@ function getPlayerId(room) {
 function joinRoom() {
   const room = getRoomFromURL();
   if (!room) return;
-  const name = (document.getElementById('vote-name-input').value || '').trim().slice(0, 14) || 'Anónimo';
+  // Defense in depth: strip control chars and HTML special chars from the
+  // user-supplied name BEFORE persisting it. esc() on the render side is the
+  // real protection, this just keeps Firebase tidy.
+  const raw = (document.getElementById('vote-name-input').value || '').trim();
+  const name = raw.replace(/[<>&"`\x00-\x1f]/g, '').slice(0, 14) || 'Anónimo';
   localStorage.setItem('mario_name_' + room, name);
   initFirebase();
   const pid = getPlayerId(room);
@@ -4358,7 +5082,9 @@ function updatePhoneUI(ar, room, pid) {
   }
   if (ar.state === 'result') {
     title.textContent = 'RESULTADO';
-    q.innerHTML = ar.lastResult || 'Cuenta tus chupitos.';
+    // textContent (not innerHTML): lastResult comes from Firebase and we don't
+    // trust the channel against tampering until Security Rules are validated.
+    q.textContent = ar.lastResult || 'Cuenta tus chupitos.';
     btns.style.display = 'none'; thanks.classList.remove('show');
     return;
   }
@@ -4370,7 +5096,7 @@ function updatePhoneUI(ar, room, pid) {
         btns.style.display = 'none'; thanks.classList.add('show');
       } else {
         title.textContent = 'APUESTA YA';
-        q.innerHTML = `Ronda ${ar.id}/12 — <strong style="color:var(--gold)">${ar.gameName}</strong><br/>¿Mario lo logra?`;
+        q.innerHTML = `Ronda ${esc(ar.id)}/12 — <strong style="color:var(--gold)">${esc(ar.gameName)}</strong><br/>¿Mario lo logra?`;
         btns.style.display = 'flex'; thanks.classList.remove('show');
       }
     });
@@ -4399,6 +5125,7 @@ function castVote(choice) {
 async function goToFinal() {
   show('screen-final');
   document.getElementById('hud').classList.add('hidden');
+  document.body.classList.remove('hud-active');
   const total = state.shots;
   const wed = state.weddingResult;
   let title, msg;
@@ -4464,13 +5191,13 @@ function renderPodium(players) {
         const seed = encodeURIComponent(p.name || ('p' + rank));
         const avatar = p.isMario
           ? '🤵'
-          : `<img src="https://api.dicebear.com/7.x/personas/svg?seed=${seed}&radius=50" onerror="this.parentElement.textContent='👤';" />`;
+          : `<img src="https://api.dicebear.com/7.x/personas/svg?seed=${seed}&radius=50" alt="" onerror="this.parentElement.textContent='👤';" />`;
         return `
           <div class="${cls}" style="animation-delay: ${i * 220}ms;">
             <div class="mk-rank">${rank}<div class="mk-medal">${medals[i] || ''}</div></div>
             <div class="mk-avatar">${avatar}</div>
             <div>
-              <div class="mk-name">${p.name}</div>
+              <div class="mk-name">${esc(p.name)}</div>
               <div class="mk-name-sub">${sub}</div>
             </div>
             <div class="mk-score">${p.chupitos} 🥃</div>
@@ -4524,7 +5251,16 @@ document.addEventListener('touchstart', (e) => {
   }
 }, { passive: false });
 
+// ESC closes the QR modal (a11y dialog convention)
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const m = document.getElementById('qr-modal');
+    if (m && m.classList.contains('active')) closeVote();
+  }
+});
+
 window.addEventListener('DOMContentLoaded', () => {
+  applyI18n();
   const params = new URLSearchParams(location.search);
   if (params.get('vote') === '1') {
     show('screen-vote');
