@@ -148,12 +148,18 @@
   /* ============ SCREENS ============ */
   .screen {
     position: fixed; inset: 0;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    /* "safe center" avoids the classic flexbox bug where a child taller than
+       the viewport gets clipped at the top and becomes unreachable via scroll.
+       Fallback to plain "center" for older browsers. */
+    align-items: safe center;
+    justify-content: safe center;
     flex-direction: column; padding: 32px;
     transition: opacity 0.5s ease;
     overflow-y: auto;
     overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
   .screen > * { flex-shrink: 0; }
   .screen.hidden { opacity: 0; pointer-events: none; }
@@ -176,6 +182,24 @@
   }
   .hud-pill.shots { border-color: var(--blood); color: var(--blood); }
   .hud-pill.round { border-color: var(--gold); color: var(--gold); }
+
+  /* ============ BACK BUTTON (top-left, mirrors lang picker) ============ */
+  .back-btn {
+    position: fixed; top: 14px; left: 14px; z-index: 200;
+    background: rgba(0,0,0,0.55);
+    border: 1px solid var(--glass-border);
+    color: var(--text);
+    border-radius: 999px; padding: 7px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .back-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--gold); }
+  @media (max-width: 480px) {
+    .back-btn { top: 8px; left: 8px; padding: 5px 10px; font-size: 10px; }
+  }
 
   /* ============ LANGUAGE SELECTOR (floating, always visible) ============ */
   .lang-picker {
@@ -743,16 +767,18 @@
     text-transform: uppercase;
   }
   .transition-card .victim-big-avatar {
-    width: clamp(72px, 12vh, 110px);
-    height: clamp(72px, 12vh, 110px);
+    /* Bigger on both mobile (140-180px) and desktop (~240px) so real friend
+       photos are clearly recognizable. */
+    width: clamp(160px, 26vh, 260px);
+    height: clamp(160px, 26vh, 260px);
     border-radius: 50%;
-    margin: 0 auto 12px;
-    border: 3px solid var(--blood);
-    box-shadow: 0 0 40px rgba(255, 23, 68, 0.4);
+    margin: 0 auto 16px;
+    border: 4px solid var(--blood);
+    box-shadow: 0 0 50px rgba(255, 23, 68, 0.5);
     overflow: hidden;
     background: linear-gradient(135deg, var(--bg-3), var(--dark-blood));
     display: flex; align-items: center; justify-content: center;
-    font-size: clamp(40px, 6vh, 60px);
+    font-size: clamp(80px, 14vh, 130px);
     animation: float 3s ease-in-out infinite;
   }
   @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
@@ -915,6 +941,39 @@
     font-weight: 800;
     color: var(--gold);
   }
+  /* Real (non-practice) round: every "key" is a wide rectangular Franco
+     portrait with the letter overlay sitting at the bottom — the running
+     joke for the Cara Al Sol chart. 16:9 aspect to keep the face visible. */
+  .lane-key.franco {
+    width: 80%;
+    max-width: 110px;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    padding: 0;
+    border-radius: 6px;
+    overflow: hidden;
+    background: url('assets/franco.jpg') center/cover no-repeat;
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 14px rgba(255,215,0,0.45);
+    display: flex; align-items: flex-end; justify-content: center;
+    bottom: 8px;
+  }
+  .lane-key.franco .lane-key-letter {
+    background: rgba(0,0,0,0.85);
+    color: var(--gold);
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    padding: 2px 7px;
+    border-radius: 3px;
+    margin-bottom: 3px;
+    line-height: 1;
+  }
+  @media (max-width: 480px) {
+    .lane-key.franco { max-width: 80px; }
+    .lane-key.franco .lane-key-letter { font-size: 10px; padding: 1px 5px; }
+  }
   .hit-zone {
     position: absolute;
     bottom: 60px; left: 0; right: 0;
@@ -922,6 +981,19 @@
     background: linear-gradient(90deg, transparent, var(--cyan), transparent);
     box-shadow: 0 0 20px var(--cyan);
   }
+  /* Hold-note tail — renders as a vertical "rope" hanging from the head.
+     Width matches the note, height proportional to (dur / LEAD_TIME) * fallDist.
+     The DOM child is added by the JS renderer when the note has a `dur`. */
+  .note .tail {
+    position: absolute;
+    left: 50%; transform: translateX(-50%);
+    top: 100%;
+    width: 28px;
+    background: linear-gradient(180deg, rgba(255,23,68,0.85), rgba(255,23,68,0.25));
+    border-radius: 6px;
+    pointer-events: none;
+  }
+  .note.held .tail { background: linear-gradient(180deg, rgba(0,255,65,0.95), rgba(0,255,65,0.35)); }
   .note {
     position: absolute;
     width: 80%; left: 10%;
@@ -929,6 +1001,19 @@
     background: linear-gradient(180deg, var(--magenta), var(--blood));
     border-radius: 8px;
     box-shadow: 0 0 20px var(--magenta);
+  }
+  /* When the game is the Cara Al Sol round (non-practice), every falling note
+     IS a Franco mugshot — the running joke. We swap the background image and
+     keep a faint magenta glow for visibility. */
+  .rhythm-stage.franco-notes .note {
+    background: url('assets/franco.jpg') center/cover no-repeat, linear-gradient(180deg, var(--magenta), var(--blood));
+    border: 2px solid var(--gold);
+    box-shadow: 0 0 18px rgba(255,23,68,0.55);
+    height: 56px;
+  }
+  .rhythm-stage.franco-notes .note.perfect {
+    border-color: var(--terminal);
+    box-shadow: 0 0 24px var(--terminal);
   }
   .note.perfect { background: linear-gradient(180deg, var(--terminal), #00aa28); box-shadow: 0 0 30px var(--terminal); }
   .lulu-goat {
@@ -1995,6 +2080,7 @@
 
 <!-- ============ LANGUAGE SELECT (with Mario-mocking storytelling) ============ -->
 <div class="screen hidden" id="screen-lang">
+  <button class="back-btn" onclick="backToStart()" aria-label="Volver al inicio">◀ ATRÁS</button>
   <div class="lang-pretitle">▸ AUDITORÍA LINGÜÍSTICA ◂</div>
   <h2 class="lang-title">¿EN QUÉ IDIOMA<br/>QUIERES VER A MARIO PAGAR?</h2>
   <p class="lang-sub">Mario habla cinco idiomas. Cuatro son F1 Fantasy en redes sociales. Elige el quinto.</p>
@@ -2033,6 +2119,7 @@
 
 <!-- ============ VICTIMS REVEAL ============ -->
 <div class="screen hidden" id="screen-victims">
+  <button class="back-btn" onclick="backToStart()" aria-label="Volver al inicio">◀ INICIO</button>
   <div class="victims-header">
     <div class="label" data-i18n="victims_label">Manifest de pasajeros — vuelo a TFS</div>
     <h2 data-i18n="victims_title">HAN VOLADO A TENERIFE</h2>
@@ -2047,6 +2134,7 @@
 
 <!-- ============ LOBBY (QR pairing) ============ -->
 <div class="screen hidden" id="screen-lobby">
+  <button class="back-btn" onclick="show('screen-victims'); goToVictims();" aria-label="Volver al menú de víctimas">◀ VÍCTIMAS</button>
   <div style="text-align:center; max-width: 600px;">
     <p style="color:var(--terminal);font-family:'JetBrains Mono',monospace;letter-spacing:0.3em;font-size:13px;margin-bottom:16px;" data-i18n="lobby_pair">▸ EMPAREJAMIENTO ◂</p>
     <h2 style="font-family:'Bebas Neue';font-size:clamp(40px,7vw,72px);margin-bottom:16px;"><span data-i18n="lobby_room">SALA</span> <span id="lobby-room" style="color:var(--gold)"></span></h2>
@@ -2107,6 +2195,7 @@
 
 <!-- ============ GAME ============ -->
 <div class="screen hidden" id="screen-game">
+  <button class="back-btn" onclick="backToVictims()" aria-label="Volver al menú">◀ MENÚ</button>
   <div class="game-stage" id="game-stage"></div>
 </div>
 
@@ -2853,6 +2942,7 @@ const MAP_PINS = [{x:140,y:155},{x:190,y:130},{x:245,y:115},{x:305,y:105},{x:370
 
 const VICTIM_IMAGES = {
   'Kerry Kaverga': 'assets/kerry-kaverga.jpg',
+  'Salva Polla': 'assets/salva-polla.jpg',
   // Add more victim photos here as friends contribute them.
 };
 function avatarUrl(name, style) {
@@ -3123,7 +3213,7 @@ function goToVictims() {
 
 // Jump directly to a victim's round — used from victim-cards & map pins.
 // Sets currentRound and launches the game without the map transition.
-function jumpToRound(n) {
+async function jumpToRound(n) {
   if (n < 1 || n > VICTIMS.length) return;
   initAudio();
   // Cancel any in-flight game (rhythm loop, key handlers, intervals) by firing
@@ -3140,11 +3230,13 @@ function jumpToRound(n) {
   document.body.classList.add('hud-active');
   show('screen-game');
   const v = VICTIMS[n - 1];
-  // iOS Safari requires audio.play() to be called inside the same gesture
-  // tick. Prime it here (we're inside the click handler that called us).
-  if (v.game === 'rhythm') primeRhythmAudio();
-  // Defer one frame so the teardown listeners actually fire before re-mount
-  requestAnimationFrame(() => startGame(v));
+  // Show the transition card first (story + quote + bets + optional practice
+  // button) so the user reads context and can warm up. The card resolves when
+  // either "EMPEZAR" or "EMPEZAR CON PRÁCTICA" is pressed.
+  await showTransitionCard(v);
+  // After the transition card a click already happened on EMPEZAR — that handler
+  // primed the rhythm audio inside the gesture. Now start the game proper.
+  startGame(v);
 }
 
 // Pre-create and unlock the rhythm MP3 inside a user gesture. Subsequent
@@ -3173,10 +3265,29 @@ function primeRhythmAudio() {
   } catch (e) {}
 }
 function replayCurrent() { jumpToRound(state.currentRound); }
-function backToVictims() { show('screen-victims'); goToVictims(); }
+function backToVictims() {
+  // Cancel any in-flight game / vote / audio when going back to the menu
+  document.dispatchEvent(new CustomEvent('start-game'));
+  if (window.__rhythmAudio) { try { window.__rhythmAudio.pause(); } catch(e){} window.__rhythmAudio = null; }
+  _voteCallback = null;
+  const qrm = document.getElementById('qr-modal');
+  if (qrm && qrm.classList.contains('active')) qrm.classList.remove('active');
+  document.getElementById('hud').classList.add('hidden');
+  document.body.classList.remove('hud-active');
+  show('screen-victims');
+  goToVictims();
+}
+function backToStart() {
+  document.dispatchEvent(new CustomEvent('start-game'));
+  if (window.__rhythmAudio) { try { window.__rhythmAudio.pause(); } catch(e){} window.__rhythmAudio = null; }
+  document.getElementById('hud').classList.add('hidden');
+  document.body.classList.remove('hud-active');
+  show('screen-start');
+}
 window.jumpToRound = jumpToRound;
 window.replayCurrent = replayCurrent;
 window.backToVictims = backToVictims;
+window.backToStart = backToStart;
 window.show = show;
 
 function quickStart() {
@@ -3259,8 +3370,15 @@ async function nextRound() {
   startGame(VICTIMS[state.currentRound - 1]);
 }
 
+// Games where a short warm-up actually helps the player understand the
+// mechanic. For simple click/quiz/typing games the instruction text is enough.
+const PRACTICE_SUPPORTED = new Set(['rhythm', 'clicker', 'drift', 'whack', 'penalty']);
+
 async function showTransitionCard(v) {
   const stage = document.getElementById('game-stage');
+  const practiceBtn = PRACTICE_SUPPORTED.has(v.game)
+    ? `<button class="btn-secondary" id="transition-practice-btn" style="margin-right:8px;">🎓 PRACTICAR PRIMERO</button>`
+    : '';
   stage.innerHTML = `
     <div class="transition-card">
       <div class="round-num">▸ RONDA ${state.currentRound} / 12 — DEUDA ${v.debt} CHUPITOS ◂</div>
@@ -3280,23 +3398,59 @@ async function showTransitionCard(v) {
         </div>
         <div style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:'JetBrains Mono',monospace;">esperando móviles · cierra al pulsar EMPEZAR</div>
       </div>
-      <button class="btn-primary" id="transition-start-btn">▶ CERRAR APUESTAS + EMPEZAR</button>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
+        ${practiceBtn}
+        <button class="btn-primary" id="transition-start-btn">▶ CERRAR APUESTAS + EMPEZAR</button>
+      </div>
     </div>
   `;
-  // Bind via addEventListener so we can call primeRhythmAudio() inside the
-  // same user-gesture tick (iOS Safari needs this for autoplay).
+  sfx.whoosh();
+  openPrediction(v);
+
+  // Practice button — launches the game in practice mode, then re-shows the
+  // transition card so the user can either practice again or start the real
+  // round. Practice does NOT modify chupitos / Firebase / showResult.
+  const pBtn = document.getElementById('transition-practice-btn');
+  if (pBtn) pBtn.addEventListener('click', async () => {
+    if (v.game === 'rhythm') primeRhythmAudio();
+    closePrediction();
+    await runPracticeRound(v);
+    // After practice, re-render the transition card and re-open predictions
+    return showTransitionCard(v).then(resolveOuter);
+  }, { once: true });
+
+  let resolveOuter;
+  const promise = new Promise(resolve => { resolveOuter = resolve; });
+
+  // Real start — primes audio inside the gesture (iOS Safari requirement)
   const startBtn = document.getElementById('transition-start-btn');
   if (startBtn) startBtn.addEventListener('click', () => {
     if (v.game === 'rhythm') primeRhythmAudio();
     document.dispatchEvent(new CustomEvent('start-game'));
   }, { once: true });
-  sfx.whoosh();
-  openPrediction(v);
+
+  document.addEventListener('start-game', () => {
+    closePrediction();
+    resolveOuter();
+  }, { once: true });
+
+  return promise;
+}
+
+// Run a short practice version of the game. Currently implemented for the
+// rhythm game (the only one where audio sync + 4-lane coordination really
+// benefits from a warm-up). For other supported games this currently just
+// shows a "no practice yet" toast and returns immediately — we can add real
+// practice rounds per-game later.
+async function runPracticeRound(v) {
+  if (v.game !== 'rhythm') {
+    toast('Práctica disponible solo en el juego rítmico (de momento).', 'info');
+    return;
+  }
   return new Promise(resolve => {
-    document.addEventListener('start-game', () => {
-      closePrediction();
-      resolve();
-    }, { once: true });
+    // Re-use gameRhythm but tell it to use the practice config and call back
+    // when finished instead of jumping to showResult.
+    gameRhythm(v, { practice: true, onPracticeEnd: resolve });
   });
 }
 
@@ -3609,45 +3763,143 @@ function gameMango(v) {
 //
 // Beat map produced by scripts/analyze_rhythm.py from assets/cara-al-sol.mp3.
 // ============================================
-function gameRhythm(v) {
+function gameRhythm(v, opts = {}) {
   const stage = document.getElementById('game-stage');
   const keys = ['d', 'f', 'j', 'k'];
+  const practice = !!opts.practice;
+  const onPracticeEnd = typeof opts.onPracticeEnd === 'function' ? opts.onPracticeEnd : null;
 
   // === Tuning ===
-  const LEAD_TIME_MS = 1700;       // how long a note spends falling
-  const HIT_WINDOW_MS = 180;       // ± window for a successful hit
-  const PERFECT_WINDOW_MS = 70;    // ± window for "PERFECT"
-  const COUNT_IN_MS = 1500;        // visual count-in before audio starts
-  const AUDIO_OFFSET_MS = (state.audioOffsetMs | 0); // user-adjustable lag fix
-  // Beat map (auto-generated; t = ms from audio start when note should reach hit-zone)
-  const beatMap = [
-    { t: 1880, lane: 3 }, { t: 2252, lane: 3 }, { t: 2693, lane: 0 },
-    { t: 3274, lane: 3 }, { t: 5363, lane: 0 }, { t: 7221, lane: 3 },
-    { t: 10425, lane: 0 }, { t: 11726, lane: 0 }, { t: 12353, lane: 1 },
-    { t: 12840, lane: 0 }, { t: 20363, lane: 1 }, { t: 21664, lane: 0 },
-    { t: 22267, lane: 0 }, { t: 22732, lane: 1 }, { t: 23289, lane: 2 },
-    { t: 24706, lane: 1 }, { t: 25309, lane: 2 }, { t: 25913, lane: 1 },
-    { t: 26517, lane: 1 }, { t: 27144, lane: 0 }, { t: 27747, lane: 0 },
-    { t: 28328, lane: 1 }, { t: 30302, lane: 0 }, { t: 30789, lane: 1 },
-    { t: 35224, lane: 2 }, { t: 40797, lane: 2 }, { t: 43792, lane: 1 },
-    { t: 45418, lane: 1 }, { t: 46277, lane: 2 }, { t: 48111, lane: 0 }
+  const LEAD_TIME_MS = practice ? 2200 : 1700;   // slower notes in practice
+  const HIT_WINDOW_MS = practice ? 240 : 180;    // wider window in practice
+  const PERFECT_WINDOW_MS = practice ? 100 : 70;
+  const COUNT_IN_MS = 1500;
+  const AUDIO_OFFSET_MS = (state.audioOffsetMs | 0);
+  // Beat map — produced by scripts/analyze_rhythm.py with the canonical
+  // librosa pipeline: onset_detect + beat_track + SNAP onsets to the musical
+  // beat grid (BPM 99, half-beat subdivisions). That snap step is what makes
+  // the chart feel "on the beat" instead of jittery on each sub-syllable.
+  //  - { t, lane }        = tap note
+  //  - { t, lane, dur }   = HOLD note (keep key down for dur ms)
+  //  - multiple entries with same t & different lanes = DOUBLE
+  const fullBeatMap = [
+    { t: 1927, lane: 3 },
+    { t: 2252, lane: 2, dur: 427 },
+    { t: 2879, lane: 0 },
+    { t: 3169, lane: 3 },
+    { t: 3459, lane: 2, dur: 1400 },
+    { t: 5363, lane: 1, dur: 450 },
+    { t: 6013, lane: 3 },
+    { t: 6664, lane: 3, dur: 427 },
+    { t: 7291, lane: 0, dur: 403 },
+    { t: 7894, lane: 2 },
+    { t: 8219, lane: 1 },
+    { t: 8544, lane: 3 },
+    { t: 9195, lane: 1 },
+    { t: 9822, lane: 1, dur: 426 },
+    { t: 10448, lane: 2 },
+    { t: 10785, lane: 1 },
+    { t: 11122, lane: 3 },
+    { t: 11749, lane: 2, dur: 427 },
+    { t: 12376, lane: 1, dur: 450 },
+    { t: 13026, lane: 3, dur: 450 },
+    { t: 13676, lane: 2 },
+    { t: 14883, lane: 2 },
+    { t: 15173, lane: 1 },
+    { t: 15464, lane: 2 },
+    { t: 15789, lane: 1 },
+    { t: 16114, lane: 0 },
+    { t: 16416, lane: 2 },
+    { t: 17008, lane: 2 },
+    { t: 17298, lane: 3 },
+    { t: 17600, lane: 2 },
+    { t: 17902, lane: 1 },
+    { t: 18204, lane: 3 },
+    { t: 18506, lane: 2 },
+    { t: 20410, lane: 2, dur: 1077 },
+    { t: 21687, lane: 3, dur: 404 },
+    { t: 22291, lane: 1, dur: 427 },
+    { t: 22918, lane: 2 },
+    { t: 23219, lane: 1 },
+    { t: 23521, lane: 3, dur: 1008 },
+    { t: 24729, lane: 2, dur: 403 },
+    { t: 25332, lane: 1 },
+    { t: 25634, lane: 3 },
+    { t: 25936, lane: 2, dur: 404 },
+    { t: 26540, lane: 1, dur: 404 },
+    { t: 27144, lane: 0, dur: 427 },
+    { t: 27771, lane: 1, dur: 403 },
+    { t: 28374, lane: 2, dur: 497 },
+    { t: 29071, lane: 1 },
+    { t: 30302, lane: 1, dur: 1400 },
+    { t: 32484, lane: 2 },
+    { t: 32786, lane: 1 },
+    { t: 33088, lane: 3 },
+    { t: 33390, lane: 2 },
+    { t: 33703, lane: 1 },
+    { t: 34945, lane: 2 },
+    { t: 35247, lane: 3 },
+    { t: 35572, lane: 2 },
+    { t: 35898, lane: 1, dur: 473 },
+    { t: 36571, lane: 2 },
+    { t: 36873, lane: 3 },
+    { t: 37175, lane: 1 },
+    { t: 37732, lane: 2 },
+    { t: 38336, lane: 2, dur: 716 },
+    { t: 39252, lane: 3 },
+    { t: 39566, lane: 2 },
+    { t: 40193, lane: 0 },
+    { t: 40820, lane: 2, dur: 427 },
+    { t: 41447, lane: 3 },
+    { t: 41760, lane: 2 },
+    { t: 42074, lane: 3 },
+    { t: 42655, lane: 2 },
+    { t: 42945, lane: 1 },
+    { t: 43235, lane: 3 },
+    { t: 43816, lane: 2, dur: 426 },
+    { t: 44442, lane: 1, dur: 764 },
+    { t: 45406, lane: 3 },
+    { t: 45720, lane: 2 },
+    { t: 46300, lane: 2 },
+    { t: 46625, lane: 3 },
+    { t: 46950, lane: 2, dur: 404 },
+    { t: 47554, lane: 1 },
+    { t: 48134, lane: 1 },
+    { t: 48447, lane: 0 },
+    { t: 50039, lane: 2 },
+    { t: 50329, lane: 3 },
+    { t: 50619, lane: 2, dur: 404 },
+    { t: 51223, lane: 0 },
+    { t: 51536, lane: 2 },
+    { t: 51850, lane: 3 },
+    { t: 52151, lane: 2 },
+    { t: 52453, lane: 3, dur: 1008 },
+    { t: 53661, lane: 2 },
+    { t: 54218, lane: 2 },
+    { t: 54531, lane: 3 }
   ];
+  // Practice = first ~10s (12 notes).
+  const beatMap = practice ? fullBeatMap.slice(0, 12) : fullBeatMap;
   const totalNotes = beatMap.length;
 
   const tapWord = state.lang === 'ng' ? 'or tap' : (state.lang === 'gl' ? 'ou toca' : 'o toca');
   const notesWord = state.lang === 'ng' ? 'notes' : 'notas';
 
+  const titleBadge = practice
+    ? `<div style="display:inline-block;background:var(--gold);color:#000;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:800;letter-spacing:0.2em;padding:4px 10px;border-radius:999px;margin-bottom:8px;">🎓 PRÁCTICA — SIN CONSECUENCIAS</div><br/>`
+    : '';
   stage.innerHTML = `
     <div style="text-align:center; width:100%; max-width: 600px;">
+      ${titleBadge}
       <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:4px;">LULU'S REVENGE</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.2em;margin-bottom:10px;">♪ CARA AL SOL ♪</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.2em;margin-bottom:10px;">${practice ? '♪ AFINACIÓN — TONO TONTO ♪' : '♪ CARA AL SOL ♪'}</div>
       <div style="color:var(--text-dim);margin-bottom:14px;font-size:13px;">
         [D] [F] [J] [K] ${tapWord} · ✓ <span id="r-hits">0</span> · ✗ <span id="r-miss">0</span> · ${totalNotes} ${notesWord}
       </div>
-      <div class="rhythm-stage" id="rhythm-stage">
+      <div class="rhythm-stage${practice ? '' : ' franco-notes'}" id="rhythm-stage">
         <div class="lulu-goat">🐐</div>
         <div class="lanes">
-          ${keys.map(k => `<div class="lane" data-key="${k}"><div class="lane-key">${k.toUpperCase()}</div></div>`).join('')}
+          ${keys.map(k => `<div class="lane" data-key="${k}"><div class="lane-key${practice ? '' : ' franco'}"><span class="lane-key-letter">${k.toUpperCase()}</span></div></div>`).join('')}
         </div>
         <div class="hit-zone"></div>
         <div class="rhythm-tap-zones">
@@ -3668,7 +3920,16 @@ function gameRhythm(v) {
 
   // === Note state ===
   // For each beat we keep: el (DOM), spawned, hit, judged ('perfect'|'good'|'miss'|null)
-  const notes = beatMap.map(b => ({ t: b.t, lane: b.lane, el: null, spawned: false, hit: false, judged: null }));
+  // and (for hold notes) dur + holdActive + holdCompleted bookkeeping.
+  const notes = beatMap.map(b => ({
+    t: b.t, lane: b.lane, dur: b.dur || 0,
+    el: null, spawned: false, hit: false, judged: null,
+    holdActive: false,     // user keydown landed on head + still pressing
+    holdCompleted: false,  // tail fully passed through hit zone while held
+    holdBonus: false,      // perfect hold => extra bonus feedback
+  }));
+  // Currently pressed keys (lane index -> true)
+  const heldKeys = [false, false, false, false];
   let hits = 0, misses = 0;
   let running = true;
   let audio = null;
@@ -3679,20 +3940,43 @@ function gameRhythm(v) {
   // and re-sync to audio.currentTime each frame to correct drift.
 
   // === Audio load + play ===
-  // Prefer the audio element primed in the user-gesture handler (jumpToRound /
-  // transition-card click). Falls back to creating a fresh one if missing.
-  try {
-    if (window.__rhythmAudio) {
-      audio = window.__rhythmAudio;
-      try { audio.pause(); audio.currentTime = 0; } catch (e) {}
-      audio.volume = state.muted ? 0 : 0.8;
-    } else {
-      audio = new Audio('assets/cara-al-sol.mp3');
-      audio.preload = 'auto';
-      audio.volume = state.muted ? 0 : 0.8;
-      window.__rhythmAudio = audio;
-    }
-  } catch (e) { audio = null; }
+  // Real round = Cara Al Sol MP3 (primed in the gesture handler).
+  // Practice round = a synthesised "tono tonto" melody using the Web Audio
+  // context — keeps the surreal humour out of practice and removes the MP3
+  // load latency.
+  let practiceMelodyTimers = [];
+  if (!practice) {
+    try {
+      if (window.__rhythmAudio) {
+        audio = window.__rhythmAudio;
+        try { audio.pause(); audio.currentTime = 0; } catch (e) {}
+        audio.volume = state.muted ? 0 : 0.8;
+      } else {
+        audio = new Audio('assets/cara-al-sol.mp3');
+        audio.preload = 'auto';
+        audio.volume = state.muted ? 0 : 0.8;
+        window.__rhythmAudio = audio;
+      }
+    } catch (e) { audio = null; }
+  }
+
+  // Practice "song": short twinkle-twinkle-ish arpeggio synced to the chart.
+  // We schedule beep() calls at each beat's t — no MP3, no autoplay risk.
+  function startPracticeMelody() {
+    if (!practice) return;
+    initAudio();
+    const tones = [392, 440, 523, 587, 659, 587, 523]; // C minor-ish arpeggio
+    beatMap.forEach((b, i) => {
+      const id = setTimeout(() => {
+        if (!running) return;
+        const f = tones[i % tones.length];
+        beep(f, 0.18, 'square', 0.06);
+      }, b.t);
+      practiceMelodyTimers.push(id);
+    });
+    audioStarted = true;
+    audioStartPerfNow = performance.now();
+  }
 
   function songTimeMs() {
     if (!audioStarted) {
@@ -3707,6 +3991,7 @@ function gameRhythm(v) {
   const cdEl = document.getElementById('r-countdown');
 
   function startAudioWhenReady() {
+    if (practice) { startPracticeMelody(); return; }
     if (!audio) { audioStarted = true; audioStartPerfNow = performance.now(); return; }
     const begin = () => {
       audio.play().then(() => {
@@ -3749,15 +4034,36 @@ function gameRhythm(v) {
         n.spawned = true;
         const el = document.createElement('div');
         el.className = 'note';
+        // Hold-note: append a tail child whose height is proportional to dur.
+        if (n.dur > 0) {
+          const tail = document.createElement('div');
+          tail.className = 'tail';
+          tail.style.height = (n.dur * fallDist / LEAD_TIME_MS) + 'px';
+          el.appendChild(tail);
+        }
         document.querySelectorAll('.lane')[n.lane].appendChild(el);
         n.el = el;
       }
-      if (n.spawned && !n.hit && n.el) {
+      if (n.spawned && n.el) {
         // ABSOLUTE position from song time — no drift.
-        // y = SPAWN_Y at song = n.t - LEAD_TIME_MS, y = hitZoneY at song = n.t
         const progress = (song - tSpawn) / LEAD_TIME_MS;
         const y = SPAWN_Y + progress * fallDist;
-        n.el.style.top = y + 'px';
+        if (!n.hit) n.el.style.top = y + 'px';
+
+        // HOLD tracking: once head was successfully hit, check if the key is
+        // still down while the tail crosses the hit zone. If so, award bonus.
+        if (n.dur > 0 && n.holdActive && !n.holdCompleted) {
+          const tailEndTime = n.t + n.dur;
+          if (!heldKeys[n.lane]) {
+            // Released too early — drop hold tracking, keep base hit credit
+            n.holdActive = false;
+          } else if (song >= tailEndTime) {
+            n.holdCompleted = true;
+            n.holdBonus = true;
+            n.el.classList.add('held');
+            showFeedback('HOLD!', 'var(--terminal)');
+          }
+        }
 
         // MISS judgement is time-based, not pixel-based
         if (!n.judged && song > n.t + HIT_WINDOW_MS) {
@@ -3778,6 +4084,25 @@ function gameRhythm(v) {
     if (allJudged && song > beatMap[beatMap.length - 1].t + 600) {
       running = false;
       if (audio) { try { audio.pause(); } catch(e){} window.__rhythmAudio = null; }
+      if (practice) {
+        // Practice ends with a small summary card + a "ya estoy listo" button
+        // that resolves back to the transition card. No chupitos, no Firebase.
+        setTimeout(() => {
+          stage.innerHTML = `
+            <div class="result-card">
+              <div class="result-label" style="color:var(--gold);">🎓 PRÁCTICA COMPLETADA</div>
+              <div style="font-family:'Bebas Neue';font-size:64px;color:var(--terminal);margin:10px 0;">${hits}/${totalNotes}</div>
+              <div class="result-msg" style="font-style:italic;">${hits === totalNotes ? '¡Perfecto! Ya tienes el feel.' : 'Has tocado lo suficiente. Lista para la prueba real.'}</div>
+              <div style="margin-top:24px;">
+                <button class="btn-primary" id="practice-back-btn">▶ VOLVER A LA TRANSICIÓN</button>
+              </div>
+            </div>
+          `;
+          const back = document.getElementById('practice-back-btn');
+          if (back) back.addEventListener('click', () => { if (onPracticeEnd) onPracticeEnd(); }, { once: true });
+        }, 900);
+        return;
+      }
       const shots = misses <= 3 ? 0 : Math.min(Math.ceil((misses - 3) / 3), 4);
       const msg = shots === 0
         ? (state.lang === 'gl' ? 'Lulu a cabra perdóache.'
@@ -3808,6 +4133,9 @@ function gameRhythm(v) {
     if (audio && audio.paused && audioStarted) { audio.play().catch(()=>{}); }
     if (!audioStarted) return;       // ignore taps during count-in
     const song = songTimeMs();
+    // Pick the CLOSEST unjudged note in the lane within the timing window —
+    // closeness measured against n.t (head). Doubles in same t pick the first
+    // unjudged note in this lane (different lane = different note entirely).
     let best = null;
     let bestDiff = Infinity;
     for (const n of notes) {
@@ -3820,10 +4148,17 @@ function gameRhythm(v) {
       best.judged = perfect ? 'perfect' : 'good';
       best.hit = true;
       hits++;
+      if (best.dur > 0) {
+        best.holdActive = true; // start hold tracking — the main loop checks
+        if (best.el) best.el.classList.add('held');
+      }
       if (best.el) {
         best.el.classList.toggle('perfect', perfect);
-        best.el.style.opacity = '0.5';
-        best.el.style.transform = 'scale(1.3)';
+        // For hold notes we keep the tail visible (don't fade out yet)
+        if (best.dur === 0) {
+          best.el.style.opacity = '0.5';
+          best.el.style.transform = 'scale(1.3)';
+        }
       }
       const hEl = document.getElementById('r-hits');
       if (hEl) hEl.textContent = hits;
@@ -3839,19 +4174,35 @@ function gameRhythm(v) {
   const keyHandler = (e) => {
     const k = e.key.toLowerCase();
     if (!keys.includes(k)) return;
-    tryHit(keys.indexOf(k));
+    if (e.repeat) return;  // ignore auto-repeat — only true keydown counts
+    const lane = keys.indexOf(k);
+    heldKeys[lane] = true;
+    tryHit(lane);
+  };
+  const keyUpHandler = (e) => {
+    const k = e.key.toLowerCase();
+    if (!keys.includes(k)) return;
+    heldKeys[keys.indexOf(k)] = false;
   };
   document.addEventListener('keydown', keyHandler);
+  document.addEventListener('keyup', keyUpHandler);
   document.querySelectorAll('.rhythm-tap-zone').forEach(z => {
-    z.addEventListener('touchstart', (e) => { e.preventDefault(); tryHit(parseInt(z.dataset.tapLane)); }, { passive: false });
-    z.addEventListener('mousedown', () => tryHit(parseInt(z.dataset.tapLane)));
+    const lane = parseInt(z.dataset.tapLane);
+    z.addEventListener('touchstart', (e) => { e.preventDefault(); heldKeys[lane] = true; tryHit(lane); }, { passive: false });
+    z.addEventListener('touchend', (e) => { e.preventDefault(); heldKeys[lane] = false; }, { passive: false });
+    z.addEventListener('mousedown', () => { heldKeys[lane] = true; tryHit(lane); });
+    z.addEventListener('mouseup', () => { heldKeys[lane] = false; });
+    z.addEventListener('mouseleave', () => { heldKeys[lane] = false; });
   });
 
   // Cleanup on game switch (jumpToRound to a different victim)
   document.addEventListener('start-game', () => {
     running = false;
     document.removeEventListener('keydown', keyHandler);
+    document.removeEventListener('keyup', keyUpHandler);
     if (audio) { try { audio.pause(); } catch(e){} window.__rhythmAudio = null; }
+    practiceMelodyTimers.forEach(clearTimeout);
+    practiceMelodyTimers = [];
   }, { once: true });
 }
 
