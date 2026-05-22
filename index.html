@@ -767,9 +767,8 @@
     text-transform: uppercase;
   }
   .transition-card .victim-big-avatar {
-    /* XL size on every screen so friend faces are unmistakable. Mobile
-       portrait baseline 220 px (≈ 56 % of 390-wide viewport); scales up on
-       desktop while never overflowing tall windows. */
+    /* Desktop keeps the previous size; mobile only is bumped up via the
+       media query below so faces are unmistakable on 390-wide screens. */
     width: clamp(220px, 36vh, 340px);
     height: clamp(220px, 36vh, 340px);
     border-radius: 50%;
@@ -781,6 +780,17 @@
     display: flex; align-items: center; justify-content: center;
     font-size: clamp(110px, 18vh, 170px);
     animation: float 3s ease-in-out infinite;
+  }
+  .transition-card .victim-big-avatar img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  /* Mobile-only: huge avatar that fills most of the card width */
+  @media (max-width: 480px) {
+    .transition-card .victim-big-avatar {
+      width: min(80vw, 340px);
+      height: min(80vw, 340px);
+    }
   }
   @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
   .transition-card .victim-big-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -2341,7 +2351,27 @@ const I18N = {
     final_label: 'Total chupitos consumidos',
     final_again: '↻ OTRA RONDA',
     pick_victim: 'ELIGE A LA VÍCTIMA',
-    pick_victim_sub: 'Pincha en quien quieras jugar. Las pruebas se pueden repetir.'
+    pick_victim_sub: 'Pincha en quien quieras jugar. Las pruebas se pueden repetir.',
+    // Transition card
+    round_label: 'RONDA',
+    debt_label: 'DEUDA',
+    bets_label: '📱 APUESTAS DEL GRUPO',
+    believe_yes: 'creen que SÍ',
+    believe_no: 'creen que NO',
+    bets_waiting: 'esperando móviles · cierra al pulsar EMPEZAR',
+    back_menu: '◀ VOLVER AL MENÚ',
+    practice_first: '🎓 PRACTICAR PRIMERO',
+    start_real: '▶ EMPEZAR PRUEBA REAL',
+    practice_tip: '💡 Prueba sin consecuencias para coger el ritmo antes de la real.',
+    // showResult
+    mario_perfect: 'MARIO PERFECTO',
+    mario_passed: 'MARIO PASÓ A DURAS PENAS',
+    mario_failed: 'MARIO FALLÓ',
+    mario_passed_short: '✅ MARIO PASÓ',
+    mario_failed_short: '❌ MARIO FALLÓ',
+    bets_drink_yes: 'beben los del SÍ',
+    bets_drink_no: 'beben los del NO',
+    nobody_lost: '(nadie del grupo apostó al lado perdedor · o no había móviles)'
   },
   gl: {
     pretitle: '▸ OPERACIÓN CRISTÓBAL — TENERIFE 2026 ◂',
@@ -2380,7 +2410,25 @@ const I18N = {
     final_label: 'Total chupitos consumidos',
     final_again: '↻ OUTRA ROLDA',
     pick_victim: 'ESCOLLE Á VÍTIMA',
-    pick_victim_sub: 'Picha en quen queiras xogar. As probas pódense repetir.'
+    pick_victim_sub: 'Picha en quen queiras xogar. As probas pódense repetir.',
+    round_label: 'ROLDA',
+    debt_label: 'DÉBEDA',
+    bets_label: '📱 APOSTAS DO GRUPO',
+    believe_yes: 'cren que SI',
+    believe_no: 'cren que NON',
+    bets_waiting: 'agardando móbiles · péchase ao premer EMPEZAR',
+    back_menu: '◀ VOLVER AO MENÚ',
+    practice_first: '🎓 PRACTICAR PRIMEIRO',
+    start_real: '▶ EMPEZAR PROBA REAL',
+    practice_tip: '💡 Proba sen consecuencias para coller o ritmo antes da real.',
+    mario_perfect: 'MARIO PERFECTO',
+    mario_passed: 'MARIO PASOU A DURAS PENAS',
+    mario_failed: 'MARIO FALLOU',
+    mario_passed_short: '✅ MARIO PASOU',
+    mario_failed_short: '❌ MARIO FALLOU',
+    bets_drink_yes: 'beben os do SI',
+    bets_drink_no: 'beben os do NON',
+    nobody_lost: '(ninguén do grupo apostou ao lado perdedor · ou non había móbiles)'
   },
   ng: {
     pretitle: '▸ OPERATION CRISTÓBAL — TENERIFE 2026 ◂',
@@ -2419,7 +2467,25 @@ const I18N = {
     final_label: 'Total shots wey Mario drink',
     final_again: '↻ ANOTHER ROUND',
     pick_victim: 'CHOOSE DI VICTIM',
-    pick_victim_sub: 'Tap who you wan play. You fit play any game again.'
+    pick_victim_sub: 'Tap who you wan play. You fit play any game again.',
+    round_label: 'ROUND',
+    debt_label: 'DEBT',
+    bets_label: '📱 GROUP BETS',
+    believe_yes: 'dey believe YES',
+    believe_no: 'dey believe NO',
+    bets_waiting: 'phones dey wait · go close wen you press START',
+    back_menu: '◀ BACK TO MENU',
+    practice_first: '🎓 PRACTISE FIRST',
+    start_real: '▶ START DI REAL TEST',
+    practice_tip: '💡 Play am with no consequence so you fit catch di rhythm before di real one.',
+    mario_perfect: 'MARIO PERFECT',
+    mario_passed: 'MARIO PASS BY HAIR',
+    mario_failed: 'MARIO FAIL',
+    mario_passed_short: '✅ MARIO PASS',
+    mario_failed_short: '❌ MARIO FAIL',
+    bets_drink_yes: 'di YES side dey drink',
+    bets_drink_no: 'di NO side dey drink',
+    nobody_lost: '(nobody for di group bet di losing side · or no phones)'
   }
 };
 function t(key) {
@@ -2622,7 +2688,7 @@ function renderMapPins() {
     return `<g class="${cls}" data-i="${i}" transform="translate(${p.x},${p.y})" style="cursor:pointer;" onclick="jumpToRound(${idx})">
       <circle class="pin-circle" r="18"/>
       <text class="pin-num">${label}</text>
-      <title>${idx}. ${v.name} · ${v.gameName}</title>
+      <title>${idx}. ${v.name} · ${vt(v, 'gameName')}</title>
     </g>`;
   }).join('');
 }
@@ -2635,7 +2701,7 @@ async function showMap(opts = {}) {
   const info = document.getElementById('map-info');
   if (v && info) {
     document.getElementById('map-current-name').textContent = v.name.toUpperCase();
-    document.getElementById('map-current-game').textContent = '▸ ' + v.gameName + ' ◂';
+    document.getElementById('map-current-game').textContent = '▸ ' + vt(v, 'gameName') + ' ◂';
     info.style.display = 'block';
   }
   sfx.tick();
@@ -2711,6 +2777,16 @@ function toggleMute() {
 const DICEBEAR = (seed, style = 'personas') =>
   `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}&radius=50`;
 
+// Translation helper: returns v.i18n[lang][field] if present, falls back to v[field].
+// Use vt(v, 'story') instead of v.story so every render respects state.lang.
+function vt(v, field) {
+  const lang = state && state.lang;
+  if (lang && lang !== 'es' && v.i18n && v.i18n[lang] && v.i18n[lang][field]) {
+    return v.i18n[lang][field];
+  }
+  return v[field];
+}
+
 const VICTIMS = [
   {
     name: 'Elver Galarga', loc: 'Lagos, Nigeria 🇳🇬',
@@ -2718,7 +2794,21 @@ const VICTIMS = [
     story: 'Taxista. Apostó 3 meses de sueldo en F1 Fantasy de Mario porque la app dijo que Hamilton era favorito en Bahréin. Hamilton acabó 7º.',
     quote: '"Mario, mi mujer me ha dejado y tú sigues vendiendo Lambos en Madrid."',
     debt: 3, game: 'rush', gameName: 'RUSH HOUR LAGOS',
-    instruction: 'Pulsa [SPACE] o toca la barra cuando esté en la zona verde. 5 intentos. La zona cambia de sitio.'
+    instruction: 'Pulsa [SPACE] o toca la barra cuando esté en la zona verde. 5 intentos. La zona cambia de sitio.',
+    i18n: {
+      gl: {
+        story: 'Taxista. Apostou 3 meses de soldo no F1 Fantasy de Mario porque a app dixo que Hamilton era favorito en Bahréin. Hamilton acabou 7º.',
+        quote: '"Mario, a miña muller deixoume e ti segues vendendo Lambos en Madrid."',
+        gameName: 'RUSH HOUR LAGOS',
+        instruction: 'Preme [SPACE] ou toca a barra cando estea na zona verde. 5 intentos. A zona cambia de sitio.'
+      },
+      ng: {
+        story: 'Taxi driver. E gamble 3 months salary for Mario im F1 Fantasy app becos di app talk say Hamilton go win Bahrain. Hamilton finish 7th.',
+        quote: '"Mario, my wife don leave me and you still dey sell Lambo for Madrid."',
+        gameName: 'RUSH HOUR LAGOS',
+        instruction: 'Press [SPACE] or tap di bar wen e dey green zone. 5 tries. Di zone go shift.'
+      }
+    }
   },
   {
     name: 'Rosa Melano', loc: 'Nairobi, Kenya 🇰🇪',
@@ -2726,7 +2816,21 @@ const VICTIMS = [
     story: 'Vendedora de mango. Apostó la caja del mercado al "Verstappen Mónaco depósito x10". Saltó la notif: "ENHORABUENA: -98%".',
     quote: '"Devuélveme mis mangos, Mario. CON INTERESES."',
     debt: 3, game: 'mango', gameName: 'MANGO MEMORY',
-    instruction: 'Mira la secuencia de 7 mangos y repítela clickando en orden. 2 vidas.'
+    instruction: 'Mira la secuencia de 7 mangos y repítela clickando en orden. 2 vidas.',
+    i18n: {
+      gl: {
+        story: 'Vendedora de mango. Apostou a caixa do mercado ao "Verstappen Mónaco depósito x10". Saltou a notif: "PARABÉNS: -98 %".',
+        quote: '"Devólveme os meus mangos, Mario. CON INTERESES."',
+        gameName: 'MANGO MEMORY',
+        instruction: 'Mira a secuencia de 7 mangos e repítea clicando en orde. 2 vidas.'
+      },
+      ng: {
+        story: 'Mango seller. She gamble di full market box for "Verstappen Monaco deposit x10". Di notif jam: "CONGRATS: -98 %".',
+        quote: '"Bring my mangoes back, Mario. WITH INTEREST."',
+        gameName: 'MANGO MEMORY',
+        instruction: 'Watch di 7-mango sequence and repeat by tapping for order. 2 lives.'
+      }
+    }
   },
   {
     name: 'Aitor Tilla', loc: 'Kampala, Uganda 🇺🇬',
@@ -2734,7 +2838,21 @@ const VICTIMS = [
     story: 'Granjero. Vendió la única cabra de la familia, Lulu, para apostar por McLaren en Hungría. Norris no terminó la vuelta 1.',
     quote: '"La cabra se llamaba LULU, Mario. LULU."',
     debt: 4, game: 'rhythm', gameName: "LULU'S REVENGE",
-    instruction: 'Pulsa [D] [F] [J] [K] o toca cuando la nota llegue a la zona cyan. 22 notas, algunas dobles.'
+    instruction: 'Pulsa [D] [F] [J] [K] o toca cuando la nota llegue a la zona cyan. 22 notas, algunas dobles.',
+    i18n: {
+      gl: {
+        story: 'Granxeiro. Vendeu a única cabra da familia, Lulu, para apostar por McLaren en Hungría. Norris non terminou a volta 1.',
+        quote: '"A cabra chamábase LULU, Mario. LULU."',
+        gameName: "LULU'S REVENGE",
+        instruction: 'Preme [D] [F] [J] [K] ou toca cando a nota chegue á zona cyan. Notas, algunhas dobres.'
+      },
+      ng: {
+        story: 'Farmer. E sell di only family goat, Lulu, to gamble McLaren for Hungary. Norris no finish lap 1.',
+        quote: '"Di goat name na LULU, Mario. LULU."',
+        gameName: "LULU'S REVENGE",
+        instruction: 'Press [D] [F] [J] [K] or tap wen di note reach di cyan zone. Plenty notes, some double.'
+      }
+    }
   },
   {
     name: 'Kerry Kaverga', loc: 'Accra, Ghana 🇬🇭',
@@ -2742,7 +2860,21 @@ const VICTIMS = [
     story: 'Estudiante de ingeniería. Gastó la beca del semestre en bonos "deposit boost x10". Ahora reparte Glovo en Accra.',
     quote: '"Mi madre cree que estoy estudiando. Acláraselo tú, Mario."',
     debt: 4, game: 'slot', gameName: 'DEPOSIT BOOST x10',
-    instruction: 'Pulsa [SPACE] o toca la máquina para girar. 3 spins. La casa siempre gana.'
+    instruction: 'Pulsa [SPACE] o toca la máquina para girar. 3 spins. La casa siempre gana.',
+    i18n: {
+      gl: {
+        story: 'Estudante de enxeñería. Gastou a bolsa do semestre en bonos "deposit boost x10". Agora reparte Glovo en Accra.',
+        quote: '"Miña nai pensa que estou estudando. Acláraschelo ti, Mario."',
+        gameName: 'DEPOSIT BOOST x10',
+        instruction: 'Preme [SPACE] ou toca a máquina para xirar. 3 spins. A casa sempre gaña.'
+      },
+      ng: {
+        story: 'Engineering student. E waste di full semester scholarship for "deposit boost x10" bonuses. Now e dey deliver Glovo for Accra.',
+        quote: '"My mama still think say I dey study. You go explain am, Mario."',
+        gameName: 'DEPOSIT BOOST x10',
+        instruction: 'Press [SPACE] or tap di machine to spin. 3 spins. Di house always win.'
+      }
+    }
   },
   {
     name: 'Unam Amadita', loc: 'Dakar, Senegal 🇸🇳',
@@ -2750,7 +2882,21 @@ const VICTIMS = [
     story: 'Madre de 4. Ahorros de la boda de su hija mayor → cash-out en live betting durante Singapur a las 3 AM. El cash-out falló "por error técnico".',
     quote: '"Mi hija se casa el sábado. ¿Vienes tú a pagar el catering?"',
     debt: 4, game: 'typing', gameName: 'LA CARTA DEL PERDÓN',
-    instruction: 'Memoriza la frase en 4s. Luego escríbela exacta. Cada error = chupito.'
+    instruction: 'Memoriza la frase en 4s. Luego escríbela exacta. Cada error = chupito.',
+    i18n: {
+      gl: {
+        story: 'Nai de 4. Os aforros da voda da súa filla maior → cash-out en live betting durante Singapur ás 3 da mañá. O cash-out fallou "por erro técnico".',
+        quote: '"A miña filla cásase o sábado. Vés ti a pagar o catering?"',
+        gameName: 'A CARTA DO PERDÓN',
+        instruction: 'Memoriza a frase en 4 s. Logo escríbea exacta. Cada erro = chupito.'
+      },
+      ng: {
+        story: 'Mother of 4. Wedding savings of im first daughter → cash-out for live betting wen Singapore dey play 3 AM. Di cash-out fail "becos of technical error".',
+        quote: '"My daughter dey marry on Saturday. You go come pay di catering?"',
+        gameName: 'DI FORGIVENESS LETTER',
+        instruction: 'Memorise di sentence for 4 s. Then type am exactly. Every mistake = one shot.'
+      }
+    }
   },
   {
     name: 'Helmer Cader', loc: 'Johannesburg, RSA 🇿🇦',
@@ -2758,7 +2904,21 @@ const VICTIMS = [
     story: 'Mecánico, fan de Hamilton desde 2008. Apostó 5 GPs seguidos a podio de Hamilton en 2024. Hamilton no pisó el podio.',
     quote: '"He vendido el manómetro, Mario. EL MANÓMETRO."',
     debt: 3, game: 'quiz', gameName: 'F1 POP QUIZ',
-    instruction: '12 preguntas de F1 · 3,5 segundos cada una · teclas [1] [2] [3] [4] o click.'
+    instruction: '12 preguntas de F1 · 3,5 segundos cada una · teclas [1] [2] [3] [4] o click.',
+    i18n: {
+      gl: {
+        story: 'Mecánico, fan de Hamilton dende 2008. Apostou 5 GPs seguidos ao podio de Hamilton en 2024. Hamilton non pisou o podio.',
+        quote: '"Vendín o manómetro, Mario. O MANÓMETRO."',
+        gameName: 'F1 POP QUIZ',
+        instruction: '12 preguntas de F1 · 3,5 s cada unha · teclas [1] [2] [3] [4] ou click.'
+      },
+      ng: {
+        story: 'Mechanic, Hamilton fan since 2008. E gamble 5 back-to-back GPs say Hamilton go reach podium for 2024. Hamilton no even smell di podium.',
+        quote: '"I sell my manometer, Mario. DI MANOMETER."',
+        gameName: 'F1 POP QUIZ',
+        instruction: '12 F1 questions · 3.5 s each · keys [1] [2] [3] [4] or tap.'
+      }
+    }
   },
   {
     name: 'Salva Polla', loc: 'Kinshasa, RDC 🇨🇩',
@@ -2766,7 +2926,21 @@ const VICTIMS = [
     story: 'Minero de coltán. El coltán acaba en el iPhone donde Mario verá las apuestas. Apostó el salario en "F1 Fantasy Premium VIP Elite".',
     quote: '"Yo saco el coltán. Tú me robas con el coltán. Reza, Mario."',
     debt: 4, game: 'clicker', gameName: 'COLTÁN CLICKER',
-    instruction: 'Pulsa [SPACE] o spam tap 150 veces en 12 segundos. El botón ENCOGE.'
+    instruction: 'Pulsa [SPACE] o spam tap 150 veces en 12 segundos. El botón ENCOGE.',
+    i18n: {
+      gl: {
+        story: 'Mineiro de coltán. O coltán remata no iPhone onde Mario verá as apostas. Apostou o salario en "F1 Fantasy Premium VIP Elite".',
+        quote: '"Eu saco o coltán. Ti róubasme co coltán. Reza, Mario."',
+        gameName: 'COLTÁN CLICKER',
+        instruction: 'Preme [SPACE] ou spam-tap 150 veces en 12 s. O botón ENCOLLE.'
+      },
+      ng: {
+        story: 'Coltan miner. Di coltan end inside di iPhone wey Mario use to see im bets. E gamble im salary for "F1 Fantasy Premium VIP Elite".',
+        quote: '"Na me dey dig di coltan. Na you dey thief me with di coltan. Pray, Mario."',
+        gameName: 'COLTAN CLICKER',
+        instruction: 'Press [SPACE] or spam-tap 150 times for 12 s. Di button dey shrink.'
+      }
+    }
   },
   {
     name: 'Lola Mento', loc: 'El Cairo, Egipto 🇪🇬',
@@ -2774,7 +2948,21 @@ const VICTIMS = [
     story: 'Taxista de Uber, primera mujer al volante de su barrio. Apostó las propinas en "Pole position Pérez Bahréin". Pérez quedó P12.',
     quote: '"Cinco años ahorrando esas propinas, Mario. CINCO AÑOS."',
     debt: 4, game: 'drift', gameName: 'DRIFT SAHARA',
-    instruction: 'Esquiva los camellos y las dunas. [←] [→] o toca lados. Aguanta 30 segundos.'
+    instruction: 'Esquiva los camellos y las dunas. [←] [→] o toca lados. Aguanta 30 segundos.',
+    i18n: {
+      gl: {
+        story: 'Taxista de Uber, primeira muller ao volante do seu barrio. Apostou as propinas en "Pole position Pérez Bahréin". Pérez quedou P12.',
+        quote: '"Cinco anos aforrando esas propinas, Mario. CINCO ANOS."',
+        gameName: 'DRIFT SAHARA',
+        instruction: 'Esquiva os camelos e as dunas. [←] [→] ou toca os lados. Aguanta 30 s.'
+      },
+      ng: {
+        story: 'Uber driver, di first woman wey hold steering for her area. She gamble all di tips for "Pole position Perez Bahrain". Perez finish P12.',
+        quote: '"Five years dey save dem tips, Mario. FIVE YEARS."',
+        gameName: 'DRIFT SAHARA',
+        instruction: 'Dodge di camels and dunes. [←] [→] or tap di sides. Survive 30 s.'
+      }
+    }
   },
   {
     name: 'Mela Sopla', loc: 'Tánger, Marruecos 🇲🇦',
@@ -2782,15 +2970,43 @@ const VICTIMS = [
     story: 'Vendedora del zoco. Su madre se llamaba Paz también. Apostó el alquiler en cuotas tipo "constructor de parlay 10 leyes".',
     quote: '"Tu suegra tiene el nombre de mi madre. KARMA, Mario."',
     debt: 4, game: 'whack', gameName: 'WHACK-A-SUEGRA',
-    instruction: 'Golpea SOLO a las FAKE. Si pegas a Paz Padilla: chupito x2. Acelera con el tiempo.'
+    instruction: 'Golpea SOLO a las FAKE. Si pegas a Paz Padilla: chupito x2. Acelera con el tiempo.',
+    i18n: {
+      gl: {
+        story: 'Vendedora do zoco. A súa nai chamábase Paz tamén. Apostou o aluguer en cotas tipo "construtor de parlay 10 leis".',
+        quote: '"A túa sogra ten o nome da miña nai. KARMA, Mario."',
+        gameName: 'WHACK-A-SOGRA',
+        instruction: 'Atínalle SÓ ás FAKE. Se lle pegas a Paz Padilla: chupito x2. Acelera co tempo.'
+      },
+      ng: {
+        story: 'Souk seller. Her mama na Paz too. She gamble di rent for "10-leg parlay builder" bonuses.',
+        quote: '"Your mother-in-law carry my mama name. KARMA, Mario."',
+        gameName: 'WHACK-DI-MOTHER-IN-LAW',
+        instruction: 'Hit ONLY di FAKE ones. If you hit Paz Padilla: shot x2. E dey speed up.'
+      }
+    }
   },
   {
     name: 'El Demonio de las Islas Jiménez', loc: 'Islas Cíes, Galicia 🇪🇸',
     avatar: DICEBEAR('Demonio-Islas-Jimenez'),
     story: 'Marinero retirado en las Cíes. Mario le metió en "F1 Fantasy gallego edition" prometiendo cuotas inflated para pescaderos. Apostó la pensión entera al Verstappen-en-Vigo (un GP que no existía).',
     quote: '"Vas a saber por qué me llaman el Demonio de las Islas, Mariño."',
-    debt: 5, game: 'press', gameName: 'PRESS CONFERENCE MADRID',
-    instruction: 'Responde 5 preguntas SIN palabras prohibidas. La pregunta desaparece a los 3s.'
+    debt: 5, game: 'runner', gameName: 'PERSECUCIÓN EN LAS CÍES',
+    instruction: '[SPACE] / [↑] saltar · [↓] agacharte · o toca arriba/abajo. Esquiva al Demonio durante 60 segundos.',
+    i18n: {
+      gl: {
+        story: 'Mariñeiro xubilado nas Cíes. Mario meteulle en "F1 Fantasy galega edition" prometendo cotas inflated para peixeiros. Apostou toda a pensión ao Verstappen-en-Vigo (un GP que non existía).',
+        quote: '"Vas saber por que me chaman o Demo das Illas, Mariño."',
+        gameName: 'PERSECUCIÓN NAS CÍES',
+        instruction: '[SPACE] / [↑] saltar · [↓] agacharse · ou toca arriba/abaixo. Esquiva o Demo durante 60 s.'
+      },
+      ng: {
+        story: 'Retired sailor for di Cíes islands. Mario sign am up for "F1 Fantasy Galician edition" with inflated odds for fishmongers. E gamble di full pension on Verstappen-for-Vigo (one GP wey no exist).',
+        quote: '"You go soon understand why dem dey call me di Demon of di Islands, Mariño."',
+        gameName: 'CHASE FOR DI CÍES',
+        instruction: '[SPACE] / [↑] jump · [↓] duck · or tap top/bottom. Dodge di Demon for 60 s.'
+      }
+    }
   },
   {
     name: 'Paz Padilla', loc: 'Cádiz / Plató Sálvame 🇪🇸',
@@ -2798,7 +3014,21 @@ const VICTIMS = [
     story: 'PENÚLTIMA. Suegra. Te recibe en plató Sálvame con polígrafo. Responde sí o no a sus 5 acusaciones en 3,5 segundos. La máquina está truqueada.',
     quote: '"Mario… SI MIENTES… mi hija no se casa contigo. Ozú."',
     debt: 8, game: 'poligrafo', gameName: 'EL POLÍGRAFO DE PAZ',
-    instruction: 'Responde con [Y] = SÍ o [N] = NO. 5 acusaciones. Si tardas más de 3,5s, MIENTES automático.'
+    instruction: 'Responde con [Y] = SÍ o [N] = NO. 5 acusaciones. Si tardas más de 3,5s, MIENTES automático.',
+    i18n: {
+      gl: {
+        story: 'PENÚLTIMA. Sogra. Recíbete no plató do Sálvame co polígrafo. Responde si ou non ás 5 acusacións en 3,5 s. A máquina está truqueada.',
+        quote: '"Mario… SE MENTES… a miña filla non casa contigo. Ozú."',
+        gameName: 'O POLÍGRAFO DE PAZ',
+        instruction: 'Responde con [Y] = SI ou [N] = NON. 5 acusacións. Se tardas máis de 3,5 s, MENTES automático.'
+      },
+      ng: {
+        story: 'SECOND-TO-LAST. Di mother-in-law. She receive you for Sálvame TV set with polygraph. Answer yes or no to her 5 accusations within 3.5 s. Di machine na rig.',
+        quote: '"Mario… IF YOU LIE… my daughter no go marry you. Ozú."',
+        gameName: 'PAZ POLYGRAPH',
+        instruction: 'Answer with [Y] = YES or [N] = NO. 5 accusations. If you delay pass 3.5 s, na automatic LIE.'
+      }
+    }
   },
   {
     name: 'Anna Ferrer', loc: 'Madrid / Cádiz (próximamente) 🇪🇸',
@@ -2806,7 +3036,21 @@ const VICTIMS = [
     story: 'FINAL FINAL BOSS. La novia. Te recibe vestida de novia con el polígrafo de mamá. 6 votos matrimoniales. Al final: el público vota si la boda se cancela.',
     quote: '"Mario, mírame a los ojos y respóndeme. Mil veces… ¿qué?"',
     debt: 10, game: 'annaboss', gameName: 'EL ÚLTIMO SÍ',
-    instruction: '6 votos matrimoniales. [Y] = SÍ, [N] = NO. Polígrafo decide. El público vota si Anna te deja.'
+    instruction: '6 votos matrimoniales. [Y] = SÍ, [N] = NO. Polígrafo decide. El público vota si Anna te deja.',
+    i18n: {
+      gl: {
+        story: 'BOSS FINAL FINAL. A noiva. Recíbete vestida de noiva co polígrafo da mamá. 6 votos matrimoniais. Ao final: o público vota se a voda se cancela.',
+        quote: '"Mario, míranme aos ollos e respóndeme. Mil veces… que?"',
+        gameName: 'O ÚLTIMO SI',
+        instruction: '6 votos matrimoniais. [Y] = SI, [N] = NON. O polígrafo decide. O público vota se Anna te deixa.'
+      },
+      ng: {
+        story: 'FINAL FINAL BOSS. Di bride. She receive you for wedding dress with her mama polygraph. 6 wedding vows. For di end: di crowd go vote whether di wedding cancel.',
+        quote: '"Mario, look me for di eye and answer. A thousand times… what?"',
+        gameName: 'DI LAST YES',
+        instruction: '6 wedding vows. [Y] = YES, [N] = NO. Di polygraph go decide. Di crowd vote whether Anna leave you.'
+      }
+    }
   }
 ];
 
@@ -3212,9 +3456,9 @@ function goToVictims() {
           <div class="v-loc">${v.loc}</div>
         </div>
       </div>
-      <div class="victim-story">${v.story}</div>
+      <div class="victim-story">${vt(v, 'story')}</div>
       <div class="victim-debt">${t('debt')}: ${v.debt} ${t('shots_word')}</div>
-      <div style="margin-top:10px;padding:8px 10px;background:rgba(255,215,0,0.12);border:1px solid var(--gold);border-radius:8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;color:var(--gold);text-transform:uppercase;">▶ ${v.gameName}</div>
+      <div style="margin-top:10px;padding:8px 10px;background:rgba(255,215,0,0.12);border:1px solid var(--gold);border-radius:8px;text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.1em;color:var(--gold);text-transform:uppercase;">▶ ${vt(v, 'gameName')}</div>
     </div>
   `).join('');
   setTimeout(() => {
@@ -3391,33 +3635,33 @@ async function showTransitionCard(v) {
   const stage = document.getElementById('game-stage');
   const hasPractice = PRACTICE_SUPPORTED.has(v.game);
   const practiceBtn = hasPractice
-    ? `<button class="btn-secondary" id="transition-practice-btn" style="border-color:var(--gold);color:var(--gold);">🎓 PRACTICAR PRIMERO</button>`
+    ? `<button class="btn-secondary" id="transition-practice-btn" style="border-color:var(--gold);color:var(--gold);">${t('practice_first')}</button>`
     : '';
   stage.innerHTML = `
     <div class="transition-card">
-      <div class="round-num">▸ RONDA ${state.currentRound} / 12 — DEUDA ${v.debt} CHUPITOS ◂</div>
+      <div class="round-num">▸ ${t('round_label')} ${state.currentRound} / 12 — ${t('debt_label')} ${v.debt} ${t('shots_word').toUpperCase()} ◂</div>
       <div class="victim-big-avatar">
         <img src="${avatarUrl(v.name)}" alt="${v.name}" class="${isCustomPhoto(v.name) ? 'moreno' : ''}" onerror="this.style.display='none';this.parentElement.innerHTML='👤';" />
       </div>
       <h2>${v.name.toUpperCase()}</h2>
       <div class="victim-loc-big">${v.loc}</div>
-      <div class="quote">${v.quote}</div>
-      <div class="game-name">▸ ${v.gameName} ◂</div>
-      <div class="game-instruction">${v.instruction}</div>
+      <div class="quote">${vt(v, 'quote')}</div>
+      <div class="game-name">▸ ${vt(v, 'gameName')} ◂</div>
+      <div class="game-instruction">${vt(v, 'instruction')}</div>
       <div style="background: rgba(255,215,0,0.08); border: 1px dashed var(--gold); border-radius: 12px; padding: 12px 16px; margin: 16px auto; max-width: 480px;">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:6px;">📱 APUESTAS DEL GRUPO</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.2em;text-transform:uppercase;margin-bottom:6px;">${t('bets_label')}</div>
         <div style="display:flex; justify-content:space-around; align-items:baseline; gap:12px;">
-          <div><span style="color:var(--terminal);font-family:'Bebas Neue';font-size:36px;" id="t-bet-si">0</span> <span style="color:var(--text-dim);font-size:13px;">creen que SÍ</span></div>
-          <div><span style="color:var(--blood);font-family:'Bebas Neue';font-size:36px;" id="t-bet-no">0</span> <span style="color:var(--text-dim);font-size:13px;">creen que NO</span></div>
+          <div><span style="color:var(--terminal);font-family:'Bebas Neue';font-size:36px;" id="t-bet-si">0</span> <span style="color:var(--text-dim);font-size:13px;">${t('believe_yes')}</span></div>
+          <div><span style="color:var(--blood);font-family:'Bebas Neue';font-size:36px;" id="t-bet-no">0</span> <span style="color:var(--text-dim);font-size:13px;">${t('believe_no')}</span></div>
         </div>
-        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:'JetBrains Mono',monospace;">esperando móviles · cierra al pulsar EMPEZAR</div>
+        <div style="font-size:11px;color:var(--text-dim);margin-top:6px;font-family:'JetBrains Mono',monospace;">${t('bets_waiting')}</div>
       </div>
       <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; align-items:stretch;">
-        <button class="btn-secondary" id="transition-back-btn">◀ VOLVER AL MENÚ</button>
+        <button class="btn-secondary" id="transition-back-btn">${t('back_menu')}</button>
         ${practiceBtn}
-        <button class="btn-primary" id="transition-start-btn">▶ EMPEZAR PRUEBA REAL</button>
+        <button class="btn-primary" id="transition-start-btn">${t('start_real')}</button>
       </div>
-      ${hasPractice ? `<p style="color:var(--text-dim);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:10px;letter-spacing:0.1em;">💡 Prueba sin consecuencias para coger el ritmo antes de la real.</p>` : ''}
+      ${hasPractice ? `<p style="color:var(--text-dim);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:10px;letter-spacing:0.1em;">${t('practice_tip')}</p>` : ''}
     </div>
   `;
   // Declare resolveOuter + promise FIRST so all handlers can reach it.
@@ -3480,7 +3724,7 @@ function openPrediction(v) {
   if (!FIREBASE_ENABLED || !firebaseDB) return;
   firebaseDB.ref('rooms/' + ROOM_ID + '/activeRound').set({
     id: state.currentRound,
-    gameName: v.gameName,
+    gameName: vt(v, 'gameName'),
     state: 'open'
   });
   // Live counter on TV
@@ -3544,7 +3788,7 @@ async function showResult(shotsTaken, msg = '') {
   const resolution = await resolvePrediction(passed);
 
   const losersHTML = resolution.losers.length === 0
-    ? `<div style="color:var(--text-dim);font-style:italic;">(nadie del grupo apostó al lado perdedor · o no había móviles)</div>`
+    ? `<div style="color:var(--text-dim);font-style:italic;">${t('nobody_lost')}</div>`
     : resolution.losers.map(l => `
         <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,23,68,0.15);border:1px solid var(--blood);padding:8px 14px;border-radius:999px;margin:4px;">
           <strong style="font-family:'Bebas Neue';font-size:20px;letter-spacing:0.05em;">${esc(l.name)}</strong>
@@ -3555,13 +3799,13 @@ async function showResult(shotsTaken, msg = '') {
 
   const predBlock = (resolution.si + resolution.no) === 0 ? '' : `
     <div style="background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:16px;padding:20px;margin:24px auto;max-width:680px;">
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px;">📱 APUESTAS DEL GRUPO</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:0.25em;color:var(--gold);text-transform:uppercase;margin-bottom:12px;">${t('bets_label')}</div>
       <div style="display:flex;justify-content:space-around;margin-bottom:16px;">
         <div><span style="color:var(--terminal);font-family:'Bebas Neue';font-size:36px;">${resolution.si}</span> <span style="color:var(--text-dim);font-size:12px;">SI</span></div>
         <div><span style="color:var(--blood);font-family:'Bebas Neue';font-size:36px;">${resolution.no}</span> <span style="color:var(--text-dim);font-size:12px;">NO</span></div>
       </div>
       <div style="font-family:'Bebas Neue';font-size:24px;letter-spacing:0.05em;color:${passed?'var(--terminal)':'var(--blood)'};margin-bottom:8px;">
-        ${passed ? '✅ MARIO PASÓ' : '❌ MARIO FALLÓ'} — beben los del ${passed ? 'NO' : 'SÍ'} (${resolution.shotsEach}🥃 c/u)
+        ${passed ? t('mario_passed_short') : t('mario_failed_short')} — ${passed ? t('bets_drink_no') : t('bets_drink_yes')} (${resolution.shotsEach}🥃 c/u)
       </div>
       <div style="margin-top:12px;">${losersHTML}</div>
     </div>
@@ -3569,7 +3813,7 @@ async function showResult(shotsTaken, msg = '') {
 
   stage.innerHTML = `
     <div class="result-card">
-      <div class="result-label">MARIO ${good ? 'PERFECTO' : (passed ? 'PASÓ A DURAS PENAS' : 'FALLÓ')}</div>
+      <div class="result-label">${good ? t('mario_perfect') : (passed ? t('mario_passed') : t('mario_failed'))}</div>
       <div class="result-shots ${good ? 'good' : ''}">${good ? '🍀' : '+' + shotsTaken}</div>
       ${msg ? `<div class="result-msg">${msg}</div>` : ''}
       ${predBlock}
@@ -3594,6 +3838,7 @@ function startGame(v) {
     case 'drift': return gameDrift(v);
     case 'whack': return gameWhack(v);
     case 'press': return gamePress(v);
+    case 'runner': return gameRunner(v);
     case 'penalty': return gamePenalty(v);
     case 'poligrafo': return gamePoligrafo(v);
     case 'annaboss': return gameAnnaBoss(v);
@@ -4865,6 +5110,309 @@ function gamePress(v) {
     clearInterval(timer);
     timeouts.forEach(clearTimeout); timeouts.clear();
     if (pressSubmitHandler) document.removeEventListener('press-submit', pressSubmitHandler);
+  }, { once: true });
+}
+
+// ============================================
+// GAME 10b — RUNNER (Chrome dino style) for Demonio de las Islas Cíes
+// Mario (player) runs from left, Demonio (obstacles) come from right.
+// SPACE/UP to jump, DOWN to duck. Survive 60 seconds.
+// ============================================
+function gameRunner(v) {
+  const stage = document.getElementById('game-stage');
+
+  // === Config (medium difficulty) ===
+  const DURATION_MS = 60_000;
+  const W = 900, H = 320;            // logical canvas size (CSS will scale)
+  const GROUND_Y = H - 50;
+  const GRAVITY = 0.95;
+  const JUMP_VY = -17;
+  const PLAYER_W = 70, PLAYER_H = 110;
+  const PLAYER_X = 90;
+  const DUCK_H = 55;
+  const OBST_W = 60, OBST_H = 90;
+  const FLY_H = 60;                  // height of flying obstacles (need to duck)
+  let scrollSpeed = 6.5;             // px/frame at the start
+  const MAX_SPEED = 11.0;
+  const SPEED_RAMP_PER_SEC = 0.05;
+  let spawnGapMs = 1700;             // gap between obstacles
+  const MIN_SPAWN_GAP_MS = 950;
+
+  stage.innerHTML = `
+    <div style="text-align:center; width:100%; max-width: 900px;">
+      <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:4px;">PERSECUCIÓN EN LAS CÍES</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.2em;margin-bottom:10px;">♛ EL DEMONIO TE PERSIGUE ♛</div>
+      <div style="color:var(--text-dim);margin-bottom:10px;font-size:13px;">
+        [SPACE] / [↑] saltar · [↓] agacharse · o toca arriba/abajo ·
+        ⏱ <span id="runner-time">60.0</span>s · ✓ <span id="runner-dodged">0</span>
+      </div>
+      <div class="runner-stage" style="position:relative; max-width: ${W}px; margin: 0 auto; border: 2px solid var(--glass-border); border-radius: 16px; overflow: hidden;">
+        <canvas id="runner-canvas" width="${W}" height="${H}" style="display:block; width:100%; height:auto; background: linear-gradient(180deg, #1a0808 0%, #2a0a0a 60%, #0a0606 100%);"></canvas>
+        <div id="runner-tap-jump" style="position:absolute; left:0; right:0; top:0; height:55%;"></div>
+        <div id="runner-tap-duck" style="position:absolute; left:0; right:0; bottom:0; height:45%;"></div>
+        <div id="runner-overlay" style="position:absolute; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column; background:rgba(0,0,0,0.7); color:white; font-family:'Bebas Neue';font-size:48px; letter-spacing:0.05em;"></div>
+      </div>
+    </div>
+  `;
+
+  const canvas = document.getElementById('runner-canvas');
+  const ctx = canvas.getContext('2d');
+  const overlay = document.getElementById('runner-overlay');
+
+  // === Asset preload ===
+  const playerImg = new Image();
+  const obstacleImg = new Image();
+  let playerReady = false, obstacleReady = false;
+  playerImg.onload = () => { playerReady = true; };
+  obstacleImg.onload = () => { obstacleReady = true; };
+  playerImg.src = 'assets/mario-runner.jpg';
+  obstacleImg.src = 'assets/demonio-islas-jimenez.jpg';
+
+  // === State ===
+  let running = true;
+  let startT = 0;
+  let lastSpawn = 0;
+  let player = { x: PLAYER_X, y: GROUND_Y - PLAYER_H, vy: 0, ducking: false };
+  let obstacles = []; // {x, y, w, h, kind: 'ground'|'fly'}
+  let dodged = 0;
+  let scrollX = 0;   // for parallax ground stripes
+
+  function spawnObstacle() {
+    // 70% ground (duck-around-or-jump-over), 30% fly (must duck)
+    const fly = Math.random() < 0.30;
+    if (fly) {
+      obstacles.push({
+        x: W + 20,
+        y: GROUND_Y - PLAYER_H + 6, // hovering at "head" height — must duck
+        w: OBST_W, h: FLY_H,
+        kind: 'fly',
+        passed: false,
+      });
+    } else {
+      // Sometimes double-stacked vertically? No — keep medium difficulty
+      obstacles.push({
+        x: W + 20,
+        y: GROUND_Y - OBST_H,
+        w: OBST_W, h: OBST_H,
+        kind: 'ground',
+        passed: false,
+      });
+    }
+  }
+
+  function rectOverlap(a, b) {
+    return !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y);
+  }
+
+  function jump() {
+    if (player.y >= GROUND_Y - PLAYER_H - 1) { // on ground
+      player.vy = JUMP_VY;
+      sfx.click();
+    }
+  }
+  function duck(on) { player.ducking = on; }
+
+  // === Input ===
+  const keyHandler = (e) => {
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') { e.preventDefault(); jump(); }
+    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') { e.preventDefault(); duck(true); }
+  };
+  const keyUpHandler = (e) => {
+    if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') duck(false);
+  };
+  document.addEventListener('keydown', keyHandler);
+  document.addEventListener('keyup', keyUpHandler);
+
+  // Touch / mouse: top half = jump, bottom half = duck (while pressed)
+  const tapJump = document.getElementById('runner-tap-jump');
+  const tapDuck = document.getElementById('runner-tap-duck');
+  const onTapJump = (e) => { e.preventDefault(); jump(); };
+  const onDuckStart = (e) => { e.preventDefault(); duck(true); };
+  const onDuckEnd = (e) => { e.preventDefault(); duck(false); };
+  tapJump.addEventListener('touchstart', onTapJump, { passive: false });
+  tapJump.addEventListener('mousedown', onTapJump);
+  tapDuck.addEventListener('touchstart', onDuckStart, { passive: false });
+  tapDuck.addEventListener('touchend', onDuckEnd, { passive: false });
+  tapDuck.addEventListener('mousedown', onDuckStart);
+  tapDuck.addEventListener('mouseup', onDuckEnd);
+  tapDuck.addEventListener('mouseleave', onDuckEnd);
+
+  // === Loop ===
+  function loop(now) {
+    if (!running) return;
+    if (!startT) startT = now;
+    const elapsed = now - startT;
+    const remaining = Math.max(0, DURATION_MS - elapsed);
+
+    // Difficulty ramp
+    const secs = elapsed / 1000;
+    scrollSpeed = Math.min(MAX_SPEED, 6.5 + secs * SPEED_RAMP_PER_SEC);
+    spawnGapMs = Math.max(MIN_SPAWN_GAP_MS, 1700 - secs * 12);
+
+    // Spawn
+    if (elapsed - lastSpawn > spawnGapMs) {
+      spawnObstacle();
+      lastSpawn = elapsed + Math.random() * 250 - 125; // jitter
+    }
+
+    // Player physics
+    player.vy += GRAVITY;
+    player.y += player.vy;
+    if (player.y > GROUND_Y - PLAYER_H) { player.y = GROUND_Y - PLAYER_H; player.vy = 0; }
+
+    // Player AABB (shorter when ducking)
+    const ph = player.ducking ? DUCK_H : PLAYER_H;
+    const py = player.ducking ? (GROUND_Y - DUCK_H) : player.y;
+    const playerBox = { x: player.x + 8, y: py + 6, w: PLAYER_W - 16, h: ph - 12 };
+
+    // Move obstacles + collide. Since the obstacles render as CIRCLES, we
+    // inset the AABB so collision matches the visible disc (the rectangle
+    // corners outside the disc would otherwise kill the player unfairly).
+    obstacles.forEach(o => {
+      o.x -= scrollSpeed;
+      const inset = Math.min(o.w, o.h) * 0.18;
+      const oBox = { x: o.x + inset, y: o.y + inset, w: o.w - inset * 2, h: o.h - inset * 2 };
+      if (!o.passed && rectOverlap(playerBox, oBox)) {
+        // Collision — game over
+        running = false;
+        finish(false, elapsed);
+      }
+      if (!o.passed && o.x + o.w < player.x) { o.passed = true; dodged++; }
+    });
+    obstacles = obstacles.filter(o => o.x + o.w > -20);
+
+    // Win
+    if (elapsed >= DURATION_MS) {
+      running = false;
+      finish(true, elapsed);
+    }
+
+    // HUD
+    document.getElementById('runner-time').textContent = (remaining / 1000).toFixed(1);
+    document.getElementById('runner-dodged').textContent = dodged;
+
+    // === Render ===
+    ctx.clearRect(0, 0, W, H);
+
+    // Stars / floating particles (cheap parallax)
+    scrollX = (scrollX + scrollSpeed * 0.3) % 60;
+    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+    for (let i = 0; i < 30; i++) {
+      const x = (i * 60 - scrollX + (i * 17) % 30) % W;
+      const y = ((i * 43) % (H - 80));
+      ctx.fillRect(x, y, 2, 2);
+    }
+
+    // Ground line + stripes (Cíes-rocky stylised)
+    ctx.strokeStyle = 'rgba(255,215,0,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, GROUND_Y);
+    ctx.lineTo(W, GROUND_Y);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,215,0,0.18)';
+    for (let i = 0; i < 24; i++) {
+      const sx = (i * 80 - scrollX * 2 + 2000) % (W + 80) - 40;
+      ctx.fillRect(sx, GROUND_Y + 4, 30, 3);
+    }
+
+    // Player
+    const drawH = player.ducking ? DUCK_H : PLAYER_H;
+    const drawY = player.ducking ? (GROUND_Y - DUCK_H) : player.y;
+    if (playerReady) {
+      // Slight tilt while in air
+      ctx.save();
+      const inAir = player.y < GROUND_Y - PLAYER_H - 2;
+      if (inAir) {
+        ctx.translate(player.x + PLAYER_W / 2, drawY + drawH / 2);
+        ctx.rotate(-0.18);
+        ctx.translate(-(player.x + PLAYER_W / 2), -(drawY + drawH / 2));
+      }
+      // Background frame
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(player.x - 2, drawY - 2, PLAYER_W + 4, drawH + 4);
+      ctx.drawImage(playerImg, player.x, drawY, PLAYER_W, drawH);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = '#FFD700';
+      ctx.fillRect(player.x, drawY, PLAYER_W, drawH);
+    }
+
+    // Obstacles — drawn as circles (clipped image + glowing ring) so they
+    // look like floating demon mugshots, not rectangles.
+    obstacles.forEach(o => {
+      const cx = o.x + o.w / 2;
+      const cy = o.y + o.h / 2;
+      // Radius based on the SHORTER side so the picture stays inside the circle.
+      const r = Math.min(o.w, o.h) / 2;
+      if (obstacleReady) {
+        // Glow ring (blood red), drawn under the photo
+        ctx.beginPath();
+        ctx.arc(cx, cy, r + 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#FF1744';
+        ctx.shadowColor = 'rgba(255,23,68,0.6)';
+        ctx.shadowBlur = 12;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        // Clip to circle, draw image centred on (cx, cy)
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.clip();
+        // Use the SMALLER bounding square so the face isn't squashed.
+        const size = r * 2;
+        ctx.drawImage(obstacleImg, cx - size / 2, cy - size / 2, size, size);
+        ctx.restore();
+        // Floor shadow for flying obstacles (looks better with a circle)
+        if (o.kind === 'fly') {
+          ctx.fillStyle = 'rgba(0,0,0,0.35)';
+          ctx.beginPath();
+          ctx.ellipse(cx, GROUND_Y + 5, r * 0.9, 4, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        ctx.fillStyle = '#FF1744';
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    });
+
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  function finish(survived, elapsedMs) {
+    // Stop input
+    document.removeEventListener('keydown', keyHandler);
+    document.removeEventListener('keyup', keyUpHandler);
+    let shots;
+    let msg;
+    if (survived) {
+      shots = 0;
+      msg = '🏆 ¡Has sobrevivido al Demonio! Las Cíes te perdonan.';
+      sfx.success(); flash('green');
+      overlay.style.display = 'flex';
+      overlay.innerHTML = `<div style="color:var(--terminal);">¡SOBREVIVISTE!</div><div style="font-size:18px;font-family:'JetBrains Mono',monospace;color:var(--gold);margin-top:8px;">${dodged} obstáculos esquivados</div>`;
+    } else {
+      const sec = elapsedMs / 1000;
+      if (sec < 15) shots = 5;
+      else if (sec < 30) shots = 4;
+      else if (sec < 45) shots = 3;
+      else shots = 2;
+      msg = `🩸 El Demonio te pilló a los ${sec.toFixed(1)}s. ${dodged} esquivados. Bebes ${shots}.`;
+      sfx.fail(); flash('red'); shake('heavy');
+      overlay.style.display = 'flex';
+      overlay.innerHTML = `<div style="color:var(--blood);">¡TE PILLÓ!</div><div style="font-size:18px;font-family:'JetBrains Mono',monospace;color:var(--text-dim);margin-top:8px;">${sec.toFixed(1)}s · ${dodged} esquivados</div>`;
+    }
+    setTimeout(() => showResult(shots, msg), 1300);
+  }
+
+  // Cleanup on game switch
+  document.addEventListener('start-game', () => {
+    running = false;
+    document.removeEventListener('keydown', keyHandler);
+    document.removeEventListener('keyup', keyUpHandler);
   }, { once: true });
 }
 
