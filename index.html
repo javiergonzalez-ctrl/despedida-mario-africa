@@ -2921,19 +2921,19 @@ const VICTIMS = [
     story: 'Granjero. Vendió la única cabra de la familia, Lulu, para apostar por McLaren en Hungría. Norris no terminó la vuelta 1.',
     quote: '"La cabra se llamaba LULU, Mario. LULU."',
     debt: 4, game: 'rhythm', gameName: "LULU'S REVENGE",
-    instruction: 'Pulsa [D] [F] [J] [K] o toca cuando la nota llegue a la zona cyan. Mantén pulsadas las notas largas. No rompas el combo.',
+    instruction: 'Pulsa [D] [F] [J] [K] o toca cuando la nota llegue a la zona cyan. Las notas largas se MANTIENEN pulsadas (soltar antes = fallo). Aprobado: ≥70% de aciertos.',
     i18n: {
       gl: {
         story: 'Granxeiro. Vendeu a única cabra da familia, Lulu, para apostar por McLaren en Hungría. Norris non terminou a volta 1.',
         quote: '"A cabra chamábase LULU, Mario. LULU."',
         gameName: "LULU'S REVENGE",
-        instruction: 'Preme [D] [F] [J] [K] ou toca cando a nota chegue á zona cyan. Mantén premidas as notas longas. Non rompas o combo.'
+        instruction: 'Preme [D] [F] [J] [K] ou toca cando a nota chegue á zona cyan. As notas longas mantéñense premidas (soltar antes = fallo). Aprobado: ≥70 % de acertos.'
       },
       ng: {
         story: 'Farmer. E sell di only family goat, Lulu, to gamble McLaren for Hungary. Norris no finish lap 1.',
         quote: '"Di goat name na LULU, Mario. LULU."',
         gameName: "LULU'S REVENGE",
-        instruction: 'Press [D] [F] [J] [K] or tap wen di note reach di cyan zone. Hold di long notes. No break di combo.'
+        instruction: 'Press [D] [F] [J] [K] or tap wen di note reach di cyan zone. HOLD di long notes (release early = miss). Pass mark: ≥70% hits.'
       }
     }
   },
@@ -4494,7 +4494,7 @@ function gameRhythm(v, opts = {}) {
     el: null, spawned: false, hit: false, judged: null,
     holdActive: false,     // user keydown landed on head + still pressing
     holdCompleted: false,  // tail fully passed through hit zone while held
-    holdBonus: false,      // perfect hold => extra bonus feedback
+    headPerfect: false,    // head landed in the perfect window (hold notes)
   }));
   // Currently pressed keys (lane index -> true)
   const heldKeys = [false, false, false, false];
@@ -4635,18 +4635,42 @@ function gameRhythm(v, opts = {}) {
         const y = SPAWN_Y + progress * fallDist;
         if (!n.hit) n.el.style.top = y + 'px';
 
-        // HOLD tracking: once head was successfully hit, check if the key is
-        // still down while the tail crosses the hit zone. If so, award bonus.
+        // HOLD tracking: the head tap only STARTS a hold — the note scores
+        // NOTHING until the tail clears while the key is still down. Releasing
+        // early = full MISS (playtest: tapping holds was way too easy).
         if (n.dur > 0 && n.holdActive && !n.holdCompleted) {
           const tailEndTime = n.t + n.dur;
           if (!heldKeys[n.lane]) {
-            // Released too early — drop hold tracking, keep base hit credit
+            // Released too early — the whole note is a miss
             n.holdActive = false;
+            n.judged = 'miss';
+            n.hit = true;
+            misses++;
+            combo = 0;
+            updateCombo();
+            const mEl = document.getElementById('r-miss');
+            if (mEl) mEl.textContent = misses;
+            n.el.classList.remove('held');
+            n.el.style.opacity = '0.25';
+            sfx.miss();
+            showFeedback('¡SOLTASTE!', 'var(--blood)');
           } else if (song >= tailEndTime) {
+            // Held all the way through — NOW it scores
             n.holdCompleted = true;
-            n.holdBonus = true;
-            n.el.classList.add('held');
+            n.judged = n.headPerfect ? 'perfect' : 'good';
+            n.hit = true;
+            hits++;
+            combo++;
+            if (combo > maxCombo) maxCombo = combo;
+            if (n.headPerfect) perfects++;
+            updateCombo();
+            const hEl = document.getElementById('r-hits');
+            if (hEl) hEl.textContent = hits;
+            sfx.hit();
             showFeedback('HOLD!', 'var(--terminal)');
+            if (n.headPerfect) flash('green');
+            n.el.style.transition = 'opacity 0.2s linear';
+            n.el.style.opacity = '0';
           }
         }
 
@@ -4666,8 +4690,8 @@ function gameRhythm(v, opts = {}) {
       }
     });
 
-    // End condition: all notes judged + a small grace tail
-    const allJudged = notes.every(n => n.judged);
+    // End condition: all notes judged (an in-flight hold is NOT done yet)
+    const allJudged = notes.every(n => n.judged && n.judged !== 'holding');
     if (allJudged && song > beatMap[beatMap.length - 1].t + 600) {
       running = false;
       if (audio) { try { audio.pause(); } catch(e){} window.__rhythmAudio = null; }
@@ -4690,17 +4714,19 @@ function gameRhythm(v, opts = {}) {
         }, 900);
         return;
       }
-      const shots = misses <= 3 ? 0 : Math.min(Math.ceil((misses - 3) / 3), 4);
-      // Arcade-style scorecard: accuracy %, max combo, perfects → letter grade
+      // PASS RULE: ≥70% accuracy = aprobado (same bar as the Cíes runner).
+      // 95+ flawless → 0 shots · 70-94 pass → 1 · 50-69 → 2 · 30-49 → 3 · <30 → 4
       const acc = totalNotes > 0 ? Math.round((hits / totalNotes) * 100) : 0;
+      const shots = acc >= 95 ? 0 : acc >= 70 ? 1 : acc >= 50 ? 2 : acc >= 30 ? 3 : 4;
       const grade = acc >= 95 ? 'S' : acc >= 85 ? 'A' : acc >= 70 ? 'B' : acc >= 50 ? 'C' : 'D';
-      const statsLine = `<span style="display:block;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);">RANK ${grade} · ${acc}% · 🔥 combo máx ${maxCombo} · ★ ${perfects} perfect</span>`;
-      const msg = (shots === 0
+      const passLbl = acc >= 70 ? '✅ APROBADO' : '❌ SUSPENSO';
+      const statsLine = `<span style="display:block;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);">${passLbl} (corte 70%) · RANK ${grade} · ${acc}% · 🔥 combo máx ${maxCombo} · ★ ${perfects} perfect</span>`;
+      const msg = (acc >= 70
         ? (state.lang === 'gl' ? 'Lulu a cabra perdóache.'
           : state.lang === 'ng' ? 'Lulu di goat don forgive you.'
           : 'Lulu la cabra te perdona.')
         : (state.lang === 'ng' ? `${misses} misses. Drink ${shots}.`
-          : `${misses} fallos. ${state.lang === 'ng' ? 'Drink' : 'Bebes'} ${shots}.`)) + statsLine;
+          : `${misses} fallos. Bebes ${shots}.`)) + statsLine;
       setTimeout(() => showResult(shots, msg), 900);
       return;
     }
@@ -4736,6 +4762,17 @@ function gameRhythm(v, opts = {}) {
     }
     if (best) {
       const perfect = bestDiff <= PERFECT_WINDOW_MS;
+      if (best.dur > 0) {
+        // HOLD head: arm the hold and wait — scoring happens in the main loop
+        // when the tail clears (or the player releases early → miss).
+        best.judged = 'holding';
+        best.headPerfect = perfect;
+        best.holdActive = true;
+        if (best.el) best.el.classList.add('held');
+        sfx.hit();
+        showFeedback(state.lang === 'ng' ? 'HOLD AM…' : 'MANTÉN…', 'var(--gold)');
+        return;
+      }
       best.judged = perfect ? 'perfect' : 'good';
       best.hit = true;
       hits++;
@@ -4743,10 +4780,6 @@ function gameRhythm(v, opts = {}) {
       if (combo > maxCombo) maxCombo = combo;
       if (perfect) perfects++;
       updateCombo();
-      if (best.dur > 0) {
-        best.holdActive = true; // start hold tracking — the main loop checks
-        if (best.el) best.el.classList.add('held');
-      }
       if (best.el) {
         best.el.classList.toggle('perfect', perfect);
         if (best.dur === 0) {
@@ -4791,6 +4824,7 @@ function gameRhythm(v, opts = {}) {
     const lane = parseInt(z.dataset.tapLane);
     z.addEventListener('touchstart', (e) => { e.preventDefault(); heldKeys[lane] = true; tryHit(lane); }, { passive: false });
     z.addEventListener('touchend', (e) => { e.preventDefault(); heldKeys[lane] = false; }, { passive: false });
+    z.addEventListener('touchcancel', () => { heldKeys[lane] = false; });
     z.addEventListener('mousedown', () => { heldKeys[lane] = true; tryHit(lane); });
     z.addEventListener('mouseup', () => { heldKeys[lane] = false; });
     z.addEventListener('mouseleave', () => { heldKeys[lane] = false; });
