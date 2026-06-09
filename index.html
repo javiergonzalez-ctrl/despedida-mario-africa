@@ -2050,6 +2050,8 @@
     .hud { padding: 8px 12px; }
     .hud-pill { padding: 4px 10px; font-size: 11px; }
     .victims-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    /* keep the header clear of the fixed lang pills + back button row */
+    .victims-header { padding-top: 48px; }
     .victim-card { padding: 10px; }
     .victim-card .head { gap: 8px; margin-bottom: 8px; }
     .victim-avatar { width: 44px; height: 44px; font-size: 24px; }
@@ -2371,6 +2373,7 @@ let state = {
   shots: 0,
   groupShots: 0,
   currentRound: 0,
+  roundShots: {},   // shots per round — replaying a round REPLACES its score, never stacks
   muted: false,
   votes: { yes: 0, no: 0 },
   weddingResult: null,
@@ -2717,11 +2720,20 @@ function particleBurst(x, y, count = 16, color = '#FF1744') {
     requestAnimationFrame(animate);
   }
 }
+let _toastTimer = null;
 function toast(msg, kind = '') {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.className = 'toast visible ' + kind;
-  setTimeout(() => el.classList.remove('visible'), 2400);
+  // Cancelable timer — otherwise toast A's timeout hides toast B early,
+  // and a toast fired mid-game survives into the next screen.
+  if (_toastTimer) clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { el.classList.remove('visible'); _toastTimer = null; }, 2400);
+}
+function clearToast() {
+  const el = document.getElementById('toast');
+  if (el) el.classList.remove('visible');
+  if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
 }
 
 // HTML-escape for any user-controlled string (player names, room IDs, Firebase
@@ -2788,6 +2800,7 @@ async function showMap(opts = {}) {
 // SCREEN MANAGER
 // ============================================
 function show(screenId) {
+  clearToast(); // a toast belongs to the screen that fired it — never carry it over
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById(screenId).classList.remove('hidden');
 }
@@ -2864,19 +2877,19 @@ const VICTIMS = [
     story: 'Taxista. Apostó 3 meses de sueldo en F1 Fantasy de Mario porque la app dijo que Hamilton era favorito en Bahréin. Hamilton acabó 7º.',
     quote: '"Mario, mi mujer me ha dejado y tú sigues vendiendo Lambos en Madrid."',
     debt: 3, game: 'rush', gameName: 'RUSH HOUR LAGOS',
-    instruction: 'Pulsa [SPACE] o toca la barra cuando esté en la zona verde. 5 intentos. La zona cambia de sitio.',
+    instruction: 'Pulsa [SPACE] o toca la barra cuando esté en la zona verde. 4 intentos. La zona cambia de sitio.',
     i18n: {
       gl: {
         story: 'Taxista. Apostou 3 meses de soldo no F1 Fantasy de Mario porque a app dixo que Hamilton era favorito en Bahréin. Hamilton acabou 7º.',
         quote: '"Mario, a miña muller deixoume e ti segues vendendo Lambos en Madrid."',
         gameName: 'RUSH HOUR LAGOS',
-        instruction: 'Preme [SPACE] ou toca a barra cando estea na zona verde. 5 intentos. A zona cambia de sitio.'
+        instruction: 'Preme [SPACE] ou toca a barra cando estea na zona verde. 4 intentos. A zona cambia de sitio.'
       },
       ng: {
         story: 'Taxi driver. E gamble 3 months salary for Mario im F1 Fantasy app becos di app talk say Hamilton go win Bahrain. Hamilton finish 7th.',
         quote: '"Mario, my wife don leave me and you still dey sell Lambo for Madrid."',
         gameName: 'RUSH HOUR LAGOS',
-        instruction: 'Press [SPACE] or tap di bar wen e dey green zone. 5 tries. Di zone go shift.'
+        instruction: 'Press [SPACE] or tap di bar wen e dey green zone. 4 tries. Di zone go shift.'
       }
     }
   },
@@ -2886,19 +2899,19 @@ const VICTIMS = [
     story: 'Vendedora de mango. Apostó la caja del mercado al "Verstappen Mónaco depósito x10". Saltó la notif: "ENHORABUENA: -98%".',
     quote: '"Devuélveme mis mangos, Mario. CON INTERESES."',
     debt: 3, game: 'mango', gameName: 'MANGO MEMORY',
-    instruction: 'Mira la secuencia de 7 mangos y repítela clickando en orden. 2 vidas.',
+    instruction: 'Los compradores de mangos: mira la secuencia de 6 caras y repítela en orden. 3 vidas.',
     i18n: {
       gl: {
         story: 'Vendedora de mango. Apostou a caixa do mercado ao "Verstappen Mónaco depósito x10". Saltou a notif: "PARABÉNS: -98 %".',
         quote: '"Devólveme os meus mangos, Mario. CON INTERESES."',
         gameName: 'MANGO MEMORY',
-        instruction: 'Mira a secuencia de 7 mangos e repítea clicando en orde. 2 vidas.'
+        instruction: 'Os compradores de mangos: mira a secuencia de 6 caras e repítea en orde. 3 vidas.'
       },
       ng: {
         story: 'Mango seller. She gamble di full market box for "Verstappen Monaco deposit x10". Di notif jam: "CONGRATS: -98 %".',
         quote: '"Bring my mangoes back, Mario. WITH INTEREST."',
         gameName: 'MANGO MEMORY',
-        instruction: 'Watch di 7-mango sequence and repeat by tapping for order. 2 lives.'
+        instruction: 'Di mango buyers: watch di 6-face sequence and repeat am for order. 3 lives.'
       }
     }
   },
@@ -2908,19 +2921,19 @@ const VICTIMS = [
     story: 'Granjero. Vendió la única cabra de la familia, Lulu, para apostar por McLaren en Hungría. Norris no terminó la vuelta 1.',
     quote: '"La cabra se llamaba LULU, Mario. LULU."',
     debt: 4, game: 'rhythm', gameName: "LULU'S REVENGE",
-    instruction: 'Pulsa [D] [F] [J] [K] o toca cuando la nota llegue a la zona cyan. 22 notas, algunas dobles.',
+    instruction: 'Pulsa [D] [F] [J] [K] o toca cuando la nota llegue a la zona cyan. Mantén pulsadas las notas largas. No rompas el combo.',
     i18n: {
       gl: {
         story: 'Granxeiro. Vendeu a única cabra da familia, Lulu, para apostar por McLaren en Hungría. Norris non terminou a volta 1.',
         quote: '"A cabra chamábase LULU, Mario. LULU."',
         gameName: "LULU'S REVENGE",
-        instruction: 'Preme [D] [F] [J] [K] ou toca cando a nota chegue á zona cyan. Notas, algunhas dobres.'
+        instruction: 'Preme [D] [F] [J] [K] ou toca cando a nota chegue á zona cyan. Mantén premidas as notas longas. Non rompas o combo.'
       },
       ng: {
         story: 'Farmer. E sell di only family goat, Lulu, to gamble McLaren for Hungary. Norris no finish lap 1.',
         quote: '"Di goat name na LULU, Mario. LULU."',
         gameName: "LULU'S REVENGE",
-        instruction: 'Press [D] [F] [J] [K] or tap wen di note reach di cyan zone. Plenty notes, some double.'
+        instruction: 'Press [D] [F] [J] [K] or tap wen di note reach di cyan zone. Hold di long notes. No break di combo.'
       }
     }
   },
@@ -2952,19 +2965,19 @@ const VICTIMS = [
     story: 'Madre de 4. Ahorros de la boda de su hija mayor → cash-out en live betting durante Singapur a las 3 AM. El cash-out falló "por error técnico".',
     quote: '"Mi hija se casa el sábado. ¿Vienes tú a pagar el catering?"',
     debt: 4, game: 'typing', gameName: 'LA CARTA DEL PERDÓN',
-    instruction: 'Memoriza la frase en 4s. Luego escríbela exacta. Cada error = chupito.',
+    instruction: '5 frases, cada vez más largas (la última en gallego). Memoriza y escribe exacto. Cada palabra mal = chupito.',
     i18n: {
       gl: {
         story: 'Nai de 4. Os aforros da voda da súa filla maior → cash-out en live betting durante Singapur ás 3 da mañá. O cash-out fallou "por erro técnico".',
         quote: '"A miña filla cásase o sábado. Vés ti a pagar o catering?"',
         gameName: 'A CARTA DO PERDÓN',
-        instruction: 'Memoriza a frase en 4 s. Logo escríbea exacta. Cada erro = chupito.'
+        instruction: '5 frases, cada vez máis longas (a última en galego). Memoriza e escribe exacto. Cada palabra mal = chupito.'
       },
       ng: {
         story: 'Mother of 4. Wedding savings of im first daughter → cash-out for live betting wen Singapore dey play 3 AM. Di cash-out fail "becos of technical error".',
         quote: '"My daughter dey marry on Saturday. You go come pay di catering?"',
         gameName: 'DI FORGIVENESS LETTER',
-        instruction: 'Memorise di sentence for 4 s. Then type am exactly. Every mistake = one shot.'
+        instruction: '5 sentences, each one longer (di last one for Galician). Memorise and type am exact. Every wrong word = one shot.'
       }
     }
   },
@@ -2974,19 +2987,19 @@ const VICTIMS = [
     story: 'Mecánico, fan de Hamilton desde 2008. Apostó 5 GPs seguidos a podio de Hamilton en 2024. Hamilton no pisó el podio.',
     quote: '"He vendido el manómetro, Mario. EL MANÓMETRO."',
     debt: 3, game: 'quiz', gameName: 'F1 POP QUIZ',
-    instruction: '12 preguntas de F1 · 3,5 segundos cada una · teclas [1] [2] [3] [4] o click.',
+    instruction: '12 preguntas de F1 · 4,5 segundos cada una · teclas [1] [2] [3] [4] o click.',
     i18n: {
       gl: {
         story: 'Mecánico, fan de Hamilton dende 2008. Apostou 5 GPs seguidos ao podio de Hamilton en 2024. Hamilton non pisou o podio.',
         quote: '"Vendín o manómetro, Mario. O MANÓMETRO."',
         gameName: 'F1 POP QUIZ',
-        instruction: '12 preguntas de F1 · 3,5 s cada unha · teclas [1] [2] [3] [4] ou click.'
+        instruction: '12 preguntas de F1 · 4,5 s cada unha · teclas [1] [2] [3] [4] ou click.'
       },
       ng: {
         story: 'Mechanic, Hamilton fan since 2008. E gamble 5 back-to-back GPs say Hamilton go reach podium for 2024. Hamilton no even smell di podium.',
         quote: '"I sell my manometer, Mario. DI MANOMETER."',
         gameName: 'F1 POP QUIZ',
-        instruction: '12 F1 questions · 3.5 s each · keys [1] [2] [3] [4] or tap.'
+        instruction: '12 F1 questions · 4.5 s each · keys [1] [2] [3] [4] or tap.'
       }
     }
   },
@@ -2996,19 +3009,19 @@ const VICTIMS = [
     story: 'Minero de coltán. El coltán acaba en el iPhone donde Mario verá las apuestas. Apostó el salario en "F1 Fantasy Premium VIP Elite".',
     quote: '"Yo saco el coltán. Tú me robas con el coltán. Reza, Mario."',
     debt: 4, game: 'clicker', gameName: 'COLTÁN CLICKER',
-    instruction: 'Pulsa [SPACE] o spam tap 150 veces en 12 segundos. El botón ENCOGE.',
+    instruction: 'Pulsa [SPACE] o spam tap 110 veces en 14 segundos. El botón ENCOGE.',
     i18n: {
       gl: {
         story: 'Mineiro de coltán. O coltán remata no iPhone onde Mario verá as apostas. Apostou o salario en "F1 Fantasy Premium VIP Elite".',
         quote: '"Eu saco o coltán. Ti róubasme co coltán. Reza, Mario."',
         gameName: 'COLTÁN CLICKER',
-        instruction: 'Preme [SPACE] ou spam-tap 150 veces en 12 s. O botón ENCOLLE.'
+        instruction: 'Preme [SPACE] ou spam-tap 110 veces en 14 s. O botón ENCOLLE.'
       },
       ng: {
         story: 'Coltan miner. Di coltan end inside di iPhone wey Mario use to see im bets. E gamble im salary for "F1 Fantasy Premium VIP Elite".',
         quote: '"Na me dey dig di coltan. Na you dey thief me with di coltan. Pray, Mario."',
         gameName: 'COLTAN CLICKER',
-        instruction: 'Press [SPACE] or spam-tap 150 times for 12 s. Di button dey shrink.'
+        instruction: 'Press [SPACE] or spam-tap 110 times for 14 s. Di button dey shrink.'
       }
     }
   },
@@ -3017,20 +3030,20 @@ const VICTIMS = [
     avatar: DICEBEAR('Lola-Mento'),
     story: 'Taxista de Uber, primera mujer al volante de su barrio. Apostó las propinas en "Pole position Pérez Bahréin". Pérez quedó P12.',
     quote: '"Cinco años ahorrando esas propinas, Mario. CINCO AÑOS."',
-    debt: 4, game: 'drift', gameName: 'DRIFT SAHARA',
-    instruction: 'Esquiva los camellos y las dunas. [←] [→] o toca lados. Aguanta 30 segundos.',
+    debt: 4, game: 'drift', gameName: 'VUELO MC-911',
+    instruction: 'Pilota el avión de Mario entre las torres. [←] [→] o toca los lados. Aguanta 22 segundos sin estrellarte.',
     i18n: {
       gl: {
         story: 'Taxista de Uber, primeira muller ao volante do seu barrio. Apostou as propinas en "Pole position Pérez Bahréin". Pérez quedou P12.',
         quote: '"Cinco anos aforrando esas propinas, Mario. CINCO ANOS."',
-        gameName: 'DRIFT SAHARA',
-        instruction: 'Esquiva os camelos e as dunas. [←] [→] ou toca os lados. Aguanta 30 s.'
+        gameName: 'VOO MC-911',
+        instruction: 'Pilota o avión de Mario entre as torres. [←] [→] ou toca os lados. Aguanta 22 s sen estrelarte.'
       },
       ng: {
         story: 'Uber driver, di first woman wey hold steering for her area. She gamble all di tips for "Pole position Perez Bahrain". Perez finish P12.',
         quote: '"Five years dey save dem tips, Mario. FIVE YEARS."',
-        gameName: 'DRIFT SAHARA',
-        instruction: 'Dodge di camels and dunes. [←] [→] or tap di sides. Survive 30 s.'
+        gameName: 'FLIGHT MC-911',
+        instruction: 'Fly Mario plane between di towers. [←] [→] or tap di sides. Survive 22 s without crash.'
       }
     }
   },
@@ -3081,22 +3094,22 @@ const VICTIMS = [
   {
     name: 'Paz Padilla', loc: 'Cádiz / Plató Sálvame 🇪🇸',
     avatar: DICEBEAR('Paz-Padilla-Suegra', 'avataaars'),
-    story: 'PENÚLTIMA. Suegra. Te recibe en plató Sálvame con polígrafo. Responde sí o no a sus 5 acusaciones en 3,5 segundos. La máquina está truqueada.',
+    story: 'PENÚLTIMA. Suegra. Te recibe en plató Sálvame con polígrafo. Responde sí o no a sus 5 acusaciones en 5 segundos. La máquina está truqueada.',
     quote: '"Mario… SI MIENTES… mi hija no se casa contigo. Ozú."',
     debt: 8, game: 'poligrafo', gameName: 'EL POLÍGRAFO DE PAZ',
-    instruction: 'Responde con [Y] = SÍ o [N] = NO. 5 acusaciones. Si tardas más de 3,5s, MIENTES automático.',
+    instruction: 'Responde con [Y] = SÍ o [N] = NO. 5 acusaciones. Si tardas más de 5s, MIENTES automático.',
     i18n: {
       gl: {
-        story: 'PENÚLTIMA. Sogra. Recíbete no plató do Sálvame co polígrafo. Responde si ou non ás 5 acusacións en 3,5 s. A máquina está truqueada.',
+        story: 'PENÚLTIMA. Sogra. Recíbete no plató do Sálvame co polígrafo. Responde si ou non ás 5 acusacións en 5 s. A máquina está truqueada.',
         quote: '"Mario… SE MENTES… a miña filla non casa contigo. Ozú."',
         gameName: 'O POLÍGRAFO DE PAZ',
-        instruction: 'Responde con [Y] = SI ou [N] = NON. 5 acusacións. Se tardas máis de 3,5 s, MENTES automático.'
+        instruction: 'Responde con [Y] = SI ou [N] = NON. 5 acusacións. Se tardas máis de 5 s, MENTES automático.'
       },
       ng: {
-        story: 'SECOND-TO-LAST. Di mother-in-law. She receive you for Sálvame TV set with polygraph. Answer yes or no to her 5 accusations within 3.5 s. Di machine na rig.',
+        story: 'SECOND-TO-LAST. Di mother-in-law. She receive you for Sálvame TV set with polygraph. Answer yes or no to her 5 accusations within 5 s. Di machine na rig.',
         quote: '"Mario… IF YOU LIE… my daughter no go marry you. Ozú."',
         gameName: 'PAZ POLYGRAPH',
-        instruction: 'Answer with [Y] = YES or [N] = NO. 5 accusations. If you delay pass 3.5 s, na automatic LIE.'
+        instruction: 'Answer with [Y] = YES or [N] = NO. 5 accusations. If you delay pass 5 s, na automatic LIE.'
       }
     }
   },
@@ -3798,6 +3811,7 @@ async function startRounds() {
   state.currentRound = 0;
   state.shots = 0;
   state.groupShots = 0;
+  state.roundShots = {};
   document.getElementById('hud').classList.remove('hidden');
   document.body.classList.add('hud-active');
   if (document.documentElement.requestFullscreen && /Android|iPhone/i.test(navigator.userAgent)) {
@@ -3991,12 +4005,19 @@ async function resolvePrediction(passed) {
 }
 
 async function showResult(shotsTaken, msg = '') {
+  // Ghost-result guard: a game abandoned via jump/back fires its delayed
+  // showResult AFTER the player already left — without this it silently adds
+  // shots to whatever round is on screen ("the score is weird" bug).
+  if (!document.body.classList.contains('game-running')) return;
   // Result screen visible -> game NOT running anymore, restore the back btn
   document.body.classList.remove('game-running');
   const stage = document.getElementById('game-stage');
   const passed = shotsTaken <= 1;
   const good = shotsTaken === 0;
-  addShots(shotsTaken);
+  // Replay-aware scoring: re-playing a round replaces its previous score.
+  const prevRoundShots = state.roundShots[state.currentRound] || 0;
+  state.roundShots[state.currentRound] = shotsTaken;
+  addShots(shotsTaken - prevRoundShots);
   if (good) { sfx.success(); flash('green'); }
   else { sfx.fail(); flash('red'); shake(shotsTaken >= 3 ? 'heavy' : 'light'); }
 
@@ -4128,7 +4149,7 @@ function gameRush(v) {
         <div class="rush-zone" id="rush-zone" style="left:${zoneStart}%; width:${zoneWidth}%;"></div>
         <div class="rush-cursor" id="rush-cursor" style="left:${cursorPos}%;"></div>
       </div>
-      <p style="color:var(--text-dim);font-size:14px;">El taxi de Adebayo se aproxima. La zona <strong style="color:var(--terminal)">cambia de sitio</strong> cada vez.</p>
+      <p style="color:var(--text-dim);font-size:14px;">El taxi de Elver se aproxima. La zona <strong style="color:var(--terminal)">cambia de sitio</strong> cada vez.</p>
     </div>
   `;
 
@@ -4167,7 +4188,7 @@ function gameRush(v) {
     } else {
       running = false;
       const misses = results.filter(r => !r).length;
-      setTimeout(() => showResult(misses, misses === 0 ? '¡5/5 frenazos! Adebayo se calma. De momento.' : `Adebayo te exige ${misses} chupito${misses>1?'s':''}.`), 800);
+      setTimeout(() => showResult(misses, misses === 0 ? '¡4/4 frenazos! Elver se calma. De momento.' : `Elver te exige ${misses} chupito${misses>1?'s':''}.`), 800);
     }
   }
 
@@ -4188,9 +4209,18 @@ function gameRush(v) {
 // ============================================
 function gameMango(v) {
   const stage = document.getElementById('game-stage');
-  const colors = ['green', 'yellow', 'orange', 'red'];
-  const freqs = { green: 392, yellow: 523, orange: 659, red: 784 };
-  const seq = Array.from({length: 6}, () => colors[Math.floor(Math.random() * 4)]);
+  // Playtest 2026-06-09 (Ángel): the mango pads become FACES of the crew.
+  // Drop real photos as assets/memory-<id>.jpg to replace the placeholder
+  // avatars (DiceBear). Jesús Gil gets the full-width bottom pad — the meme.
+  const FACES = [
+    { id: 'olga',         name: 'Olga' },
+    { id: 'paula-bellod', name: 'Paula Bellod' },
+    { id: 'iris',         name: 'Iris' },
+    { id: 'raquel',       name: 'Raquel' },
+    { id: 'jesus-gil',    name: 'Jesús Gil', wide: true }
+  ];
+  const tones = [392, 466, 523, 622, 784]; // one tone per face
+  const seq = Array.from({length: 6}, () => Math.floor(Math.random() * FACES.length));
   let userIdx = 0;
   let lives = 3;
   let mistakes = 0;
@@ -4199,12 +4229,20 @@ function gameMango(v) {
   const timers = new Set();
   const setT = (fn, ms) => { const id = setTimeout(() => { timers.delete(id); if (alive) fn(); }, ms); timers.add(id); return id; };
 
+  const faceCell = (f, i) => `
+    <div class="mango" data-face="${i}" style="${f.wide ? 'grid-column: span 2; min-height: 80px;' : ''}position:relative;background:rgba(255,255,255,0.06);color:var(--gold);overflow:hidden;flex-direction:column;gap:4px;padding:6px;">
+      <img src="assets/memory-${f.id}.jpg" alt="${f.name}"
+           style="width:${f.wide ? '64px' : '72%'};max-width:110px;aspect-ratio:1;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.25);pointer-events:none;"
+           onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(f.name)}&radius=50';" />
+      <span style="font-size:12px;font-weight:800;letter-spacing:0.04em;pointer-events:none;">${f.name}</span>
+    </div>`;
+
   stage.innerHTML = `
     <div style="text-align:center; width:100%;">
       <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:8px;">MANGO MEMORY</div>
-      <div style="color:var(--text-dim);margin-bottom:16px;">Vidas: <span id="mango-lives">❤❤❤</span> · Secuencia: ${seq.length} mangos</div>
-      <div class="mango-grid" id="mango-grid">
-        ${colors.map(c => `<div class="mango" data-color="${c}">🥭</div>`).join('')}
+      <div style="color:var(--text-dim);margin-bottom:16px;">Vidas: <span id="mango-lives">❤❤❤</span> · Secuencia: ${seq.length} caras · Repite quién compró los mangos</div>
+      <div class="mango-grid" id="mango-grid" style="aspect-ratio:auto;">
+        ${FACES.map(faceCell).join('')}
       </div>
       <p id="mango-msg" style="color:var(--text-dim);font-size:14px;">Memoriza la secuencia...</p>
     </div>
@@ -4216,13 +4254,13 @@ function gameMango(v) {
     document.getElementById('mango-msg').textContent = 'Mira con atención...';
     for (const c of seq) {
       if (!alive) return;
-      const el = document.querySelector(`.mango[data-color="${c}"]`);
+      const el = document.querySelector(`.mango[data-face="${c}"]`);
       if (!el) return;
       el.classList.add('active');
-      beep(freqs[c], 0.22, 'sine', 0.09);
-      await sleep(380);
+      beep(tones[c], 0.22, 'sine', 0.09);
+      await sleep(420);
       el.classList.remove('active');
-      await sleep(120);
+      await sleep(160);
     }
     if (!alive) return;
     document.getElementById('mango-msg').textContent = 'Tu turno. Repite la secuencia.';
@@ -4236,15 +4274,15 @@ function gameMango(v) {
     const m = e.target.closest('.mango');
     if (!m || !grid.contains(m)) return;
     if (playing) return;
-    const c = m.dataset.color;
+    const c = parseInt(m.dataset.face);
     m.classList.add('active');
-    beep(freqs[c], 0.25, 'sine', 0.1);
+    beep(tones[c], 0.25, 'sine', 0.1);
     setT(() => m.classList.remove('active'), 200);
     if (c === seq[userIdx]) {
       userIdx++;
       if (userIdx === seq.length) {
         sfx.success(); flash('green');
-        setT(() => showResult(mistakes, mistakes === 0 ? '¡Grace impresionada! No bebes nada.' : `Bebes ${mistakes} por los fallos.`), 800);
+        setT(() => showResult(mistakes, mistakes === 0 ? '¡Rosa Melano impresionada! No bebes nada.' : `Bebes ${mistakes} por los fallos.`), 800);
       }
     } else {
       lives--;
@@ -4252,7 +4290,7 @@ function gameMango(v) {
       sfx.miss(); flash('red'); shake('light');
       document.getElementById('mango-lives').textContent = '❤'.repeat(Math.max(0,lives)) + '🖤'.repeat(3 - Math.max(0,lives));
       if (lives <= 0) {
-        showResult(3, 'Grace se va furiosa. 3 chupitos.');
+        showResult(3, 'Rosa Melano se va furiosa. 3 chupitos.');
       } else {
         userIdx = 0;
         document.getElementById('mango-msg').textContent = `¡Fallo! Reinicia. ${lives} vida(s).`;
@@ -4294,9 +4332,11 @@ function gameRhythm(v, opts = {}) {
   const onPracticeEnd = typeof opts.onPracticeEnd === 'function' ? opts.onPracticeEnd : null;
 
   // === Tuning ===
-  const LEAD_TIME_MS = practice ? 2200 : 1700;   // slower notes in practice
-  const HIT_WINDOW_MS = practice ? 240 : 180;    // wider window in practice
-  const PERFECT_WINDOW_MS = practice ? 100 : 70;
+  // Playtest 2026-06-09 ("ronda 3 va muy rápido"): notes fall 24% slower and
+  // the hit window is slightly wider. Chart timing (beat map) is untouched.
+  const LEAD_TIME_MS = practice ? 2500 : 2100;   // slower notes in practice
+  const HIT_WINDOW_MS = practice ? 240 : 200;    // wider window in practice
+  const PERFECT_WINDOW_MS = practice ? 100 : 80;
   const COUNT_IN_MS = 1500;
   const AUDIO_OFFSET_MS = (state.audioOffsetMs | 0);
   // Beat map — produced by scripts/analyze_rhythm.py with the canonical
@@ -4417,8 +4457,12 @@ function gameRhythm(v, opts = {}) {
       ${titleBadge}
       <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:4px;">LULU'S REVENGE</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.2em;margin-bottom:10px;">${practice ? '♪ AFINACIÓN — TONO TONTO ♪' : '♪ CARA AL SOL ♪'}</div>
-      <div style="color:var(--text-dim);margin-bottom:14px;font-size:13px;">
+      <div style="color:var(--text-dim);margin-bottom:8px;font-size:13px;">
         [D] [F] [J] [K] ${tapWord} · ✓ <span id="r-hits">0</span> · ✗ <span id="r-miss">0</span> · ${totalNotes} ${notesWord}
+        · <span style="color:var(--gold);">🔥 <span id="r-combo">0</span></span>
+      </div>
+      <div style="height:5px;background:rgba(255,255,255,0.1);border-radius:99px;margin:0 auto 10px;max-width:600px;overflow:hidden;">
+        <div id="r-progress" style="height:100%;width:0%;background:linear-gradient(90deg,var(--terminal),var(--gold));border-radius:99px;"></div>
       </div>
       <div class="rhythm-stage${practice ? '' : ' franco-notes'}" id="rhythm-stage">
         <div class="lulu-goat">🐐</div>
@@ -4455,6 +4499,19 @@ function gameRhythm(v, opts = {}) {
   // Currently pressed keys (lane index -> true)
   const heldKeys = [false, false, false, false];
   let hits = 0, misses = 0;
+  let combo = 0, maxCombo = 0, perfects = 0;
+  const songEndT = beatMap[beatMap.length - 1].t;
+  function updateCombo() {
+    const el = document.getElementById('r-combo');
+    if (el) {
+      el.textContent = combo;
+      // Pop animation on every combo change (scale pulse, no layout shift)
+      el.parentElement.style.transition = 'transform 0.12s ease-out';
+      el.parentElement.style.display = 'inline-block';
+      el.parentElement.style.transform = combo > 0 ? 'scale(1.25)' : 'scale(1)';
+      setTimeout(() => { if (el.parentElement) el.parentElement.style.transform = 'scale(1)'; }, 130);
+    }
+  }
   let running = true;
   let audio = null;
   let audioStarted = false;       // becomes true once audio.play() resolves
@@ -4539,6 +4596,10 @@ function gameRhythm(v, opts = {}) {
     if (!running) return;
     const song = songTimeMs();
 
+    // Song progress bar (0 → last note)
+    const prEl = document.getElementById('r-progress');
+    if (prEl) prEl.style.width = Math.min(100, Math.max(0, (song / songEndT) * 100)) + '%';
+
     // Countdown overlay (3 · 2 · 1 · GO)
     if (!audioStarted && cdEl) {
       const remaining = Math.max(0, -song);
@@ -4594,6 +4655,8 @@ function gameRhythm(v, opts = {}) {
           n.judged = 'miss';
           n.hit = true;
           misses++;
+          combo = 0;
+          updateCombo();
           const mEl = document.getElementById('r-miss');
           if (mEl) mEl.textContent = misses;
           n.el.style.opacity = '0';
@@ -4628,12 +4691,16 @@ function gameRhythm(v, opts = {}) {
         return;
       }
       const shots = misses <= 3 ? 0 : Math.min(Math.ceil((misses - 3) / 3), 4);
-      const msg = shots === 0
+      // Arcade-style scorecard: accuracy %, max combo, perfects → letter grade
+      const acc = totalNotes > 0 ? Math.round((hits / totalNotes) * 100) : 0;
+      const grade = acc >= 95 ? 'S' : acc >= 85 ? 'A' : acc >= 70 ? 'B' : acc >= 50 ? 'C' : 'D';
+      const statsLine = `<span style="display:block;margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--gold);">RANK ${grade} · ${acc}% · 🔥 combo máx ${maxCombo} · ★ ${perfects} perfect</span>`;
+      const msg = (shots === 0
         ? (state.lang === 'gl' ? 'Lulu a cabra perdóache.'
           : state.lang === 'ng' ? 'Lulu di goat don forgive you.'
           : 'Lulu la cabra te perdona.')
         : (state.lang === 'ng' ? `${misses} misses. Drink ${shots}.`
-          : `${misses} fallos. ${state.lang === 'ng' ? 'Drink' : 'Bebes'} ${shots}.`);
+          : `${misses} fallos. ${state.lang === 'ng' ? 'Drink' : 'Bebes'} ${shots}.`)) + statsLine;
       setTimeout(() => showResult(shots, msg), 900);
       return;
     }
@@ -4672,6 +4739,10 @@ function gameRhythm(v, opts = {}) {
       best.judged = perfect ? 'perfect' : 'good';
       best.hit = true;
       hits++;
+      combo++;
+      if (combo > maxCombo) maxCombo = combo;
+      if (perfect) perfects++;
+      updateCombo();
       if (best.dur > 0) {
         best.holdActive = true; // start hold tracking — the main loop checks
         if (best.el) best.el.classList.add('held');
@@ -4831,67 +4902,99 @@ function gameSlot(v) {
 // ============================================
 function gameTyping(v) {
   const stage = document.getElementById('game-stage');
-  const target = 'Perdon Aminata por arruinar la boda de tu hija en Dakar';
-  const timeLimit = 25;
-  const previewTime = 6;
-  let timeLeft = timeLimit;
-  let interval;
+  // Playtest 2026-06-09 (Ángel): more phrases, funnier, shorter, escalating
+  // difficulty — and the last one in Galician. preview = memorise seconds,
+  // write = typing seconds. One run-through, mistakes accumulate.
+  const PHRASES = [
+    { text: 'Perdon Unam',                                                   preview: 3, write: 8 },
+    { text: 'Yo pago el catering de Dakar',                                  preview: 3, write: 10 },
+    { text: 'Mil veces si pero el deposito boost x10 jamas',                 preview: 4, write: 14 },
+    { text: 'Prometo devolver un mango a cada madre de Senegal con interes', preview: 5, write: 16 },
+    { text: 'Desculpa Unam devolvereiche os cartos da voda da tua filla',    preview: 5, write: 16, flag: '🇪🇸 EN GALEGO' }
+  ];
+  let phraseIdx = 0;
+  let totalMistakes = 0;
   let alive = true;
-  let previewTimeout;
+  let interval = null;
+  let previewTimeout = null;
   let finished = false;
 
-  stage.innerHTML = `
-    <div class="typing-stage">
-      <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:8px;">LA CARTA DEL PERDÓN</div>
-      <div class="typing-timer" id="t-timer">${timeLimit}</div>
-      <div class="typing-prompt" id="t-prompt">${target}</div>
-      <input class="typing-input" id="t-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Memoriza primero..." disabled />
-      <p style="color:var(--text-dim);font-size:14px;margin-top:12px;">Memoriza la frase. Desaparece en ${previewTime}s. Sin acentos. Cada palabra incorrecta = chupito.</p>
-    </div>
-  `;
-  previewTimeout = setTimeout(() => {
+  function renderPhrase() {
     if (!alive) return;
-    const prompt = document.getElementById('t-prompt');
-    const inp = document.getElementById('t-input');
-    if (prompt) { prompt.innerHTML = '<em style="color:var(--blood);">[ MEMORIA ]</em>'; }
-    if (inp) { inp.disabled = false; inp.placeholder = 'Escribe la frase...'; inp.focus(); }
-  }, previewTime * 1000);
-  const input = document.getElementById('t-input');
+    if (phraseIdx >= PHRASES.length) return finishAll();
+    const p = PHRASES[phraseIdx];
+    stage.innerHTML = `
+      <div class="typing-stage">
+        <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:4px;">LA CARTA DEL PERDÓN</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--gold);letter-spacing:0.2em;margin-bottom:10px;">
+          FRASE ${phraseIdx + 1}/${PHRASES.length} ${p.flag ? '· ' + p.flag : ''} · fallos acumulados: ${totalMistakes}
+        </div>
+        <div class="typing-timer" id="t-timer">👀</div>
+        <div class="typing-prompt" id="t-prompt">${p.text}</div>
+        <input class="typing-input" id="t-input" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Memoriza primero..." disabled />
+        <p style="color:var(--text-dim);font-size:14px;margin-top:12px;">Memorízala (${p.preview}s). Luego escríbela exacta y pulsa ENTER. Sin acentos. Cada palabra mal = +1 fallo.</p>
+      </div>
+    `;
+    const input = document.getElementById('t-input');
+    const onKey = (e) => { if (e.key === 'Enter') gradePhrase(input, p, onKey); };
+    input.addEventListener('keydown', onKey);
 
-  interval = setInterval(() => {
-    if (!alive) { clearInterval(interval); return; }
-    timeLeft--;
-    const tEl = document.getElementById('t-timer');
-    if (!tEl) { clearInterval(interval); return; }
-    tEl.textContent = timeLeft;
-    if (timeLeft <= 5) tEl.classList.add('urgent');
-    if (timeLeft <= 0) { clearInterval(interval); finish(); }
-    if (timeLeft <= 10) sfx.tick();
-  }, 1000);
+    // Phase 1: memorise — timer does NOT run yet (it used to, which felt unfair)
+    previewTimeout = setTimeout(() => {
+      if (!alive) return;
+      const prompt = document.getElementById('t-prompt');
+      if (prompt) prompt.innerHTML = '<em style="color:var(--blood);">[ MEMORIA ]</em>';
+      if (input) { input.disabled = false; input.placeholder = 'Escribe la frase...'; input.focus(); }
+      // Phase 2: write — countdown starts now
+      let timeLeft = p.write;
+      const tEl = document.getElementById('t-timer');
+      if (tEl) tEl.textContent = timeLeft;
+      interval = setInterval(() => {
+        if (!alive) { clearInterval(interval); return; }
+        timeLeft--;
+        const te = document.getElementById('t-timer');
+        if (!te) { clearInterval(interval); return; }
+        te.textContent = timeLeft;
+        if (timeLeft <= 3) te.classList.add('urgent');
+        if (timeLeft <= 5) sfx.tick();
+        if (timeLeft <= 0) { clearInterval(interval); gradePhrase(input, p, onKey); }
+      }, 1000);
+    }, p.preview * 1000);
+  }
 
-  function finish() {
-    if (finished || !alive) return;
-    finished = true;
+  function gradePhrase(input, p, onKey) {
+    if (!alive) return;
     clearInterval(interval);
-    const typed = input.value.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-    const targetN = target.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
-    const typedWords = typed.split(/\s+/).filter(Boolean);
-    const targetWords = targetN.split(/\s+/);
+    if (input) input.removeEventListener('keydown', onKey);
+    const norm = (s) => s.trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    const typedWords = norm(input ? input.value : '').split(/\s+/).filter(Boolean);
+    const targetWords = norm(p.text).split(/\s+/);
     let mistakes = 0;
     for (let i = 0; i < targetWords.length; i++) {
       if (typedWords[i] !== targetWords[i]) mistakes++;
     }
-    showResult(Math.min(mistakes, 6), mistakes === 0 ? 'Aminata acepta el perdón.' : `${mistakes} palabra(s) incorrecta(s).`);
+    totalMistakes += mistakes;
+    if (mistakes === 0) { sfx.success(); flash('green'); toast('✓ Frase perfecta', 'success'); }
+    else { sfx.miss(); flash('red'); toast(`✗ ${mistakes} palabra(s) mal`, 'danger'); }
+    phraseIdx++;
+    setTimeout(renderPhrase, 900);
   }
 
-  const onKey = (e) => { if (e.key === 'Enter') finish(); };
-  input.addEventListener('keydown', onKey);
+  function finishAll() {
+    if (finished) return;
+    finished = true;
+    const shots = Math.min(totalMistakes, 6);
+    showResult(shots, totalMistakes === 0
+      ? 'Carta impecable. Unam Amadita acepta el perdón.'
+      : `${totalMistakes} palabra(s) incorrecta(s) en total. Unam Amadita no olvida.`);
+  }
+
+  renderPhrase();
 
   document.addEventListener('start-game', () => {
     alive = false;
     clearInterval(interval);
     clearTimeout(previewTimeout);
-    if (input) input.removeEventListener('keydown', onKey);
   }, { once: true });
 }
 
@@ -4909,7 +5012,7 @@ function gameQuiz(v) {
 
   function render() {
     if (idx >= qs.length) {
-      showResult(Math.min(wrong, 5), wrong === 0 ? 'Thabo te respeta.' : `${wrong} fallos.`);
+      showResult(Math.min(wrong, 5), wrong === 0 ? 'Helmer te respeta.' : `${wrong} fallos.`);
       return;
     }
     const q = qs[idx];
@@ -4992,7 +5095,7 @@ function gameClicker(v) {
       <div style="display:flex;justify-content:center;align-items:center;height:300px;">
         <button class="clicker-button" id="c-btn" style="transform:scale(1);transition:transform 0.2s;">COLTÁN</button>
       </div>
-      <p style="color:var(--text-dim);font-size:13px;margin-top:16px;">Pulsa <span class="key-hint">SPACE</span> o spam tap. 12+ clicks/s.</p>
+      <p style="color:var(--text-dim);font-size:13px;margin-top:16px;">Pulsa <span class="key-hint">SPACE</span> o spam tap. 8+ clicks/s.</p>
     </div>
   `;
   const btn = document.getElementById('c-btn');
@@ -5014,9 +5117,12 @@ function gameClicker(v) {
 
   btn.addEventListener('click', bump);
   btn.addEventListener('touchstart', (e) => { e.preventDefault(); bump(); }, { passive: false });
-  const keyHandler = (e) => { if (e.code === 'Space') { e.preventDefault(); bump(); } };
+  // e.repeat guard kills the "hold SPACE" exploit — OS key auto-repeat was
+  // racking up ~30 free clicks/s without tapping.
+  const keyHandler = (e) => { if (e.code === 'Space') { e.preventDefault(); if (e.repeat) return; bump(); } };
   document.addEventListener('keydown', keyHandler);
 
+  const TOTAL_TIME = 14;
   const interval = setInterval(() => {
     timeLeft--;
     const te = document.getElementById('c-time');
@@ -5032,7 +5138,7 @@ function gameClicker(v) {
     document.removeEventListener('keydown', keyHandler);
     const missing = Math.max(0, target - count);
     const shots = Math.min(6, Math.ceil(missing / 20));
-    setTimeout(() => showResult(shots, count >= target ? `¡${count} clicks en ${12-timeLeft}s! Patrice se va satisfecho.` : `Solo ${count}/${target}. Bebes ${shots}.`), 600);
+    setTimeout(() => showResult(shots, count >= target ? `¡${count} clicks en ${TOTAL_TIME - timeLeft}s! Salva Polla se va satisfecho.` : `Solo ${count}/${target}. Bebes ${shots}.`), 600);
   }
   document.addEventListener('start-game', () => document.removeEventListener('keydown', keyHandler), { once: true });
 }
@@ -5048,16 +5154,25 @@ function gameDrift(v) {
   let obstacles = [];
   let running = true;
   let lastSpawn = 0;
-  let spawnGap = 600;
-  let fallSpeed = 4;
+  // Playtest 2026-06-09: "más espaciado, si no es bastante complicado" —
+  // slower spawn cadence, slower fall, lower double-spawn odds.
+  let spawnGap = 950;
+  let fallSpeed = 3.4;
 
+  // Mario pilots the plane. Drop assets/mario-face.png to put his face on it
+  // (falls back to plain plane emoji if the photo isn't there yet).
   stage.innerHTML = `
     <div style="text-align:center;">
-      <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:8px;">DRIFT SAHARA</div>
-      <div style="color:var(--text-dim);margin-bottom:16px;">[←] [→] o toca lados · Tiempo: <span id="d-time">22</span>s · Choques: <span id="d-crash">0</span></div>
+      <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:8px;">VUELO MC-911</div>
+      <div style="color:var(--text-dim);margin-bottom:16px;">[←] [→] o toca lados · Tiempo: <span id="d-time">22</span>s · Impactos: <span id="d-crash">0</span></div>
       <div class="drift-stage" id="d-stage">
         <div class="drift-road"></div>
-        <div class="drift-car" id="d-car" style="left: 50%;">🚗</div>
+        <div class="drift-car" id="d-car" style="left: 50%;">
+          <span style="display:inline-block;transform:rotate(-45deg);">✈️</span>
+          <img src="assets/mario-face.png" alt=""
+               style="position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:34px;height:34px;border-radius:50%;border:2px solid var(--gold);object-fit:cover;background:#000;"
+               onerror="this.remove();" />
+        </div>
         <div class="drift-tap-zones">
           <div class="drift-tap-zone" id="d-tap-l">◀</div>
           <div class="drift-tap-zone" id="d-tap-r">▶</div>
@@ -5093,19 +5208,20 @@ function gameDrift(v) {
     if (!te) { clearInterval(interval); return; }
     te.textContent = timeLeft;
     if (timeLeft % 6 === 0) {
-      spawnGap = Math.max(330, spawnGap - 35);
-      fallSpeed = Math.min(7, fallSpeed + 0.4);
+      spawnGap = Math.max(560, spawnGap - 30);
+      fallSpeed = Math.min(5.5, fallSpeed + 0.35);
     }
     if (timeLeft <= 0) finish();
   }, 1000);
 
-  function spawnObstacle(lane) {
-    const o = { x: lane, y: -50, emoji: Math.random() > 0.4 ? '🐪' : '🏜️' };
+  function spawnObstacle(lane, yOffset = 0) {
+    // Twin towers incoming (Mario is the plane — dark humour by request)
+    const o = { x: lane, y: -70 - yOffset, emoji: '🏢' };
     const el = document.createElement('div');
     el.className = 'drift-obstacle';
     el.textContent = o.emoji;
     el.style.left = lane + '%';
-    el.style.top = '-50px';
+    el.style.top = o.y + 'px';
     stageEl.appendChild(el);
     o.el = el;
     obstacles.push(o);
@@ -5116,11 +5232,12 @@ function gameDrift(v) {
     if (t - lastSpawn > spawnGap) {
       const lane = 25 + Math.random() * 50;
       spawnObstacle(lane);
-      // 18% chance to spawn a second obstacle further down
-      if (Math.random() < 0.18) {
-        let lane2 = 25 + Math.random() * 50;
-        if (Math.abs(lane2 - lane) < 18) lane2 = lane + (lane < 50 ? 25 : -25);
-        spawnObstacle(lane2);
+      // 12% chance of a SECOND tower — staggered both horizontally (≥30% gap,
+      // always dodgeable) and vertically (never side-by-side overlap)
+      if (Math.random() < 0.12) {
+        let lane2 = lane < 50 ? lane + 30 : lane - 30;
+        lane2 = Math.max(20, Math.min(80, lane2));
+        spawnObstacle(lane2, 120 + Math.random() * 80);
       }
       lastSpawn = t;
     }
@@ -5147,7 +5264,7 @@ function gameDrift(v) {
     clearInterval(interval);
     document.removeEventListener('keydown', keyHandler);
     const shots = Math.min(crashes, 5);
-    setTimeout(() => showResult(shots, shots === 0 ? '¡Conducción magistral! Fatima respeta.' : `${crashes} choques. ${shots} chupitos.`), 600);
+    setTimeout(() => showResult(shots, shots === 0 ? '¡Vuelo magistral! Lola Mento respeta.' : `${crashes} impactos. ${shots} chupitos.`), 600);
   }
   document.addEventListener('start-game', () => {
     running = false;
