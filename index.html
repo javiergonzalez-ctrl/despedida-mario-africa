@@ -702,7 +702,7 @@
     line-height: 1.65;
     text-align: justify;
     font-weight: 500;
-    animation: crawl 40s linear forwards;
+    animation: crawl 22s linear forwards; /* P1.E: 40s era eterno; el corte a victims llega ~20s */
   }
   @keyframes crawl {
     0% { bottom: -50%; }
@@ -2311,7 +2311,7 @@
 
 <!-- ============ INTRO ============ -->
 <div class="screen hidden" id="screen-intro">
-  <button class="skip-btn" onclick="goToVictims()">Saltar intro ▸</button>
+  <button class="skip-btn" onclick="cancelIntro(); goToVictims();">Saltar intro ▸</button>
   <div class="intro-stage" id="intro-stage"></div>
 </div>
 
@@ -3693,12 +3693,21 @@ const TERMINAL_LINES = {
 // ============================================
 // INTRO CINEMATIC
 // ============================================
+// Generation token: "Saltar intro" (o cualquier salida) deja la corrutina
+// startIntro corriendo por detrás — sin esto, el sleep(20s) del crawl acababa
+// llamando a goToVictims() MÁS TARDE y te sacaba de la partida en curso (P1.F).
+let _introToken = 0;
+function cancelIntro() { _introToken++; }
+
 async function startIntro() {
   initAudio();
+  const my = ++_introToken;
+  // Vivo solo si nadie relanzó/canceló la intro Y seguimos en su pantalla.
+  const alive = () => my === _introToken && !document.getElementById('screen-intro').classList.contains('hidden');
   show('screen-intro');
   const stage = document.getElementById('intro-stage');
 
-  // Phase 1: Terminal
+  // Phase 1: Terminal (P1.E: delays ×0.55 — mismo gag, mitad de espera)
   stage.innerHTML = '<div class="terminal" id="term"></div>';
   const term = document.getElementById('term');
   sfx.heartbeat();
@@ -3708,9 +3717,11 @@ async function startIntro() {
     el.innerHTML = line.text;
     term.appendChild(el);
     sfx.click();
-    await sleep(line.delay);
+    await sleep(Math.round(line.delay * 0.55));
+    if (!alive()) return;
   }
-  await sleep(700);
+  await sleep(400);
+  if (!alive()) return;
 
   // Phase 2: Counter
   stage.innerHTML = `
@@ -3721,11 +3732,12 @@ async function startIntro() {
     </div>
   `;
   sfx.alarm();
-  await animateCounter('counter', 0, 4732891, 2600);
-  await sleep(900);
+  await animateCounter('counter', 0, 4732891, 1800);
+  if (!alive()) return;
+  await sleep(600);
+  if (!alive()) return;
 
   // Phase 3: PIXEL ART Africa + Iberia map
-  await sleep(800);
   const PX = 12;
   const cols = AFRICA_PIXEL_GRID[0].length;
   const rows = AFRICA_PIXEL_GRID.length;
@@ -3758,7 +3770,7 @@ async function startIntro() {
     const px = (d.col * PX + PX/2) / W * 100;
     const py = (d.row * PX + PX/2) / H * 100 + (d.dy || 0);
     let style, arrow;
-    const delay = 800 + i * 60;
+    const delay = 400 + i * 50;
     if (d.pos === 'L') {
       style = 'right:calc(' + (100 - px) + '% + 18px);top:' + py + '%;transform:translateY(-50%);';
       arrow = '<span class="lbl-arrow">▶</span>';
@@ -3792,8 +3804,9 @@ async function startIntro() {
     </div>
   `;
   sfx.tick();
-  // Hold so user can read all 12 labels comfortably
-  await sleep(10000);
+  // P1.E: 10s de hold era un funeral — 4.5s basta (labels entran en ~1s).
+  await sleep(4500);
+  if (!alive()) return;
 
   // Phase 4: WANTED
   stage.innerHTML = `
@@ -3813,16 +3826,18 @@ async function startIntro() {
   `;
   setTimeout(() => sfx.drum(), 300);
   setTimeout(() => sfx.drum(), 600);
-  await sleep(2800);
+  await sleep(2600);
+  if (!alive()) return;
 
-  // Phase 5: Crawl
+  // Phase 5: Crawl (animación CSS 22s; cortamos a victims a los 20s)
   stage.innerHTML = `
     <div class="crawl-wrap">
       <div class="crawl">${tList(CRAWL_TEXT_HTML)}</div>
     </div>
   `;
   sfx.whoosh();
-  await sleep(40000);
+  await sleep(20000);
+  if (!alive()) return;
 
   // Plane scene removed from intro flow per design review.
   goToVictims();
@@ -7501,6 +7516,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
 // Expose to onclick
 window.startIntro = startIntro;
+window.cancelIntro = cancelIntro;
 window.goToVictims = goToVictims;
 window.startRounds = startRounds;
 window.nextRound = nextRound;
