@@ -2363,7 +2363,7 @@
       <div style="font-family:'Bebas Neue';font-size:64px;line-height:1;color:var(--terminal);" id="lobby-count">0</div>
       <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);margin-top:8px;" id="lobby-list" data-i18n="lobby_waiting">esperando móviles...</div>
     </div>
-    <p style="color:var(--text-dim);font-size:13px;margin-top:20px;" data-i18n="lobby_no_fb">⚠ Si Firebase no está configurado: voto manual con botones del portátil.</p>
+    <p style="color:var(--text-dim);font-size:13px;margin-top:20px;" data-i18n="lobby_no_fb">⚠ ¿Un móvil no conecta? Siempre se puede votar en manual desde el portátil.</p>
     <div style="margin-top: 24px;">
       <button class="btn-primary" onclick="startRounds()" data-i18n="start_party">▶ EMPEZAR PARTIDA</button>
     </div>
@@ -2516,9 +2516,9 @@
 // CONFIG
 // ============================================
 // Backend: Neon Postgres via same-origin Vercel functions (api/*.js).
-// Firebase removed 2026-06-10 (Google billing). FIREBASE_ENABLED stays as a
-// compat flag so every call-site keeps working unchanged.
-const FIREBASE_ENABLED = true;
+// (Firebase fue eliminado 2026-06-10 por billing de Google.)
+// BACKEND_ENABLED = false desactiva todo el voto QR (modo solo-portátil).
+const BACKEND_ENABLED = true;
 const API_POST = (path, body) =>
   fetch('/api/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     .then(r => r.json()).catch(() => null);
@@ -2578,7 +2578,7 @@ const I18N = {
     lobby_help: 'Cada amigo escanea UNA vez. Su móvil queda enlazado para todas las votaciones del juego.',
     lobby_connected: 'Conectados',
     lobby_waiting: 'esperando móviles...',
-    lobby_no_fb: '⚠ Si Firebase no está configurado: voto manual con botones del portátil.',
+    lobby_no_fb: '⚠ ¿Un móvil no conecta? Siempre se puede votar en manual desde el portátil.',
     start_party: '▶ EMPEZAR PARTIDA',
     skip_lobby: 'Saltar lobby',
     map_title: 'TENERIFE',
@@ -2637,7 +2637,7 @@ const I18N = {
     lobby_help: 'Cada amigo escanea UNHA vez. O seu móbil queda ligado para tódalas votacións do xogo.',
     lobby_connected: 'Conectados',
     lobby_waiting: 'agardando móbiles...',
-    lobby_no_fb: '⚠ Se Firebase non está configurado: voto manual cos botóns do portátil.',
+    lobby_no_fb: '⚠ Un móbil non conecta? Sempre se pode votar en manual dende o portátil.',
     start_party: '▶ EMPEZAR PARTIDA',
     skip_lobby: 'Saltar lobby',
     map_title: 'TENERIFE',
@@ -2694,7 +2694,7 @@ const I18N = {
     lobby_help: 'Every padi go scan ONE time. Im phone go connect for all di voting.',
     lobby_connected: 'Connected',
     lobby_waiting: 'we dey wait phones...',
-    lobby_no_fb: '⚠ If Firebase no dey set: manual vote with laptop buttons.',
+    lobby_no_fb: '⚠ Phone no gree connect? You fit always vote manual from di laptop.',
     start_party: '▶ START DI PARTY',
     skip_lobby: 'Skip lobby',
     map_title: 'TENERIFE',
@@ -3293,13 +3293,13 @@ const VICTIMS = [
     instruction: 'Mario se ha fugado de la boda y se esconde entre 120 invitados. Encuéntralo en 30s (ojo a los novios falsos). Luego: EL voto final y el público decide si hay boda.',
     i18n: {
       gl: {
-        story: 'BOSS FINAL FINAL. A noiva. Recíbete vestida de noiva co polígrafo da mamá. 6 votos matrimoniais. Ao final: o público vota se a voda se cancela.',
+        story: 'BOSS FINAL FINAL. A noiva. Mario fuxiu da voda e hai que atopalo entre os invitados. Logo, O voto final co polígrafo da mamá — e o público vota se a voda se cancela.',
         quote: '"Mario, míranme aos ollos e respóndeme. Mil veces… que?"',
         gameName: 'ONDE ESTÁ MARIO?',
         instruction: 'Mario fuxiu da voda e escóndese entre 120 invitados. Atópao en 30 s (ollo aos noivos falsos). Logo: O voto final e o público decide se hai voda.'
       },
       ng: {
-        story: 'FINAL FINAL BOSS. Di bride. She receive you for wedding dress with her mama polygraph. 6 wedding vows. For di end: di crowd go vote whether di wedding cancel.',
+        story: 'FINAL FINAL BOSS. Di bride. Mario don run from im own wedding and you gatz find am among di guests. Then, DI final vow with mama polygraph — and di crowd go vote whether di wedding cancel.',
         quote: '"Mario, look me for di eye and answer. A thousand times… what?"',
         gameName: 'WHERE MARIO DEY?',
         instruction: 'Mario don run from im own wedding, e dey hide among 120 guests. Find am for 30 s (watch out for fake grooms). Then: DI final vow and di crowd decide if wedding go happen.'
@@ -4027,7 +4027,7 @@ function copyToClip(text, btn) {
   }
 }
 function openLobby() {
-  initFirebase();
+  initBackend();
   show('screen-lobby');
   document.getElementById('lobby-room').textContent = ROOM_ID;
   const url = `${location.origin}${location.pathname}?vote=1&room=${ROOM_ID}`;
@@ -4045,7 +4045,7 @@ function openLobby() {
     const cEl = document.getElementById('lobby-count');
     const lEl = document.getElementById('lobby-list');
     if (cEl) cEl.textContent = s.players.length;
-    if (lEl) lEl.textContent = s.players.length === 0 ? 'esperando móviles...' : names.join(' · ');
+    if (lEl) lEl.textContent = s.players.length === 0 ? t('lobby_waiting') : names.join(' · ');
   }, 2000);
 }
 
@@ -4086,7 +4086,7 @@ async function nextRound() {
 
 // Games where a short warm-up actually helps the player understand the
 // mechanic. For simple click/quiz/typing games the instruction text is enough.
-const PRACTICE_SUPPORTED = new Set(['rhythm', 'clicker', 'drift', 'whack', 'penalty']);
+const PRACTICE_SUPPORTED = new Set(['rhythm', 'clicker', 'drift', 'whack']);
 
 async function showTransitionCard(v) {
   const stage = document.getElementById('game-stage');
@@ -4186,7 +4186,7 @@ async function runPracticeRound(v) {
 }
 
 function openPrediction(v) {
-  if (!FIREBASE_ENABLED) return;
+  if (!BACKEND_ENABLED) return;
   API_POST('round', { action: 'open', room: ROOM_ID, round: state.currentRound, gameName: vt(v, 'gameName') });
   // Live counter on TV — 2s polling is indistinguishable from realtime here
   if (state._predUnsubs) state._predUnsubs();
@@ -4203,7 +4203,7 @@ function openPrediction(v) {
 }
 
 function closePrediction() {
-  if (!FIREBASE_ENABLED) return;
+  if (!BACKEND_ENABLED) return;
   API_POST('round', { action: 'close', room: ROOM_ID, round: state.currentRound });
 }
 
@@ -5779,6 +5779,8 @@ function gameWhack(v) {
 // ============================================
 // GAME 10 — PRESS CONFERENCE
 // ============================================
+// ⚠ DEAD CODE (sin víctima asignada desde el rediseño de rondas).
+// PENDIENTE JAVIER: ¿recuperar la Press Conference para alguna víctima o borrar?
 function gamePress(v) {
   const stage = document.getElementById('game-stage');
   let qIdx = 0;
@@ -6383,6 +6385,7 @@ function gameRunner(v) {
 // ============================================
 // GAME 11 — PENALTY vs FERRER
 // ============================================
+// ⚠ DEAD CODE (sin víctima asignada). PENDIENTE JAVIER: ¿recuperar o borrar?
 function gamePenalty(v) {
   const stage = document.getElementById('game-stage');
   let shotsLeft = 5;
@@ -7226,9 +7229,8 @@ function ANNA_TIME(t) { return t.toFixed(1) + 's'; }
 // ============================================
 // QR VOTING
 // ============================================
-// Compat shims — firebaseDB is just a truthy flag now, init is a no-op.
-let firebaseDB = true;
-function initFirebase() {}
+// Shim heredado de la era Firebase: el backend Neon no necesita init.
+function initBackend() {}
 
 // Final/public votes are modelled as a special round id: 900 + currentRound.
 let _voteModalPoll = null;
@@ -7529,7 +7531,7 @@ window.addEventListener('DOMContentLoaded', () => {
   const params = new URLSearchParams(location.search);
   if (params.get('vote') === '1') {
     show('screen-vote');
-    initFirebase();
+    initBackend();
     const room = params.get('room');
     if (room) {
       const savedName = localStorage.getItem('mario_name_' + room);
