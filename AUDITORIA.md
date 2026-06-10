@@ -50,7 +50,7 @@
 ## P3 — Jugabilidad floja
 
 - [x] **P3.1 Rush (ronda 1) visualmente pobre** ✅ 1b25e5f — escena Lagos (atardecer + skyline ventanas + carretera animada + taxi/danfo cruzando), cursor = taxi de Elver frenando en la PARADA. Mecánica intacta (4 intentos verificados Playwright 390px+desktop).
-- [ ] **P3.2 Revisar dificultad global**: pase final con las 12 rondas seguidas en móvil para calibrar chupitos/duración (mejor al final, post-cambios).
+- [x] **P3.2 Pase E2E final 12 rondas EN PROD (390px)** ✅ 2026-06-11 ~01:20 — smoke completo contra despedida-mario-africa.vercel.app: 12/12 transition cards + juegos arrancan (markers DOM verificados: lagos-scene, mango 20 cartas, receptores rhythm, slot, typing con timeout-grading correcto, quiz, clicker, drift, whack, runner con ciclo completo hasta result +5, mill-start, wally-grid 120) + capturas inspeccionadas (e2e-r*.jpeg) + voto móvil prod (join+polling OK). Consola prod limpia: solo los 404 esperados de fotos pendientes (onerror fallback por diseño). Dificultad global: sin cambios necesarios tras los overhauls de esta noche.
 
 ## P4 — Texturas / UI / copys
 
@@ -72,6 +72,19 @@
 - No SVG viewBox zoom sobre pixel art; no spotlight oscuro; colores planos GBC; no SVGs huérfanos en body; pins próximos → dy manual + lado alterno; mantener no-cache headers.
 - No fotos reales que no existen (las de Álvaro), no audio grabado inventado, no cambiar lore/orden salvo A y B.
 - Commits: email `239983809+javiergonzalez-ctrl@users.noreply.github.com`, add por archivo, push a main tras verificar.
+
+## 🌙 CIERRE DE LA NOCHE (2026-06-11 ~01:20) — BACKLOG AGOTADO
+
+**Hecho y en prod** (d28d482 → último): P0.1 juego fantasma · P0.2 toast pegado · P1.A quiz revert · P1.B Millonario R11 + API choice 0..3 + fix activeRound · P1.C rhythm receptores DDR · P1.D mapa aventura · P1.E intro 61s→32s · P1.F skip mata corrutina · P1.G controles HUD ↻/✕ · P2.1/2.3/2.4 polish · P3.1 rush Lagos · P3.2 E2E prod · P4.1-3 copys · P5.2 BACKEND_ENABLED.
+
+**PENDIENTE JAVIER (decisiones/material suyo):**
+1. ✏️ Ajustar preguntas del Millonario → `MILLONARIO_QUESTIONS` (array comentado en index.html, busca "EDITAR AQUÍ"). Voz: flag `MILLONARIO_VOICE_ENABLED` (true=speechSynthesis es-ES; voces grabadas = sustituir `millSpeak()`).
+2. 📸 Subir fotos → `assets/FOTOS_PENDIENTES.md` (memory-olga/paula-bellod/iris/raquel/jesus-gil.jpg + mario-face.png). Entran solas (onerror fallback) — son los únicos 404 de consola.
+3. 🗑️ `gamePress` + `gamePenalty` (~250 líneas dead code marcadas): ¿recuperar Press Conference para alguna víctima o borrar?
+4. 🎵 P6.1 música chiptune menú/mapa (opcional, no hecho).
+5. 🔄 P6.2 resume de shots/ronda del host si la TV recarga a mitad de partida (opcional, no hecho).
+6. 📰 Capturas de noticias reales de Anna/Mario (las pasa Álvaro) — el polígrafo ya no está en el flujo; si las quieres usar, decidir dónde (¿acusaciones del Millonario? ¿intro?).
+7. 📱 Prueba E2E real con 2+ móviles físicos en la misma sala (lo único no automatizable).
 
 ## Evidencia de la auditoría
 Capturas en `C:\Users\javi1\IA-Proyectos\audit-0*.jpeg` (start/victims/transition/rhythm/quiz/poligrafo/map 390px + map desktop + final 390px). Bugs P0 reproducidos en vivo contra prod con Playwright.
