@@ -19,12 +19,12 @@
 
 - [x] **P1.A Quiz F1 (ronda 6): REVERTIR al set simple** ✅ — restaurado set de 830ffbc (es: 15 preguntas = 12 F1 + 3 Mario; gl/ng intactas) + instruction de Helmer. Verificado Playwright: 15 dots, preguntas clásicas, avance OK.
 
-- [ ] **P1.B ¿QUIÉN QUIERE SER MILLONARIO? — nuevo minijuego que SUSTITUYE la ronda 11** (fuera el polígrafo de Paz de esa posición).
-  - 6-7 preguntas A/B/C/D dificultad creciente, lore Mario+Anna (UFV, F1 Fantasy África, Menorca sept 2025, boda Cádiz 2026, "¡Mil veces sí!", Noniná, Paz Sálvame, Albert ex-Barça). Array JS comentado y editable (Javier las ajusta mañana).
-  - Comodín del público: voto QR Neon. ⚠️ `api/vote.js` solo acepta `choice 0|1` y `api/state.js` solo devuelve counts si/no → extender a `choice 0..3` + counts por opción (compat si/no intacta) + página móvil con botones A/B/C/D cuando round id ∈ rango comodín (p.ej. 800+N).
-  - Presentador: copys + dramatismo + luces; voz `speechSynthesis` es-ES tras flag `MILLONARIO_VOICE_ENABLED` (Javier meterá voces grabadas después).
-  - Integración completa: transition card (apuestas) → juego → showResult → ranking. Actualizar VICTIMS[10] (nombre del juego, instruction, i18n gl/ng).
-  - Decidir destino de `gamePoligrafo`: queda sin víctima → ¿borrar o conservar? (ver P5.1).
+- [x] **P1.B ¿QUIÉN QUIERE SER MILLONARIO? — SUSTITUYE la ronda 11.** ✅ ac197d4
+  - Paz Padilla pasa de polígrafo a PRESENTADORA (orden de víctimas intacto). 7 preguntas lore en `MILLONARIO_QUESTIONS` (array comentado, editable; chupitos por caída en `MILLONARIO_FAIL_SHOTS`).
+  - Formato concurso: intro plató → pregunta → selección → "¿RESPUESTA DEFINITIVA?" → suspense con dim de luces + latidos → reveal. Escalera de premios cachondos. Voz presentador `speechSynthesis` es-ES tras `MILLONARIO_VOICE_ENABLED` (nota: sustituir `millSpeak()` por mp3 cuando Javier traiga voces grabadas).
+  - Comodines: 50:50 + EL PÚBLICO (QR Neon, rounds 800+idx, barras % en vivo + botones manuales sin móviles; % quedan pegados a las opciones al cerrar).
+  - API extendido: `vote.js` choice 0..3, `state.js` counts.byChoice + **fix prioridad open en activeRound** (bug latente: un round 800/900+ cerrado tapaba las apuestas de rondas posteriores). Móvil: botones A/B/C/D para rounds 800-899.
+  - Verificado: Playwright 390px+desktop (flujo win/lose, 50:50, público, % persistentes) + E2E prod (vote choice 3 → byChoice=[0,0,0,1]; activeRound prioriza open). `gamePoligrafo` queda sin víctima → P5.1.
 
 - [ ] **P1.C Ronda 3 (Lulu's Revenge, rhythm): mejora integral "a todos los niveles"** (pedido por Javier 2026-06-10).
   - Jugabilidad: revisar ritmo/densidad del chart, ventanas de hit, claridad de los holds, curva de dificultad.
