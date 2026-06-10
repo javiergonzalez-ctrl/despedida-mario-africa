@@ -38,7 +38,7 @@
 
 - [x] **P1.F "Saltar intro" SIEMPRE operativo.** ✅ 5db8923 — Botón fixed z-200 visible sobre las 5 fases (ya lo estaba). BUG REAL arreglado: la corrutina async seguía viva tras saltar y su `goToVictims()` final (a los ~40s) te SACABA de la partida en curso. Ahora token `_introToken` + guard `alive()` (token+visibilidad) tras cada await; skip llama `cancelIntro()`. Verificado Playwright: skip a mitad de terminal → victims → jumpToRound(7) → 5s después sigue en screen-game con la intro congelada (corrutina muerta).
 
-- [ ] **P1.G Controles a MITAD de juego: reiniciar Y salir** (Javier 2026-06-11). Hoy en mitad de un juego no puedes ni reiniciar ni salir (◀ MENÚ oculto durante game-running por el fix fat-finger). Añadir DOS controles accesibles durante la partida (pills en el HUD visibles solo con game-running): "↻" reiniciar → jumpToRound(state.currentRound) (la transition card actúa de confirmación natural) y "✕" salir → backToVictims() (menú del juego; desde ahí ya hay ◀ INICIO al menú principal). Verificar teardown limpio del juego en curso (timers, listeners, audio) en ambos caminos.
+- [x] **P1.G Controles a MITAD de juego: reiniciar Y salir.** ✅ a32571a — Pills ↻/✕ en HUD (pointer-events:auto sobre HUD none), visibles SOLO con body.game-running. ↻ → jumpToRound(actual) pasando por transition card (confirmación natural); ✕ → backToVictims(). jumpToRound ahora quita game-running (los pills no persisten en transition cards). Verificado Playwright 390px: transition card sin pills → en juego con pills → ↻ vuelve a card ronda 7 → ✕ a victims con teardown; en result también se ocultan.
 
 ## P2 — Fricción / bugs móvil (390px)
 
