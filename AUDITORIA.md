@@ -4,16 +4,18 @@
 
 ## P0 — Bugs que rompen el juego
 
-- [ ] **P0.1 Juego fantasma al pulsar "VOLVER AL MENÚ" en la transition card.**
+- [x] **P0.1 Juego fantasma al pulsar "VOLVER AL MENÚ" en la transition card.** ✅ d28d482 — resolve {cancelled:true} antes del dispatch; verificado Playwright (back→sin ghost, start→juego OK).
   Reproducido en prod: `jumpToRound(7)` → click `transition-back-btn` → quedas en `screen-victims` PERO `body.game-running=true` y el clicker está montado en el stage oculto con key handlers + timers vivos. Al expirar el juego llama `showResult` (la guard `game-running` pasa porque `startGame` la re-activó) → suma chupitos a una ronda que el jugador canceló y dispara `resolve` en el API.
   **Causa raíz**: en `showTransitionCard` (index.html:3894-3920), el handler del back llama `backToVictims()` que despacha `start-game`; el listener `document('start-game')` resuelve la promise con `undefined` ANTES de que el handler ejecute `resolveOuter({cancelled:true})` → `jumpToRound`/`nextRound` ven "no cancelado" y llaman `startGame(v)`.
   **Fix**: resolver `{cancelled:true}` ANTES de llamar `backToVictims()` (o flag `cancelled` que el listener de start-game consulte).
 
-- [ ] **P0.2 Toast pegado para siempre en móvil (multilínea).**
+- [x] **P0.2 Toast pegado para siempre en móvil (multilínea).** ✅ — opacity gate + pointer-events:none; verificado Playwright (expira→0, cambio de pantalla→0).
   Reproducido: toast "⏱ TIMEOUT — Paz lo toma como mentira" (3 líneas a 390px) sigue visible 3 pantallas y varios minutos después (map → final). `clearToast()`/timer quitan `.visible`, pero el estado oculto es solo `translateY(-150px)` con `top:90px` (index.html:1933-1951) — un toast de ~70px+ de alto sigue asomando por arriba. `opacity` queda a 1 siempre.
   **Fix**: `.toast { opacity:0; pointer-events:none; }` + `.toast.visible { opacity:1; }` (mantener el translate para la animación).
 
 ## P1 — Cambios confirmados por Javier (alta prioridad)
+
+> **MANDATO GRÁFICO (Javier 2026-06-10 noche): luz verde para cambiar los gráficos y hacer algo más profesional aún.** Aplica a mapa (P1.D), rhythm (P1.C), intro (P1.E) y a cualquier juego/pantalla que lo necesite — siempre dentro de las lecciones (colores planos GBC, raster pixelated, sin viewBox zoom).
 
 - [ ] **P1.A Quiz F1 (ronda 6): REVERTIR al set simple** anterior a af4e461 / be051ec / 283a2e1 (humor negro + troll). Extraer el set previo con `git show 830ffbc:index.html` (F1_QUESTIONS es). Sincronizar `instruction` de Helmer (es dice "21 preguntas — humor MUY negro"; gl/ng dicen 12). Verificar quiz completo tras revert.
 
