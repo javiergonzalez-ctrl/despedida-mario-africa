@@ -1925,6 +1925,48 @@
   }
   .final-msg em { color: var(--gold); font-style: normal; }
 
+  /* ============ TENERIFE MAP (P1.D redesign) ============ */
+  #screen-map { padding-top: 76px; }
+  .map-header { text-align: center; margin-bottom: 12px; }
+  .map-header h2 { font-family: 'Bebas Neue'; font-size: clamp(42px, 7vw, 64px); letter-spacing: 0.08em; line-height: 1; }
+  .map-header p { color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.06em; margin-top: 4px; }
+  .tenerife-container { width: min(720px, 94vw); margin: 0 auto; text-align: center; }
+  .tenerife-svg { width: 100%; height: auto; display: block; border-radius: 18px; box-shadow: 0 14px 50px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(141,162,255,0.18); }
+  .island-base { fill: #d9b36c; stroke: #f4e3ae; stroke-width: 3; filter: url(#island-shadow); }
+  .island-inland { fill: #5e9444; }
+  .teide-cone { fill: #564a50; stroke: #2e2429; stroke-width: 2; }
+  .teide-snow { fill: #ffffff; }
+  .teide-label { fill: rgba(0,0,0,0.55); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; letter-spacing: 0.12em; }
+  .ocean-label { fill: rgba(255,255,255,0.3); font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.4em; }
+  .wave { stroke: rgba(255,255,255,0.18); stroke-width: 2; fill: none; stroke-linecap: round; }
+  .compass circle { fill: rgba(0,0,0,0.35); stroke: rgba(255,255,255,0.35); stroke-width: 1.5; }
+  .compass polygon { fill: var(--gold); }
+  .compass text { fill: rgba(255,255,255,0.6); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 800; }
+  .map-route-done { stroke: var(--gold); stroke-width: 3.5; fill: none; stroke-linecap: round; stroke-linejoin: round; filter: drop-shadow(0 0 4px rgba(255,215,0,0.6)); }
+  .map-route-todo { stroke: rgba(255,255,255,0.4); stroke-width: 3; fill: none; stroke-dasharray: 1 9; stroke-linecap: round; stroke-linejoin: round; }
+  .map-pin { cursor: pointer; }
+  .map-pin .pin-circle { fill: #16202f; stroke: rgba(141,162,255,0.65); stroke-width: 2.5; transition: fill 0.15s, stroke 0.15s; }
+  .map-pin .pin-num { fill: #cdd8ff; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 800; text-anchor: middle; dominant-baseline: central; pointer-events: none; }
+  .map-pin:hover .pin-circle { stroke: var(--gold); fill: #243149; }
+  .map-pin.done .pin-circle { fill: #0d8c3a; stroke: #3aff84; }
+  .map-pin.done .pin-num { fill: #eafff2; }
+  .map-pin.active .pin-circle { fill: var(--gold); stroke: #ffffff; stroke-width: 3; }
+  .map-pin.active .pin-num { fill: #000000; }
+  .pin-halo {
+    fill: none; stroke: var(--gold); stroke-width: 2.5; pointer-events: none;
+    transform-box: fill-box; transform-origin: center;
+    animation: pinHalo 1.6s ease-out infinite;
+  }
+  @keyframes pinHalo { 0% { transform: scale(0.6); opacity: 1; } 100% { transform: scale(2); opacity: 0; } }
+  .map-current-info {
+    margin: 16px auto 0; max-width: 460px;
+    background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+    border-radius: 16px; padding: 16px 22px; backdrop-filter: blur(6px);
+  }
+  .map-current-info .label { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.3em; color: var(--gold); text-transform: uppercase; }
+  .map-current-info .name { font-family: 'Bebas Neue'; font-size: clamp(30px, 6vw, 42px); line-height: 1.1; margin: 4px 0 2px; }
+  .map-current-info .game { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--cyan); letter-spacing: 0.12em; margin-bottom: 10px; }
+
   /* ============ MILLONARIO (ronda 11) ============ */
   .mill-stage {
     width: 100%; max-width: 760px; margin: 0 auto; text-align: center;
@@ -2317,26 +2359,41 @@
     <p data-i18n="map_sub">12 paradas · 12 vidas arruinadas · 1 boda en juego</p>
   </div>
   <div class="tenerife-container">
-    <svg class="tenerife-svg" viewBox="0 0 600 340" preserveAspectRatio="xMidYMid meet">
+    <svg class="tenerife-svg" viewBox="0 0 600 340" preserveAspectRatio="xMidYMid meet" aria-label="Mapa de Tenerife con las 12 paradas">
       <defs>
-        <linearGradient id="tenerife-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="rgba(180, 130, 80, 0.4)" />
-          <stop offset="50%" stop-color="rgba(120, 80, 50, 0.55)" />
-          <stop offset="100%" stop-color="rgba(60, 40, 25, 0.7)" />
-        </linearGradient>
-        <radialGradient id="teide-grad" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0%" stop-color="rgba(255,255,255,0.8)" />
-          <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+        <radialGradient id="ocean-glow" cx="0.5" cy="0.45" r="0.8">
+          <stop offset="0%" stop-color="#11456b" />
+          <stop offset="100%" stop-color="#071624" />
         </radialGradient>
+        <filter id="island-shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="7" stdDeviation="9" flood-color="#000000" flood-opacity="0.55" />
+        </filter>
       </defs>
-      <!-- Tenerife island -->
-      <path class="island" d="M 90,170 C 75,150 80,130 105,120 L 145,108 195,98 250,90 295,85 C 340,85 380,90 420,95 L 460,108 490,128 510,150 C 522,170 524,188 515,205 L 495,225 470,238 440,245 C 405,250 370,247 335,240 L 290,225 245,215 200,210 C 165,213 130,212 105,205 C 85,195 80,180 90,170 Z" />
-      <!-- Teide (volcano) glow indicator -->
-      <circle cx="300" cy="155" r="30" fill="url(#teide-grad)" opacity="0.5" />
-      <circle cx="300" cy="155" r="4" fill="#fff" opacity="0.7" />
-      <text x="300" y="180" fill="rgba(255,255,255,0.7)" font-family="JetBrains Mono" font-size="9" text-anchor="middle">TEIDE</text>
-      <!-- Pins placeholder, filled by JS -->
+      <!-- Océano -->
+      <rect class="ocean" x="0" y="0" width="600" height="340" rx="18" fill="url(#ocean-glow)" />
+      <path class="wave" d="M 50,60 q 10,-6 20,0 q 10,6 20,0" />
+      <path class="wave" d="M 520,250 q 10,-6 20,0 q 10,6 20,0" />
+      <path class="wave" d="M 70,280 q 10,-6 20,0 q 10,6 20,0" />
+      <path class="wave" d="M 500,70 q 10,-6 20,0 q 10,6 20,0" />
+      <text class="ocean-label" x="300" y="326" text-anchor="middle">· OCÉANO ATLÁNTICO ·</text>
+      <!-- Isla: costa (arena) + interior (verde) -->
+      <path class="island-base" d="M 90,170 C 75,150 80,130 105,120 L 145,108 195,98 250,90 295,85 C 340,85 380,90 420,95 L 460,108 490,128 510,150 C 522,170 524,188 515,205 L 495,225 470,238 440,245 C 405,250 370,247 335,240 L 290,225 245,215 200,210 C 165,213 130,212 105,205 C 85,195 80,180 90,170 Z" />
+      <path class="island-inland" transform="translate(54,29.7) scale(0.82)" d="M 90,170 C 75,150 80,130 105,120 L 145,108 195,98 250,90 295,85 C 340,85 380,90 420,95 L 460,108 490,128 510,150 C 522,170 524,188 515,205 L 495,225 470,238 440,245 C 405,250 370,247 335,240 L 290,225 245,215 200,210 C 165,213 130,212 105,205 C 85,195 80,180 90,170 Z" />
+      <!-- Teide -->
+      <g class="teide">
+        <polygon class="teide-cone" points="300,118 266,172 334,172" />
+        <polygon class="teide-snow" points="300,118 287,140 313,140" />
+        <text class="teide-label" x="300" y="186" text-anchor="middle">TEIDE · 3.715 m</text>
+      </g>
+      <!-- Ruta + pins (rellenados por JS) -->
+      <g id="map-route"></g>
       <g id="map-pins"></g>
+      <!-- Brújula -->
+      <g class="compass" transform="translate(556,46)">
+        <circle r="16" />
+        <polygon points="0,-11 4,2 0,-1 -4,2" />
+        <text y="-20" text-anchor="middle">N</text>
+      </g>
     </svg>
     <div class="map-current-info" id="map-info" style="display:none;">
       <div class="label" data-i18n="map_next">SIGUIENTE PARADA</div>
@@ -2856,6 +2913,16 @@ window.esc = esc;
 function renderMapPins() {
   const g = document.getElementById('map-pins');
   if (!g) return;
+  // Ruta tipo juego de mesa: tramo recorrido en oro sólido, tramo pendiente
+  // en puntitos. El corte es el pin activo (ronda actual).
+  const routeG = document.getElementById('map-route');
+  if (routeG) {
+    const pts = MAP_PINS.map(p => `${p.x},${p.y}`);
+    const cut = Math.max(0, Math.min(MAP_PINS.length - 1, state.currentRound - 1));
+    routeG.innerHTML = `
+      ${cut > 0 ? `<polyline class="map-route-done" points="${pts.slice(0, cut + 1).join(' ')}" />` : ''}
+      <polyline class="map-route-todo" points="${pts.slice(cut).join(' ')}" />`;
+  }
   g.innerHTML = MAP_PINS.map((p, i) => {
     const idx = i + 1;
     const v = VICTIMS[i];
@@ -2863,8 +2930,9 @@ function renderMapPins() {
     const active = i === (state.currentRound - 1);
     const cls = ['map-pin', done ? 'done' : '', active ? 'active' : ''].filter(Boolean).join(' ');
     const label = done ? '✓' : idx;
-    return `<g class="${cls}" data-i="${i}" transform="translate(${p.x},${p.y})" style="cursor:pointer;" onclick="jumpToRound(${idx})">
-      <circle class="pin-circle" r="18"/>
+    return `<g class="${cls}" data-i="${i}" transform="translate(${p.x},${p.y})" onclick="jumpToRound(${idx})">
+      ${active ? '<circle class="pin-halo" r="16"/>' : ''}
+      <circle class="pin-circle" r="16"/>
       <text class="pin-num">${label}</text>
       <title>${idx}. ${v.name} · ${vt(v, 'gameName')}</title>
     </g>`;
