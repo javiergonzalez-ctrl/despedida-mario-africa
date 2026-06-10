@@ -49,7 +49,7 @@
 
 ## P3 — Jugabilidad floja
 
-- [ ] **P3.1 Rush (ronda 1) visualmente pobre** — añadir taxi animado / ambiente Lagos (pendiente del playtest 2026-06-09).
+- [x] **P3.1 Rush (ronda 1) visualmente pobre** ✅ 1b25e5f — escena Lagos (atardecer + skyline ventanas + carretera animada + taxi/danfo cruzando), cursor = taxi de Elver frenando en la PARADA. Mecánica intacta (4 intentos verificados Playwright 390px+desktop).
 - [ ] **P3.2 Revisar dificultad global**: pase final con las 12 rondas seguidas en móvil para calibrar chupitos/duración (mejor al final, post-cambios).
 
 ## P4 — Texturas / UI / copys
