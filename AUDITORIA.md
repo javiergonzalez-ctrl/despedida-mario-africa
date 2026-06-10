@@ -42,10 +42,10 @@
 
 ## P2 — Fricción / bugs móvil (390px)
 
-- [ ] **P2.1 Pantalla final: lang-pills (ES/GL/NAIJA) pisan el pretitle** "DAMAGE REPORT — JUICIO CERRADO" a 390px. Padding-top o esconder pills en screen-final.
+- [x] **P2.1 Pantalla final: lang-pills pisan el pretitle** ✅ 1f8a320 — body.final-active esconde las pills (cambiar idioma en el damage report no aporta) + padding-top 56px. Verificado Playwright.
 - [x] **P2.2 Rhythm: fila de botones táctiles cortada por el borde inferior** ✅ — resuelto en P1.C (e890371): receptores a bottom:32px + stage 64dvh + tap zone carril completo.
-- [ ] **P2.3 Result screen: scroll-to-top al renderizar** (pendiente del playtest; en móvil aterrizas a mitad de scroll).
-- [ ] **P2.4 favicon 404** en todas las cargas — meter favicon inline (data URI emoji 🏁/🥃) y matar el error de consola.
+- [x] **P2.3 Result screen: scroll-to-top al renderizar** ✅ 1f8a320 — screen-game.scrollTop=0 en showResult y showTransitionCard. Verificado: scrollTop 250→0.
+- [x] **P2.4 favicon 404** ✅ 1f8a320 — SVG data URI 🥃 en head; consola sin el 404.
 
 ## P3 — Jugabilidad floja
 
