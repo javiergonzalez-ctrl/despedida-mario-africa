@@ -1929,6 +1929,87 @@
   }
   .final-msg em { color: var(--gold); font-style: normal; }
 
+  /* ============ MILLONARIO (ronda 11) ============ */
+  .mill-stage {
+    width: 100%; max-width: 760px; margin: 0 auto; text-align: center;
+    padding: 18px 10px 26px; position: relative; overflow: hidden;
+    background: radial-gradient(ellipse at 50% -10%, rgba(45,70,190,0.45), rgba(8,10,40,0.95) 72%);
+    border: 2px solid rgba(90,120,255,0.4); border-radius: 22px;
+    box-shadow: 0 0 70px rgba(40,60,190,0.3), inset 0 0 90px rgba(8,12,55,0.7);
+  }
+  .mill-stage::after { /* barrido de focos de plató */
+    content: ''; position: absolute; inset: -45%; pointer-events: none;
+    background: conic-gradient(from 0deg,
+      transparent 0deg, rgba(130,170,255,0.08) 16deg, transparent 38deg,
+      transparent 180deg, rgba(130,170,255,0.08) 198deg, transparent 220deg);
+    animation: millSweep 9s linear infinite;
+  }
+  @keyframes millSweep { to { transform: rotate(360deg); } }
+  .mill-inner { position: relative; z-index: 1; }
+  .mill-logo {
+    font-family: 'Bebas Neue'; letter-spacing: 0.1em; color: var(--gold);
+    text-shadow: 0 0 26px rgba(255,215,0,0.55); font-size: clamp(26px, 5.4vw, 46px); line-height: 1.05;
+  }
+  .mill-sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.3em; color: #8da2ff; text-transform: uppercase; margin-top: 4px; }
+  .mill-host { display: flex; align-items: center; gap: 12px; justify-content: center; margin: 14px auto 8px; max-width: 520px; }
+  .mill-host img { width: 56px; height: 56px; border-radius: 50%; border: 2px solid var(--gold); flex-shrink: 0; background: #1a1f55; }
+  .mill-host .bubble {
+    background: rgba(0,0,30,0.75); border: 1px solid rgba(141,162,255,0.45);
+    padding: 9px 14px; border-radius: 14px; font-style: italic; color: #dfe6ff; font-size: 13px; text-align: left;
+  }
+  .mill-ladder { display: flex; justify-content: center; gap: 5px; margin: 12px auto 4px; flex-wrap: wrap; }
+  .mill-step { width: 26px; height: 9px; border-radius: 4px; background: rgba(141,162,255,0.22); }
+  .mill-step.done { background: var(--gold); box-shadow: 0 0 8px rgba(255,215,0,0.7); }
+  .mill-step.current { background: #8df0ff; animation: millPulse 1.2s infinite; }
+  .mill-prize { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold); letter-spacing: 0.12em; margin: 2px 0 10px; }
+  .mill-question {
+    font-size: clamp(16px, 4.2vw, 21px); font-weight: 800; color: #fff;
+    background: linear-gradient(180deg, rgba(22,32,95,0.95), rgba(10,14,52,0.97));
+    border: 2px solid var(--gold); border-radius: 999px;
+    padding: 15px 24px; margin: 10px auto 14px; max-width: 640px; box-shadow: 0 6px 30px rgba(0,0,0,0.5);
+  }
+  .mill-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-width: 640px; margin: 0 auto; }
+  @media (max-width: 560px) { .mill-opts { grid-template-columns: 1fr; } }
+  .mill-opt {
+    position: relative; display: flex; align-items: center; gap: 10px; text-align: left;
+    background: linear-gradient(180deg, rgba(18,26,82,0.95), rgba(8,12,44,0.95)); color: #fff;
+    border: 2px solid rgba(141,162,255,0.5); border-radius: 999px;
+    padding: 13px 18px; font-family: inherit; font-size: 15px; font-weight: 700;
+    cursor: pointer; transition: border-color 0.15s, background 0.15s; min-height: 52px;
+  }
+  .mill-opt:hover:not(:disabled) { border-color: var(--gold); }
+  .mill-opt .ltr { color: var(--gold); font-family: 'Bebas Neue'; font-size: 21px; line-height: 1; }
+  .mill-opt .pct { margin-left: auto; font-family: 'Bebas Neue'; font-size: 19px; color: #8df0ff; flex-shrink: 0; }
+  .mill-opt.selected { background: linear-gradient(180deg, #c47b00, #8a5200); border-color: var(--gold); animation: millPulse 1s infinite; }
+  .mill-opt.correct { background: linear-gradient(180deg, #0d8c3a, #06602a); border-color: #3aff84; animation: none; }
+  .mill-opt.wrong { background: linear-gradient(180deg, #a31313, #6e0606); border-color: #ff4d4d; animation: none; }
+  .mill-opt.dimmed { opacity: 0.22; pointer-events: none; }
+  .mill-opt:disabled { cursor: default; }
+  @keyframes millPulse { 0%,100% { box-shadow: 0 0 0 rgba(255,215,0,0); } 50% { box-shadow: 0 0 26px rgba(255,215,0,0.55); } }
+  .mill-lifelines { display: flex; gap: 10px; justify-content: center; margin: 16px 0 2px; flex-wrap: wrap; }
+  .mill-life {
+    background: rgba(0,0,30,0.75); border: 2px solid #8da2ff; color: #cdd8ff; border-radius: 999px;
+    padding: 9px 16px; font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.08em;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .mill-life:hover:not(:disabled) { border-color: var(--gold); color: var(--gold); }
+  .mill-life:disabled { opacity: 0.3; cursor: default; text-decoration: line-through; }
+  .mill-confirm { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+  .mill-suspense .mill-inner { animation: millDim 2.6s ease forwards; }
+  @keyframes millDim {
+    0% { filter: brightness(1); }
+    35% { filter: brightness(0.45) saturate(0.6); }
+    88% { filter: brightness(0.45) saturate(0.6); }
+    100% { filter: brightness(1); }
+  }
+  .mill-bar-row { display: flex; align-items: center; gap: 8px; max-width: 480px; margin: 7px auto; }
+  .mill-bar-row .ltr { width: 22px; color: var(--gold); font-family: 'Bebas Neue'; font-size: 21px; text-align: center; }
+  .mill-bar { flex: 1; height: 22px; background: rgba(141,162,255,0.15); border: 1px solid rgba(141,162,255,0.4); border-radius: 6px; overflow: hidden; }
+  .mill-bar > div { height: 100%; background: linear-gradient(90deg, #2fd3ff, #8da2ff); width: 0%; transition: width 0.4s; }
+  .mill-bar-row .n { width: 52px; text-align: right; font-family: 'Bebas Neue'; font-size: 19px; color: #8df0ff; }
+  .vote-btn.abcd { background: linear-gradient(180deg, rgba(22,32,95,0.95), rgba(10,14,52,0.97)); border: 3px solid var(--gold); color: var(--gold); flex: 1 1 calc(50% - 8px); min-width: 120px; padding: 26px 0; }
+  .vote-btn.abcd:active { background: rgba(255,215,0,0.2); transform: scale(0.95); }
+
   /* ============ TOAST ============ */
   .toast {
     position: fixed; top: 90px; left: 50%;
@@ -2322,6 +2403,13 @@
     <div class="vote-buttons" id="vote-buttons" style="display:none;">
       <button class="vote-btn si" onclick="castVote(1)">SÍ</button>
       <button class="vote-btn no" onclick="castVote(0)">NO</button>
+    </div>
+    <!-- Comodín del público (Millonario): voto A/B/C/D — rounds id 800-899 -->
+    <div class="vote-buttons" id="vote-buttons-abcd" style="display:none;flex-direction:row;flex-wrap:wrap;gap:12px;">
+      <button class="vote-btn abcd" onclick="castVote(0)">A</button>
+      <button class="vote-btn abcd" onclick="castVote(1)">B</button>
+      <button class="vote-btn abcd" onclick="castVote(2)">C</button>
+      <button class="vote-btn abcd" onclick="castVote(3)">D</button>
     </div>
     <p class="vote-thanks" id="vote-thanks">✓ Voto registrado.</p>
   </div>
@@ -3093,24 +3181,24 @@ const VICTIMS = [
     }
   },
   {
-    name: 'Paz Padilla', loc: 'Cádiz / Plató Sálvame 🇪🇸',
+    name: 'Paz Padilla', loc: 'Cádiz / Plató TV 🇪🇸',
     avatar: DICEBEAR('Paz-Padilla-Suegra', 'avataaars'),
-    story: 'PENÚLTIMA. Suegra. Te recibe en plató Sálvame con polígrafo. Responde sí o no a sus acusaciones en 5 segundos. La máquina está truqueada.',
-    quote: '"Mario… SI MIENTES… mi hija no se casa contigo. Ozú."',
-    debt: 8, game: 'poligrafo', gameName: 'EL POLÍGRAFO DE PAZ',
-    instruction: 'Responde con [Y] = SÍ o [N] = NO. 7 acusaciones. Si tardas más de 5s, MIENTES automático.',
+    story: 'PENÚLTIMA. Tu suegra ha alquilado un plató y presenta SU concurso. Siete preguntas sobre tu propia vida, Mario. Como no conozcas ni tu boda, lo pagas en chupitos delante de toda España.',
+    quote: '"Mario… ¿es tu respuesta DEFINITIVA? Ozú, qué tensión."',
+    debt: 5, game: 'millonario', gameName: '¿QUIÉN QUIERE SER MILLONARIO?',
+    instruction: '7 preguntas sobre Mario y Anna, dificultad creciente. Elige [1]-[4] o toca A/B/C/D y CONFIRMA. Un fallo = fin del concurso (cuanto antes caigas, más bebes). Comodines: 50:50 y EL PÚBLICO (voto QR).',
     i18n: {
       gl: {
-        story: 'PENÚLTIMA. Sogra. Recíbete no plató do Sálvame co polígrafo. Responde si ou non ás 5 acusacións en 5 s. A máquina está truqueada.',
-        quote: '"Mario… SE MENTES… a miña filla non casa contigo. Ozú."',
-        gameName: 'O POLÍGRAFO DE PAZ',
-        instruction: 'Responde con [Y] = SI ou [N] = NON. 5 acusacións. Se tardas máis de 5 s, MENTES automático.'
+        story: 'PENÚLTIMA. A túa sogra alugou un plató e presenta O SEU concurso. Sete preguntas sobre a túa propia vida, Mario. Como non coñezas nin a túa voda, págalo en chupitos diante de toda España.',
+        quote: '"Mario… é a túa resposta DEFINITIVA? Ozú, que tensión."',
+        gameName: 'QUEN QUERE SER MILLONARIO?',
+        instruction: '7 preguntas sobre Mario e Anna, dificultade crecente. Elixe [1]-[4] ou toca A/B/C/D e CONFIRMA. Un fallo = fin do concurso (canto antes caias, máis bebes). Comodíns: 50:50 e O PÚBLICO (voto QR).'
       },
       ng: {
-        story: 'SECOND-TO-LAST. Di mother-in-law. She receive you for Sálvame TV set with polygraph. Answer yes or no to her 5 accusations within 5 s. Di machine na rig.',
-        quote: '"Mario… IF YOU LIE… my daughter no go marry you. Ozú."',
-        gameName: 'PAZ POLYGRAPH',
-        instruction: 'Answer with [Y] = YES or [N] = NO. 5 accusations. If you delay pass 5 s, na automatic LIE.'
+        story: 'SECOND-TO-LAST. Your mother-in-law don rent TV studio and she dey host HER own game show. Seven questions about your own life, Mario. If you no sabi even your own wedding, you go pay am for shots in front of everybody.',
+        quote: '"Mario… na your FINAL answer? Ozú, di tension."',
+        gameName: 'WHO WANT BE MILLIONAIRE?',
+        instruction: '7 questions about Mario and Anna, difficulty dey climb. Pick [1]-[4] or tap A/B/C/D and CONFIRM. One miss = show don end (di earlier you fall, di more you drink). Lifelines: 50:50 and DI CROWD (QR vote).'
       }
     }
   },
@@ -3343,6 +3431,58 @@ const F1_QUESTIONS = {
     { q: 'Schumacher win count?', opts: ['78', '91', '99', '103'], correct: 1 }
   ]
 };
+
+// ============================================================
+// ¿QUIÉN QUIERE SER MILLONARIO? — RONDA 11 (presenta: Paz Padilla)
+// ============================================================
+// 🎙️ VOZ DEL PRESENTADOR: speechSynthesis del navegador en es-ES.
+//    Pon esto a false para silenciarla. Para meter voces GRABADAS reales:
+//    sustituir la función millSpeak() por reproducción de <audio> con tus mp3.
+const MILLONARIO_VOICE_ENABLED = true;
+
+// ✏️ EDITAR AQUÍ LAS PREGUNTAS (Javier) — dificultad creciente, 4 opciones,
+//    correct = índice de la buena (0=A, 1=B, 2=C, 3=D). prize = lo que Mario
+//    "asegura" al superarla (puro atrezzo de concurso). Si cambias el número
+//    de preguntas, todo se adapta solo (escalera, chupitos, comodines).
+const MILLONARIO_QUESTIONS = [
+  { // P1 — calentamiento
+    q: '¿Qué gritó Anna a sus 800k seguidores para anunciar la pedida?',
+    opts: ['"Sí quiero"', '"¡Mil veces sí!"', '"¡Ozú, me caso!"', '"Noniná que me caso"'],
+    correct: 1, prize: '1 mojito en Playa de las Américas'
+  },
+  { // P2
+    q: '¿Dónde le pidió Mario matrimonio a Anna (sept 2025)?',
+    opts: ['En Cádiz, con Paz escondida en un arbusto', 'En Menorca', 'En el paddock de Montmeló', 'En el Vips de Villaviciosa de Odón'],
+    correct: 1, prize: 'Tapa de jamón del bueno'
+  },
+  { // P3
+    q: '¿De qué es la empresa que se ha llevado a Mario a África?',
+    opts: ['Safaris para influencers', 'F1 Fantasy', 'Exportación de mango premium', 'Cría de cabras lecheras'],
+    correct: 1, prize: 'Cena pagada (sin postre)'
+  },
+  { // P4
+    q: '¿Cómo se llama la marca de la familia Padilla-Ferrer?',
+    opts: ['Ozú', 'Arsobaco', 'Noniná', 'MilVecesSí Co.'],
+    correct: 2, prize: 'Fin de semana en Cádiz'
+  },
+  { // P5
+    q: '¿Quién es el futuro suegro de Mario?',
+    opts: ['Albert Ferrer, ex-Barça', 'Albert Rivera, ex-todo', 'Alberto Chicote, ex-cocinas', 'Albert Einstein, ex-vivo'],
+    correct: 0, prize: 'Entradas VIP para el Camp Nou'
+  },
+  { // P6
+    q: '¿Qué estudió Mario en la UFV, la uni más pija de Madrid?',
+    opts: ['Derecho, como quería su madre', 'Diseño', 'ADE con minor en pádel', 'Teología aplicada al Fantasy'],
+    correct: 1, prize: 'La despedida AMORTIZADA'
+  },
+  { // P7 — EL MILLÓN
+    q: 'EL MILLÓN: ¿cuántos seguidores tiene Anna Ferrer (aprox)?',
+    opts: ['80.000', '300.000', '800.000', '8 millones'],
+    correct: 2, prize: '🏆 LA LUNA DE MIEL PAGADA'
+  }
+];
+// Chupitos si Mario CAE en la pregunta i (0-based). Gana todo = 0 chupitos.
+const MILLONARIO_FAIL_SHOTS = [5, 5, 4, 4, 3, 2, 2];
 
 const PRESS_QUESTIONS = {
   es: [
@@ -4086,7 +4226,8 @@ function startGame(v) {
     case 'press': return gamePress(v);
     case 'runner': return gameRunner(v);
     case 'penalty': return gamePenalty(v);
-    case 'poligrafo': return gamePoligrafo(v);
+    case 'millonario': return gameMillonario(v);
+    case 'poligrafo': return gamePoligrafo(v); // sin víctima desde P1.B (era ronda 11) — ver AUDITORIA P5.1
     case 'annaboss': return gameAnnaBoss(v);
   }
 }
@@ -6250,6 +6391,289 @@ function gamePenalty(v) {
 // ============================================
 // GAME 12 — POLIGRAFO PAZ (FINAL BOSS)
 // ============================================
+// ============================================
+// GAME 11 — ¿QUIÉN QUIERE SER MILLONARIO? (presenta: Paz Padilla)
+// ============================================
+// Voz del presentador: speechSynthesis es-ES tras MILLONARIO_VOICE_ENABLED.
+// Para voces grabadas reales (futuro): sustituir el cuerpo por new Audio(mp3).
+function millSpeak(text) {
+  if (!MILLONARIO_VOICE_ENABLED || state.muted) return;
+  try {
+    if (!('speechSynthesis' in window)) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'es-ES'; u.rate = 0.98; u.pitch = 0.85;
+    const es = speechSynthesis.getVoices().find(vc => vc.lang && vc.lang.toLowerCase().startsWith('es'));
+    if (es) u.voice = es;
+    speechSynthesis.cancel(); // no encolar: la última frase manda
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+
+function gameMillonario(v) {
+  const stage = document.getElementById('game-stage');
+  const qs = MILLONARIO_QUESTIONS;
+  let idx = 0;
+  let alive = true;
+  let used5050 = false, usedPublic = false;
+  let selected = null;       // option index awaiting "¿DEFINITIVA?"
+  let locked = false;        // true while suspense/reveal runs
+  let removed = [];          // options hidden by 50:50 (per question)
+  let audiencePct = null;    // [%A..%D] after the audience lifeline (per question)
+  let lifelinePoll = null;
+  let manualVotes = [0, 0, 0, 0]; // no-phones fallback during the lifeline
+
+  // Frases de Paz por pregunta (se reciclan si hay más preguntas que frases)
+  const HOST_LINES = [
+    'Empezamos suave, que esto es de tu novia, criatura.',
+    'Esta la sabe hasta Albert, y eso que solo habla del Barça.',
+    'Tu CURRO, Mario. Tu curro. Ozú.',
+    'Como falles esta te desheredo antes de heredar.',
+    'Cuidado, que del suegro se habla con respeto.',
+    'Tu título universitario está en juego, pijo.',
+    'EL MILLÓN. Mírame a los ojos y no me tiembles.'
+  ];
+
+  function teardown() {
+    if (lifelinePoll) { clearInterval(lifelinePoll); lifelinePoll = null; }
+  }
+
+  // ---------- INTRO del plató ----------
+  function renderIntro() {
+    stage.innerHTML = `
+      <div class="mill-stage"><div class="mill-inner">
+        <div class="mill-sub">▸ PLATÓ 3 — EN DIRECTO ◂</div>
+        <div class="mill-logo">¿QUIÉN QUIERE SER<br/>MILLONARIO?</div>
+        <div class="mill-sub" style="margin-top:6px;">edición "conoce a tu propia boda"</div>
+        <div class="mill-host">
+          <img src="${v.avatar}" alt="Paz Padilla" />
+          <div class="bubble">"Buenas noches, España. Esta noche, en el sillón… mi futuro yerno. ${qs.length} preguntas sobre SU PROPIA VIDA. Si las falla, no se lleva el millón: se lleva chupitos. <strong>Ozú, empezamos.</strong>"</div>
+        </div>
+        <div class="mill-lifelines" style="margin-top:10px;">
+          <span class="mill-life" style="cursor:default;">🔀 50:50</span>
+          <span class="mill-life" style="cursor:default;">📱 EL PÚBLICO</span>
+        </div>
+        <div style="margin-top:18px;">
+          <button class="btn-primary" id="mill-start">▶ QUE EMPIECE EL CONCURSO</button>
+        </div>
+      </div></div>
+    `;
+    const b = document.getElementById('mill-start');
+    if (b) b.addEventListener('click', () => {
+      if (!alive) return;
+      sfx.heartbeat();
+      millSpeak('¿Quién quiere ser millonario? Esta noche, mi futuro yerno, Mario Cristóbal. Empezamos.');
+      renderQ();
+    }, { once: true });
+  }
+
+  // ---------- PREGUNTA ----------
+  function renderQ() {
+    selected = null; locked = false;
+    const q = qs[idx];
+    const hostLine = HOST_LINES[Math.min(idx, HOST_LINES.length - 1)];
+    stage.innerHTML = `
+      <div class="mill-stage" id="mill-stage"><div class="mill-inner">
+        <div class="mill-sub">▸ PREGUNTA ${idx + 1} / ${qs.length} ◂</div>
+        <div class="mill-ladder">
+          ${qs.map((_, i) => `<div class="mill-step ${i < idx ? 'done' : i === idx ? 'current' : ''}"></div>`).join('')}
+        </div>
+        <div class="mill-prize">💰 EN JUEGO: ${q.prize}</div>
+        <div class="mill-host">
+          <img src="${v.avatar}" alt="Paz Padilla" />
+          <div class="bubble">"${hostLine}"</div>
+        </div>
+        <div class="mill-question">${q.q}</div>
+        <div class="mill-opts">
+          ${q.opts.map((o, i) => `
+            <button class="mill-opt ${removed.includes(i) ? 'dimmed' : ''}" data-mi="${i}">
+              <span class="ltr">${'ABCD'[i]}:</span><span>${o}</span>
+              ${audiencePct ? `<span class="pct">${audiencePct[i]}%</span>` : ''}
+            </button>`).join('')}
+        </div>
+        <div class="mill-confirm" id="mill-confirm" style="display:none;">
+          <button class="btn-primary" id="mill-final">🔒 RESPUESTA DEFINITIVA</button>
+          <button class="btn-secondary" id="mill-change">↩ Cambiar</button>
+        </div>
+        <div class="mill-lifelines">
+          <button class="mill-life" id="mill-5050" ${used5050 ? 'disabled' : ''}>🔀 50:50</button>
+          <button class="mill-life" id="mill-public" ${usedPublic ? 'disabled' : ''}>📱 EL PÚBLICO</button>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#8da2ff;margin-top:8px;letter-spacing:0.1em;">teclas [1]-[4] · ENTER confirma</div>
+      </div></div>
+    `;
+    stage.querySelectorAll('.mill-opt').forEach(b => {
+      b.addEventListener('click', () => select(parseInt(b.dataset.mi)));
+    });
+    const b5050 = document.getElementById('mill-5050');
+    const bPub = document.getElementById('mill-public');
+    if (b5050) b5050.addEventListener('click', use5050);
+    if (bPub) bPub.addEventListener('click', usePublic);
+    const bFinal = document.getElementById('mill-final');
+    const bChange = document.getElementById('mill-change');
+    if (bFinal) bFinal.addEventListener('click', confirmAnswer);
+    if (bChange) bChange.addEventListener('click', () => select(null));
+    millSpeak(`Pregunta ${idx + 1}. ${q.q}`);
+  }
+
+  function select(i) {
+    if (!alive || locked) return;
+    if (i !== null && removed.includes(i)) return;
+    selected = i;
+    stage.querySelectorAll('.mill-opt').forEach(b => {
+      b.classList.toggle('selected', parseInt(b.dataset.mi) === i);
+    });
+    const conf = document.getElementById('mill-confirm');
+    if (conf) conf.style.display = i === null ? 'none' : 'flex';
+    if (i !== null) { sfx.tick(); millSpeak(`${'ABCD'[i]}, ${qs[idx].opts[i]}. ¿Es tu respuesta definitiva?`); }
+  }
+
+  // ---------- SUSPENSE + REVEAL ----------
+  async function confirmAnswer() {
+    if (!alive || locked || selected === null) return;
+    locked = true;
+    const q = qs[idx];
+    const conf = document.getElementById('mill-confirm');
+    if (conf) conf.style.display = 'none';
+    stage.querySelectorAll('.mill-opt, .mill-life').forEach(b => { b.disabled = true; });
+    const ms = document.getElementById('mill-stage');
+    if (ms) ms.classList.add('mill-suspense');
+    millSpeak('Respuesta definitiva. Veamos…');
+    sfx.heartbeat(); await sleep(900); if (!alive) return;
+    sfx.heartbeat(); await sleep(900); if (!alive) return;
+    sfx.heartbeat(); await sleep(800); if (!alive) return;
+    const correctBtn = stage.querySelector(`.mill-opt[data-mi="${q.correct}"]`);
+    const pickedBtn = stage.querySelector(`.mill-opt[data-mi="${selected}"]`);
+    if (selected === q.correct) {
+      if (correctBtn) { correctBtn.classList.remove('selected'); correctBtn.classList.add('correct'); }
+      sfx.kaching(); flash('gold');
+      const isLast = idx === qs.length - 1;
+      millSpeak(isLast ? '¡EL MILLÓN! ¡Ozú, el millón!' : '¡Correcto! Madre mía, criatura, sigues vivo.');
+      await sleep(2000); if (!alive) return;
+      idx++;
+      removed = []; audiencePct = null; manualVotes = [0, 0, 0, 0];
+      if (idx >= qs.length) return win();
+      renderQ();
+    } else {
+      if (pickedBtn) { pickedBtn.classList.remove('selected'); pickedBtn.classList.add('wrong'); }
+      if (correctBtn) correctBtn.classList.add('correct');
+      sfx.fail(); flash('red'); shake('heavy');
+      millSpeak(`Que no, Mario, que no. Era la ${'ABCD'[q.correct]}: ${q.opts[q.correct]}.`);
+      await sleep(2600); if (!alive) return;
+      lose(q);
+    }
+  }
+
+  function win() {
+    spawnConfetti();
+    showResult(0, `🏆 EL MILLÓN — ${qs.length}/${qs.length} correctas. Paz aprueba la boda (de momento).`);
+  }
+  function lose(q) {
+    const shots = MILLONARIO_FAIL_SHOTS[Math.min(idx, MILLONARIO_FAIL_SHOTS.length - 1)];
+    showResult(shots, `❌ Eliminado en la pregunta ${idx + 1}/${qs.length}. La respuesta era ${'ABCD'[q.correct]}: "${q.opts[q.correct]}".`);
+  }
+
+  // ---------- COMODÍN 50:50 ----------
+  function use5050() {
+    if (!alive || used5050 || locked) return;
+    used5050 = true;
+    const q = qs[idx];
+    const wrongs = [0, 1, 2, 3].filter(i => i !== q.correct).sort(() => Math.random() - 0.5);
+    removed = wrongs.slice(0, 2);
+    if (removed.includes(selected)) select(null);
+    removed.forEach(i => {
+      const b = stage.querySelector(`.mill-opt[data-mi="${i}"]`);
+      if (b) b.classList.add('dimmed');
+    });
+    const b5050 = document.getElementById('mill-5050');
+    if (b5050) b5050.disabled = true;
+    sfx.whoosh();
+    millSpeak('Fuera dos. Quedan dos, Mario. Cincuenta y cincuenta.');
+  }
+
+  // ---------- COMODÍN DEL PÚBLICO (voto QR A/B/C/D) ----------
+  function usePublic() {
+    if (!alive || usedPublic || locked) return;
+    usedPublic = true;
+    const q = qs[idx];
+    const roundId = 800 + idx;
+    API_POST('round', { action: 'open', room: ROOM_ID, round: roundId, gameName: `P${idx + 1}: ${q.q}` });
+    const url = `${location.origin}${location.pathname}?vote=1&room=${ROOM_ID}`;
+    stage.innerHTML = `
+      <div class="mill-stage"><div class="mill-inner">
+        <div class="mill-sub">▸ COMODÍN DEL PÚBLICO ◂</div>
+        <div class="mill-logo" style="font-size:clamp(22px,4.6vw,36px);">EL PÚBLICO DECIDE</div>
+        <div class="mill-question" style="font-size:clamp(14px,3.8vw,18px);">${q.q}</div>
+        <div id="mill-qr" style="background:white;padding:12px;border-radius:14px;display:inline-block;margin:6px 0 10px;"></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8da2ff;margin-bottom:8px;">escanea · vota A/B/C/D en el móvil · <span id="mill-votes-total" style="color:var(--gold);">0</span> votos</div>
+        ${q.opts.map((o, i) => `
+          <div class="mill-bar-row">
+            <span class="ltr">${'ABCD'[i]}</span>
+            <div class="mill-bar"><div id="mill-bar-${i}"></div></div>
+            <span class="n" id="mill-n-${i}">0%</span>
+          </div>`).join('')}
+        <div class="mill-lifelines" style="margin-top:12px;">
+          ${q.opts.map((_, i) => `<button class="mill-life" data-mv="${i}">+${'ABCD'[i]} manual</button>`).join('')}
+        </div>
+        <div style="margin-top:14px;">
+          <button class="btn-primary" id="mill-close-vote">▶ CERRAR VOTACIÓN</button>
+        </div>
+      </div></div>
+    `;
+    renderQR(document.getElementById('mill-qr'), url, 200);
+    millSpeak('Comodín del público. Señoras y señores, voten ya.');
+    let serverCounts = [0, 0, 0, 0];
+    const updateBars = () => {
+      const tot = serverCounts.map((c, i) => c + manualVotes[i]);
+      const sum = tot.reduce((a, b) => a + b, 0);
+      const totalEl = document.getElementById('mill-votes-total');
+      if (totalEl) totalEl.textContent = sum;
+      tot.forEach((c, i) => {
+        const pct = sum > 0 ? Math.round(c / sum * 100) : 0;
+        const bar = document.getElementById(`mill-bar-${i}`);
+        const n = document.getElementById(`mill-n-${i}`);
+        if (bar) bar.style.width = pct + '%';
+        if (n) n.textContent = pct + '%';
+      });
+      return { tot, sum };
+    };
+    lifelinePoll = setInterval(async () => {
+      const s = await API_STATE(ROOM_ID, roundId);
+      if (!s || !s.counts || !s.counts.byChoice) return;
+      serverCounts = s.counts.byChoice;
+      updateBars();
+    }, 1500);
+    stage.querySelectorAll('[data-mv]').forEach(b => {
+      b.addEventListener('click', () => { manualVotes[parseInt(b.dataset.mv)]++; sfx.click(); updateBars(); });
+    });
+    const closeBtn = document.getElementById('mill-close-vote');
+    if (closeBtn) closeBtn.addEventListener('click', () => {
+      if (lifelinePoll) { clearInterval(lifelinePoll); lifelinePoll = null; }
+      API_POST('round', { action: 'close', room: ROOM_ID, round: roundId });
+      const { tot, sum } = updateBars();
+      audiencePct = tot.map(c => sum > 0 ? Math.round(c / sum * 100) : 0);
+      const top = audiencePct.indexOf(Math.max(...audiencePct));
+      millSpeak(sum > 0 ? `El público lo tiene claro: ${audiencePct[top]} por ciento a la ${'ABCD'[top]}.` : 'El público pasa de ti, Mario.');
+      renderQ(); // re-pinta la pregunta con los % en cada opción (y el 50:50 aplicado)
+    }, { once: true });
+  }
+
+  // ---------- TECLADO + TEARDOWN ----------
+  const keyHandler = (e) => {
+    if (e.key === 'Enter') { confirmAnswer(); return; }
+    const n = parseInt(e.key);
+    if (n >= 1 && n <= 4) select(n - 1);
+  };
+  document.addEventListener('keydown', keyHandler);
+  document.addEventListener('start-game', () => {
+    alive = false;
+    teardown();
+    try { if ('speechSynthesis' in window) speechSynthesis.cancel(); } catch (e) {}
+    document.removeEventListener('keydown', keyHandler);
+  }, { once: true });
+
+  renderIntro();
+}
+
 function gamePoligrafo(v) {
   const stage = document.getElementById('game-stage');
   const pazImg = DICEBEAR('Paz-Padilla', 'avataaars');
@@ -6758,35 +7182,50 @@ function updatePhoneUI(ar, room, pid, myVote) {
   const title = document.getElementById('vote-state-title');
   const q = document.getElementById('vote-question');
   const btns = document.getElementById('vote-buttons');
+  const btnsABCD = document.getElementById('vote-buttons-abcd');
   const thanks = document.getElementById('vote-thanks');
   if (!title || !q || !btns) return;
+  const hideAll = () => { btns.style.display = 'none'; if (btnsABCD) btnsABCD.style.display = 'none'; };
   if (!ar || ar.state === 'idle' || ar.state === 'closed') {
     title.textContent = ar?.state === 'closed' ? 'CERRADO' : 'ESPERANDO';
     q.textContent = 'Mira la TV. Mario está jugando.';
-    btns.style.display = 'none'; thanks.classList.remove('show');
+    hideAll(); thanks.classList.remove('show');
     return;
   }
   if (ar.state === 'result') {
     title.textContent = 'RESULTADO';
-    // textContent (not innerHTML): lastResult comes from Firebase and we don't
-    // trust the channel against tampering until Security Rules are validated.
+    // textContent (not innerHTML): lastResult comes from the backend and we
+    // don't trust the channel against tampering.
     q.textContent = ar.lastResult || 'Cuenta tus chupitos.';
-    btns.style.display = 'none'; thanks.classList.remove('show');
+    hideAll(); thanks.classList.remove('show');
     return;
   }
   if (ar.state === 'open') {
     const amountBlock = document.getElementById('vote-amount-block');
+    // 800-899 = comodín del público (Millonario): A/B/C/D instead of SÍ/NO.
+    const isABCD = ar.id >= 800 && ar.id < 900;
     if (myVote) {
       title.textContent = '✓ VOTADO';
-      q.textContent = `Esperando que Mario juegue "${ar.gameName}"...`;
-      btns.style.display = 'none'; thanks.classList.add('show');
+      q.textContent = isABCD
+        ? `Has votado ${'ABCD'[myVote.choice] || '?'}. Mira la TV.`
+        : `Esperando que Mario juegue "${ar.gameName}"...`;
+      hideAll(); thanks.classList.add('show');
+      if (amountBlock) amountBlock.style.display = 'none';
+    } else if (isABCD) {
+      title.textContent = 'EL PÚBLICO DECIDE';
+      q.innerHTML = `<strong style="color:var(--gold)">${esc(ar.gameName)}</strong><br/>Las opciones están en la TV. Vota la correcta.`;
+      btns.style.display = 'none';
+      if (btnsABCD) btnsABCD.style.display = 'flex';
+      thanks.classList.remove('show');
       if (amountBlock) amountBlock.style.display = 'none';
     } else {
       title.textContent = ar.id >= 900 ? 'VOTO DEL PÚBLICO' : 'APUESTA YA';
       q.innerHTML = ar.id >= 900
         ? `<strong style="color:var(--gold)">${esc(ar.gameName)}</strong><br/>Mira la TV y vota.`
         : `Ronda ${esc(ar.id)}/12 — <strong style="color:var(--gold)">${esc(ar.gameName)}</strong><br/>¿Mario lo logra?`;
-      btns.style.display = 'flex'; thanks.classList.remove('show');
+      btns.style.display = 'flex';
+      if (btnsABCD) btnsABCD.style.display = 'none';
+      thanks.classList.remove('show');
       if (amountBlock) amountBlock.style.display = ar.id >= 900 ? 'none' : 'block';
     }
   }
@@ -6803,6 +7242,8 @@ function castVote(choice) {
     API_POST('vote', { room, round: ar.id, pid, choice, amount });
   }
   document.getElementById('vote-buttons').style.display = 'none';
+  const abcd = document.getElementById('vote-buttons-abcd');
+  if (abcd) abcd.style.display = 'none';
   document.getElementById('vote-thanks').classList.add('show');
   document.getElementById('vote-state-title').textContent = '✓ VOTADO';
   document.getElementById('vote-question').textContent = 'Esperando resultado...';
