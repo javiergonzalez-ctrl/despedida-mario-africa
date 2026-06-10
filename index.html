@@ -975,75 +975,65 @@
   /* ============ MINI GAME: LULU RHYTHM ============ */
   .rhythm-stage {
     width: 100%; max-width: 600px;
-    height: 70vh;            /* fallback for browsers without dvh */
-    height: 70dvh;           /* iOS Safari: respects URL bar */
-    max-height: 600px;
+    height: 64vh;            /* fallback for browsers without dvh */
+    height: 64dvh;           /* iOS Safari: respects URL bar */
+    max-height: 560px;
     position: relative;
-    background: linear-gradient(180deg, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.95) 100%);
-    border: 2px solid var(--glass-border);
-    border-radius: 16px;
+    background:
+      radial-gradient(ellipse at 50% -20%, rgba(199,36,255,0.16), transparent 55%),
+      linear-gradient(180deg, rgba(12,7,20,0.85) 0%, rgba(4,2,10,0.98) 100%);
+    border: 2px solid rgba(199,36,255,0.35);
+    border-radius: 18px;
     overflow: hidden;
+    box-shadow: 0 10px 50px rgba(0,0,0,0.6), inset 0 0 60px rgba(199,36,255,0.07);
   }
   .lanes {
     position: absolute; inset: 0;
     display: grid; grid-template-columns: repeat(4, 1fr);
   }
   .lane {
-    border-right: 1px solid rgba(255,255,255,0.05);
+    border-right: 1px solid rgba(255,255,255,0.10);
     position: relative;
   }
+  .lane:nth-child(odd) { background: rgba(255,255,255,0.03); }
   .lane:last-child { border-right: none; }
-  .lane-key {
-    position: absolute;
-    bottom: 12px; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.6);
-    border: 1px solid var(--glass-border);
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 14px;
-    font-weight: 800;
-    color: var(--gold);
-  }
-  /* Real (non-practice) round: every "key" is a wide rectangular Franco
-     portrait with the letter overlay sitting at the bottom — the running
-     joke for the Cara Al Sol chart. 16:9 aspect to keep the face visible. */
-  .lane-key.franco {
-    width: 80%;
-    max-width: 110px;
-    aspect-ratio: 16 / 9;
-    height: auto;
-    padding: 0;
-    border-radius: 6px;
-    overflow: hidden;
-    background: url('assets/franco.jpg') center/cover no-repeat;
-    border: 2px solid var(--gold);
-    box-shadow: 0 0 14px rgba(255,215,0,0.45);
-    display: flex; align-items: flex-end; justify-content: center;
-    bottom: 8px;
-  }
-  .lane-key.franco .lane-key-letter {
-    background: rgba(0,0,0,0.85);
-    color: var(--gold);
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 800;
-    font-size: 12px;
-    letter-spacing: 0.12em;
-    padding: 2px 7px;
-    border-radius: 3px;
-    margin-bottom: 3px;
-    line-height: 1;
-  }
-  @media (max-width: 480px) {
-    .lane-key.franco { max-width: 80px; }
-    .lane-key.franco .lane-key-letter { font-size: 10px; padding: 1px 5px; }
-  }
   .hit-zone {
     position: absolute;
-    bottom: 60px; left: 0; right: 0;
-    height: 8px;
+    bottom: 58px; left: 0; right: 0;
+    height: 4px;
     background: linear-gradient(90deg, transparent, var(--cyan), transparent);
-    box-shadow: 0 0 20px var(--cyan);
+    box-shadow: 0 0 18px var(--cyan);
+  }
+  /* Receptores por carril (estilo DDR): el objetivo visual fijo en la zona de
+     hit. Se iluminan al pulsar, flashean al acertar y se "encienden" durante
+     un hold. Sustituyen a la antigua fila de teclas que se cortaba en móvil. */
+  .receptors {
+    position: absolute;
+    bottom: 32px; left: 0; right: 0;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    z-index: 6; pointer-events: none;
+  }
+  .receptor {
+    --lc: #00E5FF;
+    width: 78%; height: 56px; margin: 0 auto;
+    border: 3px solid var(--lc); border-radius: 14px;
+    background: rgba(0,0,0,0.5);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--lc);
+    text-shadow: 0 0 10px var(--lc);
+    box-shadow: 0 0 10px rgba(0,0,0,0.4), inset 0 0 12px rgba(255,255,255,0.06);
+    transition: transform 0.08s ease-out, background 0.08s;
+  }
+  .receptor[data-r="0"] { --lc: #00E5FF; }
+  .receptor[data-r="1"] { --lc: #FF5CA8; }
+  .receptor[data-r="2"] { --lc: #FFD700; }
+  .receptor[data-r="3"] { --lc: #7CFF5C; }
+  .receptor.pressed { transform: scale(0.9); background: rgba(255,255,255,0.14); }
+  .receptor.held { background: var(--lc); color: #000; text-shadow: none; }
+  .receptor.hit-flash { animation: receptorHit 0.28s ease-out; }
+  @keyframes receptorHit {
+    0% { filter: brightness(2.2); box-shadow: 0 0 0 0 var(--lc); }
+    100% { filter: brightness(1); box-shadow: 0 0 30px 18px transparent; }
   }
   /* Hold-note tail — the visual "ribbon" of a sustain. It hangs ABOVE the
      head (the head is the part that arrives at the hit zone first; the
@@ -1053,19 +1043,21 @@
     position: absolute;
     left: 50%; transform: translateX(-50%);
     bottom: 100%;
-    width: 28px;
-    background: linear-gradient(180deg, rgba(255,23,68,0.25), rgba(255,23,68,0.85));
-    border-radius: 6px;
+    width: 55%;
+    background: linear-gradient(180deg, rgba(255,23,68,0.3), rgba(255,23,68,0.9));
+    border: 1px solid rgba(255,255,255,0.3);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
     pointer-events: none;
   }
-  .note.held .tail { background: linear-gradient(180deg, rgba(0,255,65,0.35), rgba(0,255,65,0.95)); }
+  .note.held .tail { background: linear-gradient(180deg, rgba(0,255,65,0.4), rgba(0,255,65,0.95)); border-color: rgba(255,255,255,0.6); }
   .note {
     position: absolute;
-    width: 80%; left: 10%;
+    width: 78%; left: 11%;
     height: 50px;
     background: linear-gradient(180deg, var(--magenta), var(--blood));
-    border-radius: 8px;
-    box-shadow: 0 0 20px var(--magenta);
+    border-radius: 10px;
+    box-shadow: 0 0 18px var(--magenta);
   }
   /* When the game is the Cara Al Sol round (non-practice), every falling note
      IS a Franco mugshot — the running joke. We swap the background image and
@@ -1082,9 +1074,10 @@
   }
   .note.perfect { background: linear-gradient(180deg, var(--terminal), #00aa28); box-shadow: 0 0 30px var(--terminal); }
   .lulu-goat {
-    position: absolute; top: 16px; right: 16px;
-    /* Lulu's real-life mugshot — the goat Aitor Tilla had to sell. */
-    width: 64px; height: 64px;
+    /* Lulu's real-life mugshot — the goat Aitor Tilla had to sell.
+       Lives in the HEADER now (it was inside the note field and got covered
+       by falling notes on mobile). Reacts with .party on every PERFECT. */
+    width: 48px; height: 48px; flex-shrink: 0;
     background: url('assets/lulu-goat.jpg') center/cover no-repeat;
     border-radius: 50%;
     border: 2px solid var(--gold);
@@ -1092,16 +1085,19 @@
     font-size: 0; /* hide the fallback emoji text */
     animation: bounce 0.5s ease-in-out infinite;
   }
-  @media (max-width: 480px) {
-    .lulu-goat { width: 48px; height: 48px; }
+  .lulu-goat.party { animation: luluParty 0.4s ease-out; }
+  @keyframes luluParty {
+    0% { transform: scale(1) rotate(0deg); }
+    40% { transform: scale(1.45) rotate(-14deg); box-shadow: 0 0 26px var(--gold); }
+    100% { transform: scale(1) rotate(0deg); }
   }
   @keyframes bounce { 0%, 100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-8px) rotate(5deg); } }
   .rhythm-feedback {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    position: absolute; top: 42%; left: 50%; transform: translate(-50%, -50%);
     font-family: 'Bebas Neue', sans-serif;
-    font-size: 48px; opacity: 0;
+    font-size: 60px; opacity: 0;
     pointer-events: none;
-    text-shadow: 0 0 20px currentColor;
+    text-shadow: 0 0 24px currentColor;
   }
   .rhythm-feedback.show { animation: feedbackPop 0.5s ease-out; }
   @keyframes feedbackPop {
@@ -2065,22 +2061,21 @@
     inset: 0;
     z-index: 5;
   }
+  /* Tap zone = el CARRIL ENTERO (no una franjita invisible abajo que nadie
+     veía): tocar en cualquier punto del carril golpea ese carril. El receptor
+     de abajo da la pista visual de dónde está el objetivo. */
   .rhythm-tap-zones {
     position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 90px;
+    inset: 0;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     z-index: 10;
   }
   .rhythm-tap-zone {
-    border-right: 1px solid rgba(255,255,255,0.05);
-    background: rgba(255,255,255,0.02);
-    transition: background 0.05s;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
-  .rhythm-tap-zone:active { background: rgba(0, 229, 255, 0.25); }
-  .rhythm-tap-zone:last-child { border-right: none; }
+  .rhythm-tap-zone:active { background: linear-gradient(180deg, transparent 55%, rgba(0,229,255,0.16)); }
   .drift-tap-zones {
     position: absolute;
     bottom: 0; left: 0; right: 0;
@@ -4638,26 +4633,33 @@ function gameRhythm(v, opts = {}) {
   stage.innerHTML = `
     <div style="text-align:center; width:100%; max-width: 600px;">
       ${titleBadge}
-      <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:4px;">LULU'S REVENGE</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gold);letter-spacing:0.2em;margin-bottom:10px;">${practice ? '♪ AFINACIÓN — TONO TONTO ♪' : '♪ CARA AL SOL ♪'}</div>
-      <div style="color:var(--text-dim);margin-bottom:8px;font-size:13px;">
+      <div style="display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:6px;">
+        <div class="lulu-goat" id="lulu-goat">🐐</div>
+        <div style="text-align:left;">
+          <div style="font-family:'Bebas Neue';font-size:36px;letter-spacing:0.05em;line-height:1;">LULU'S REVENGE</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:0.18em;">${practice ? '♪ AFINACIÓN — TONO TONTO ♪' : '♪ CARA AL SOL ♪'}</div>
+        </div>
+      </div>
+      <div style="color:var(--text-dim);margin-bottom:6px;font-size:12px;">
         [D] [F] [J] [K] ${tapWord} · ✓ <span id="r-hits">0</span> · ✗ <span id="r-miss">0</span> · ${totalNotes} ${notesWord}
         · <span style="color:var(--gold);">🔥 <span id="r-combo">0</span></span>
       </div>
-      <div style="height:5px;background:rgba(255,255,255,0.1);border-radius:99px;margin:0 auto 10px;max-width:600px;overflow:hidden;">
+      <div style="height:5px;background:rgba(255,255,255,0.1);border-radius:99px;margin:0 auto 8px;max-width:600px;overflow:hidden;">
         <div id="r-progress" style="height:100%;width:0%;background:linear-gradient(90deg,var(--terminal),var(--gold));border-radius:99px;"></div>
       </div>
       <div class="rhythm-stage${practice ? '' : ' franco-notes'}" id="rhythm-stage">
-        <div class="lulu-goat">🐐</div>
         <div class="lanes">
-          ${keys.map(k => `<div class="lane" data-key="${k}"><div class="lane-key${practice ? '' : ' franco'}"><span class="lane-key-letter">${k.toUpperCase()}</span></div></div>`).join('')}
+          ${keys.map(k => `<div class="lane" data-key="${k}"></div>`).join('')}
         </div>
         <div class="hit-zone"></div>
+        <div class="receptors">
+          ${keys.map((k, i) => `<div class="receptor" data-r="${i}">${k.toUpperCase()}</div>`).join('')}
+        </div>
         <div class="rhythm-tap-zones">
           ${keys.map((k, i) => `<div class="rhythm-tap-zone" data-tap-lane="${i}"></div>`).join('')}
         </div>
         <div class="rhythm-feedback" id="r-fb"></div>
-        <div id="r-countdown" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:120px;color:var(--gold);text-shadow:0 0 30px var(--gold);pointer-events:none;z-index:10;"></div>
+        <div id="r-countdown" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue';font-size:120px;color:var(--gold);text-shadow:0 0 30px var(--gold);pointer-events:none;z-index:12;"></div>
       </div>
     </div>
   `;
@@ -4668,6 +4670,19 @@ function gameRhythm(v, opts = {}) {
   const hitZoneY = stageH - 60;
   const SPAWN_Y = -50;
   const fallDist = hitZoneY - SPAWN_Y; // px the note travels in LEAD_TIME_MS
+
+  // === Receptor + Lulu visual feedback ===
+  const receptors = [...stage.querySelectorAll('.receptor')];
+  function receptorPress(lane, on) { const r = receptors[lane]; if (r) r.classList.toggle('pressed', on); }
+  function receptorHeld(lane, on) { const r = receptors[lane]; if (r) r.classList.toggle('held', on); }
+  function receptorFlash(lane) {
+    const r = receptors[lane]; if (!r) return;
+    r.classList.remove('hit-flash'); void r.offsetWidth; r.classList.add('hit-flash');
+  }
+  function luluParty() {
+    const g = document.getElementById('lulu-goat'); if (!g) return;
+    g.classList.remove('party'); void g.offsetWidth; g.classList.add('party');
+  }
 
   // === Note state ===
   // For each beat we keep: el (DOM), spawned, hit, judged ('perfect'|'good'|'miss'|null)
@@ -4834,6 +4849,7 @@ function gameRhythm(v, opts = {}) {
             const mEl = document.getElementById('r-miss');
             if (mEl) mEl.textContent = misses;
             n.el.classList.remove('held');
+            receptorHeld(n.lane, false);
             n.el.style.opacity = '0.25';
             sfx.miss();
             showFeedback('¡SOLTASTE!', 'var(--blood)');
@@ -4850,6 +4866,9 @@ function gameRhythm(v, opts = {}) {
             const hEl = document.getElementById('r-hits');
             if (hEl) hEl.textContent = hits;
             sfx.hit();
+            receptorHeld(n.lane, false);
+            receptorFlash(n.lane);
+            luluParty();
             showFeedback('HOLD!', 'var(--terminal)');
             if (n.headPerfect) flash('green');
             n.el.style.transition = 'opacity 0.2s linear';
@@ -4952,6 +4971,7 @@ function gameRhythm(v, opts = {}) {
         best.headPerfect = perfect;
         best.holdActive = true;
         if (best.el) best.el.classList.add('held');
+        receptorHeld(lane, true);
         sfx.hit();
         showFeedback(state.lang === 'ng' ? 'HOLD AM…' : 'MANTÉN…', 'var(--gold)');
         return;
@@ -4980,6 +5000,8 @@ function gameRhythm(v, opts = {}) {
       const hEl = document.getElementById('r-hits');
       if (hEl) hEl.textContent = hits;
       sfx.hit();
+      receptorFlash(lane);
+      if (perfect) luluParty();
       const label = state.lang === 'gl' ? (perfect ? 'PERFECTO' : 'BEN')
                   : state.lang === 'ng' ? (perfect ? 'PERFECT' : 'NICE')
                   : (perfect ? 'PERFECT' : 'GOOD');
@@ -4994,23 +5016,28 @@ function gameRhythm(v, opts = {}) {
     if (e.repeat) return;  // ignore auto-repeat — only true keydown counts
     const lane = keys.indexOf(k);
     heldKeys[lane] = true;
+    receptorPress(lane, true);
     tryHit(lane);
   };
   const keyUpHandler = (e) => {
     const k = e.key.toLowerCase();
     if (!keys.includes(k)) return;
-    heldKeys[keys.indexOf(k)] = false;
+    const lane = keys.indexOf(k);
+    heldKeys[lane] = false;
+    receptorPress(lane, false);
   };
   document.addEventListener('keydown', keyHandler);
   document.addEventListener('keyup', keyUpHandler);
   document.querySelectorAll('.rhythm-tap-zone').forEach(z => {
     const lane = parseInt(z.dataset.tapLane);
-    z.addEventListener('touchstart', (e) => { e.preventDefault(); heldKeys[lane] = true; tryHit(lane); }, { passive: false });
-    z.addEventListener('touchend', (e) => { e.preventDefault(); heldKeys[lane] = false; }, { passive: false });
-    z.addEventListener('touchcancel', () => { heldKeys[lane] = false; });
-    z.addEventListener('mousedown', () => { heldKeys[lane] = true; tryHit(lane); });
-    z.addEventListener('mouseup', () => { heldKeys[lane] = false; });
-    z.addEventListener('mouseleave', () => { heldKeys[lane] = false; });
+    const down = () => { heldKeys[lane] = true; receptorPress(lane, true); tryHit(lane); };
+    const up = () => { heldKeys[lane] = false; receptorPress(lane, false); };
+    z.addEventListener('touchstart', (e) => { e.preventDefault(); down(); }, { passive: false });
+    z.addEventListener('touchend', (e) => { e.preventDefault(); up(); }, { passive: false });
+    z.addEventListener('touchcancel', up);
+    z.addEventListener('mousedown', down);
+    z.addEventListener('mouseup', up);
+    z.addEventListener('mouseleave', up);
   });
 
   // Cleanup on game switch (jumpToRound to a different victim)
