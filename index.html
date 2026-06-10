@@ -13,8 +13,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&family=Press+Start+2P&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<!-- Firebase SDK removed 2026-06-10 — voting now runs on Neon via /api/* functions -->
 <style>
   :root {
     --bg: #0a0606;
@@ -2353,18 +2352,28 @@
 // ============================================
 // CONFIG
 // ============================================
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyDOpdHyQZKdDfsEZG9iUAt-mtU68LdTIsY",
-  authDomain: "despedida-mario.firebaseapp.com",
-  databaseURL: "https://despedida-mario-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "despedida-mario",
-  storageBucket: "despedida-mario.firebasestorage.app",
-  messagingSenderId: "642147079149",
-  appId: "1:642147079149:web:8c35f21d2b6f2a9e2b4de4"
-};
-const FIREBASE_ENABLED = FIREBASE_CONFIG.apiKey !== "REPLACE_ME";
+// Backend: Neon Postgres via same-origin Vercel functions (api/*.js).
+// Firebase removed 2026-06-10 (Google billing). FIREBASE_ENABLED stays as a
+// compat flag so every call-site keeps working unchanged.
+const FIREBASE_ENABLED = true;
+const API_POST = (path, body) =>
+  fetch('/api/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+    .then(r => r.json()).catch(() => null);
+const API_STATE = (room, round, pid) =>
+  fetch('/api/state?room=' + encodeURIComponent(room)
+    + (round !== undefined && round !== null ? '&round=' + round : '')
+    + (pid ? '&pid=' + encodeURIComponent(pid) : ''))
+    .then(r => r.json()).catch(() => null);
 
-const ROOM_ID = Math.random().toString(36).slice(2, 8).toUpperCase();
+// Room id survives a host (TV) reload — otherwise every joined phone would be
+// orphaned mid-party. Stored once per device; phones keep their pid the same way.
+const ROOM_ID = (() => {
+  try {
+    let r = localStorage.getItem('asb_room');
+    if (!r) { r = Math.random().toString(36).slice(2, 8).toUpperCase(); localStorage.setItem('asb_room', r); }
+    return r;
+  } catch (e) { return Math.random().toString(36).slice(2, 8).toUpperCase(); }
+})();
 
 // ============================================
 // STATE
@@ -2816,27 +2825,15 @@ function addShots(n) {
 }
 function addGroupShots(n) {
   state.groupShots += n;
-  // Assign each shot to a random connected player (in firebase if available)
-  if (FIREBASE_ENABLED && firebaseDB) {
-    const playersRef = firebaseDB.ref('rooms/' + ROOM_ID + '/players');
-    playersRef.once('value').then(snap => {
-      const players = snap.val() || {};
-      const ids = Object.keys(players);
-      if (ids.length === 0) return;
-      for (let i = 0; i < n; i++) {
-        const pid = ids[Math.floor(Math.random() * ids.length)];
-        const cur = (players[pid].chupitos || 0) + 1;
-        playersRef.child(pid + '/chupitos').set(cur);
-        players[pid].chupitos = cur;
-      }
-      const picks = Object.entries(players)
-        .map(([id, p]) => `${p.name || '?'}: ${p.chupitos || 0}`)
-        .join(' · ');
+  // Server assigns each shot to a random connected player
+  API_POST('round', { action: 'group-shots', room: ROOM_ID, n }).then(r => {
+    if (r && r.picks && r.picks.length > 0) {
+      const picks = r.picks.map(p => `${p.name}: ${p.total}`).join(' · ');
       toast(`🥃 GRUPO bebe ${n}: ${picks}`, 'danger');
-    });
-  } else {
-    toast(`🥃 GRUPO bebe ${n} chupitos`, 'danger');
-  }
+    } else {
+      toast(`🥃 GRUPO bebe ${n} chupitos`, 'danger');
+    }
+  });
 }
 function toggleMute() {
   state.muted = !state.muted;
@@ -3800,19 +3797,18 @@ function openLobby() {
   urlEl.innerHTML = `<a href="${url}" target="_blank" style="color:var(--gold);text-decoration:underline;user-select:text;-webkit-user-select:text;word-break:break-all;">${url}</a>
     <button onclick="copyToClip('${url}', this)" style="margin-left:8px;background:var(--gold);color:#000;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;">📋 Copiar</button>`;
   renderQR(document.getElementById('lobby-qr'), url);
-  if (FIREBASE_ENABLED && firebaseDB) {
-    firebaseDB.ref('rooms/' + ROOM_ID + '/players').on('value', snap => {
-      const players = snap.val() || {};
-      const names = Object.values(players).map(p => p.name || '?').slice(0, 20);
-      const count = Object.keys(players).length;
-      const cEl = document.getElementById('lobby-count');
-      const lEl = document.getElementById('lobby-list');
-      if (cEl) cEl.textContent = count;
-      if (lEl) lEl.textContent = count === 0 ? 'esperando móviles...' : names.join(' · ');
-    });
-  } else {
-    document.getElementById('lobby-list').textContent = '(Firebase off → modo manual)';
-  }
+  const lobbyPoll = setInterval(async () => {
+    // Stop polling once the host leaves the lobby screen
+    const screen = document.getElementById('screen-lobby');
+    if (!screen || screen.classList.contains('hidden')) { clearInterval(lobbyPoll); return; }
+    const s = await API_STATE(ROOM_ID);
+    if (!s || !s.players) return;
+    const names = s.players.map(p => p.name || '?').slice(0, 20);
+    const cEl = document.getElementById('lobby-count');
+    const lEl = document.getElementById('lobby-list');
+    if (cEl) cEl.textContent = s.players.length;
+    if (lEl) lEl.textContent = s.players.length === 0 ? 'esperando móviles...' : names.join(' · ');
+  }, 2000);
 }
 
 // ============================================
@@ -3944,76 +3940,33 @@ async function runPracticeRound(v) {
 }
 
 function openPrediction(v) {
-  if (!FIREBASE_ENABLED || !firebaseDB) return;
-  firebaseDB.ref('rooms/' + ROOM_ID + '/activeRound').set({
-    id: state.currentRound,
-    gameName: vt(v, 'gameName'),
-    state: 'open'
-  });
-  // Live counter on TV
-  const predRef = firebaseDB.ref('rooms/' + ROOM_ID + '/round/' + state.currentRound + '/predictions');
+  if (!FIREBASE_ENABLED) return;
+  API_POST('round', { action: 'open', room: ROOM_ID, round: state.currentRound, gameName: vt(v, 'gameName') });
+  // Live counter on TV — 2s polling is indistinguishable from realtime here
   if (state._predUnsubs) state._predUnsubs();
-  const listener = predRef.on('value', snap => {
-    const preds = snap.val() || {};
-    let si = 0, no = 0;
-    Object.values(preds).forEach(c => c === 1 ? si++ : no++);
+  const round = state.currentRound;
+  const poll = setInterval(async () => {
+    const s = await API_STATE(ROOM_ID, round);
+    if (!s || !s.counts) return;
     const siEl = document.getElementById('t-bet-si');
     const noEl = document.getElementById('t-bet-no');
-    if (siEl) siEl.textContent = si;
-    if (noEl) noEl.textContent = no;
-  });
-  state._predUnsubs = () => predRef.off('value', listener);
+    if (siEl) siEl.textContent = s.counts.si;
+    if (noEl) noEl.textContent = s.counts.no;
+  }, 2000);
+  state._predUnsubs = () => clearInterval(poll);
 }
 
 function closePrediction() {
-  if (!FIREBASE_ENABLED || !firebaseDB) return;
-  firebaseDB.ref('rooms/' + ROOM_ID + '/activeRound/state').set('closed');
+  if (!FIREBASE_ENABLED) return;
+  API_POST('round', { action: 'close', room: ROOM_ID, round: state.currentRound });
 }
 
 async function resolvePrediction(passed) {
-  if (!FIREBASE_ENABLED || !firebaseDB) return { losers: [], si: 0, no: 0, shotsEach: passed ? 1 : 2 };
-  const roundId = state.currentRound;
-  const [predsSnap, playersSnap] = await Promise.all([
-    firebaseDB.ref('rooms/' + ROOM_ID + '/round/' + roundId + '/predictions').once('value'),
-    firebaseDB.ref('rooms/' + ROOM_ID + '/players').once('value')
-  ]);
-  const preds = predsSnap.val() || {};
-  const players = playersSnap.val() || {};
-  // Backwards-compatible: prediction value may be a plain number (legacy
-  // SI=1 / NO=0) OR an object { choice, amount }. Amount defaults to 1.
-  const norm = (raw) => {
-    if (raw && typeof raw === 'object') {
-      return { choice: raw.choice, amount: Math.max(1, Math.min(10, raw.amount || 1)) };
-    }
-    return { choice: raw, amount: 1 };
-  };
-  let si = 0, no = 0;
-  Object.values(preds).forEach(raw => {
-    const { choice } = norm(raw);
-    if (choice === 1) si++; else if (choice === 0) no++;
-  });
-  const loserSide = passed ? 0 : 1;
-  const baseShotsEach = passed ? 1 : 2;
-  const losers = [];
-  for (const [pid, raw] of Object.entries(preds)) {
-    const { choice, amount } = norm(raw);
-    if (choice === loserSide) {
-      // Each invitee drinks baseShotsEach * how-much-they-bet.
-      const shotsForThis = baseShotsEach * amount;
-      const p = players[pid] || {};
-      const newShots = (p.chupitos || 0) + shotsForThis;
-      await firebaseDB.ref('rooms/' + ROOM_ID + '/players/' + pid + '/chupitos').set(newShots);
-      losers.push({ name: p.name || '?', shots: shotsForThis, total: newShots, bet: amount });
-    }
-  }
-  // shotsEach in the response is just the multiplier; ranking shows per-person above.
-  const shotsEach = baseShotsEach;
-  await firebaseDB.ref('rooms/' + ROOM_ID + '/activeRound').update({
-    state: 'result',
-    lastResult: `Mario ${passed ? '✅ PASÓ' : '❌ FALLÓ'} · ${losers.length === 0 ? 'Nadie bebe esta ronda.' : `bebes ${shotsEach} si votaste ${loserSide ? 'SÍ' : 'NO'}.`}`
-  });
   if (state._predUnsubs) { state._predUnsubs(); state._predUnsubs = null; }
-  return { losers, si, no, passed, shotsEach };
+  // The server settles the round atomically: losers drink base × wager.
+  const r = await API_POST('resolve', { room: ROOM_ID, round: state.currentRound, passed: !!passed });
+  if (!r || r.error) return { losers: [], si: 0, no: 0, passed, shotsEach: passed ? 1 : 2 };
+  return r;
 }
 
 async function showResult(shotsTaken, msg = '') {
@@ -6708,20 +6661,17 @@ function ANNA_TIME(t) { return t.toFixed(1) + 's'; }
 // ============================================
 // QR VOTING
 // ============================================
-let firebaseDB = null;
-function initFirebase() {
-  if (!FIREBASE_ENABLED || firebaseDB) return;
-  try {
-    firebase.initializeApp(FIREBASE_CONFIG);
-    firebaseDB = firebase.database();
-  } catch (e) { console.warn('Firebase init failed', e); }
-}
+// Compat shims — firebaseDB is just a truthy flag now, init is a no-op.
+let firebaseDB = true;
+function initFirebase() {}
 
+// Final/public votes are modelled as a special round id: 900 + currentRound.
+let _voteModalPoll = null;
+function voteRoundId() { return 900 + state.currentRound; }
 function openVoteModal(callback) {
   // Replace any pending callback first (defensive: if the previous round didn't
   // close its modal cleanly, we discard its callback rather than firing it now).
   _voteCallback = (typeof callback === 'function') ? callback : null;
-  initFirebase();
   const modal = document.getElementById('qr-modal');
   document.getElementById('qr-question').textContent = '¿Salvamos a Mario? Escanea, vota, vuelve.';
   document.getElementById('vote-yes').textContent = '0';
@@ -6734,20 +6684,15 @@ function openVoteModal(callback) {
 
   modal.classList.add('active');
 
-  if (FIREBASE_ENABLED && firebaseDB) {
-    const ref = firebaseDB.ref('rooms/' + ROOM_ID + '/votes');
-    ref.remove();
-    ref.on('value', snap => {
-      const votes = snap.val() || {};
-      let yes = 0, no = 0;
-      Object.values(votes).forEach(v => v.choice === 1 ? yes++ : no++);
-      state.votes = { yes, no };
-      document.getElementById('vote-yes').textContent = yes;
-      document.getElementById('vote-no').textContent = no;
-    });
-  } else {
-    toast('⚠ Firebase no configurado — usa votación manual', 'danger');
-  }
+  API_POST('round', { action: 'open', room: ROOM_ID, round: voteRoundId(), gameName: 'VOTO DEL PÚBLICO' });
+  if (_voteModalPoll) clearInterval(_voteModalPoll);
+  _voteModalPoll = setInterval(async () => {
+    const s = await API_STATE(ROOM_ID, voteRoundId());
+    if (!s || !s.counts) return;
+    state.votes = { yes: s.counts.si, no: s.counts.no };
+    document.getElementById('vote-yes').textContent = s.counts.si;
+    document.getElementById('vote-no').textContent = s.counts.no;
+  }, 1500);
 }
 
 function manualVote(choice) {
@@ -6760,9 +6705,8 @@ function manualVote(choice) {
 function closeVote() {
   const modal = document.getElementById('qr-modal');
   modal.classList.remove('active');
-  if (FIREBASE_ENABLED && firebaseDB) {
-    firebaseDB.ref('rooms/' + ROOM_ID + '/votes').off();
-  }
+  if (_voteModalPoll) { clearInterval(_voteModalPoll); _voteModalPoll = null; }
+  API_POST('round', { action: 'close', room: ROOM_ID, round: voteRoundId() });
   if (_voteCallback) {
     const cb = _voteCallback;
     _voteCallback = null;
@@ -6789,26 +6733,25 @@ function joinRoom() {
   const raw = (document.getElementById('vote-name-input').value || '').trim();
   const name = raw.replace(/[<>&"`\x00-\x1f]/g, '').slice(0, 14) || 'Anónimo';
   localStorage.setItem('mario_name_' + room, name);
-  initFirebase();
   const pid = getPlayerId(room);
-  if (FIREBASE_ENABLED && firebaseDB) {
-    firebaseDB.ref('rooms/' + room + '/players/' + pid).update({
-      name, joinedAt: Date.now()
-    });
-    firebaseDB.ref('rooms/' + room + '/activeRound').on('value', snap => {
-      updatePhoneUI(snap.val(), room, pid);
-    });
-    firebaseDB.ref('rooms/' + room + '/players/' + pid + '/chupitos').on('value', snap => {
-      const c = snap.val() || 0;
-      const el = document.getElementById('vote-myshots');
-      if (el) el.textContent = c;
-    });
-  }
+  API_POST('join', { room, pid, name });
+  // Phone polls the room state every 2s: active round + my vote + my shots
+  setInterval(async () => {
+    const s = await API_STATE(room, undefined, pid);
+    if (!s) return;
+    const arRaw = s.activeRound;
+    const ar = arRaw ? { id: arRaw.round, state: arRaw.state, gameName: arRaw.game_name, lastResult: arRaw.last_result } : null;
+    window._phoneActiveRound = ar;
+    updatePhoneUI(ar, room, pid, s.myVote);
+    const me = (s.players || []).find(p => p.pid === pid);
+    const el = document.getElementById('vote-myshots');
+    if (el && me) el.textContent = me.chupitos || 0;
+  }, 2000);
   document.getElementById('vote-name-step').style.display = 'none';
   document.getElementById('vote-active-step').style.display = 'block';
   document.getElementById('vote-myname').textContent = name;
 }
-function updatePhoneUI(ar, room, pid) {
+function updatePhoneUI(ar, room, pid, myVote) {
   const title = document.getElementById('vote-state-title');
   const q = document.getElementById('vote-question');
   const btns = document.getElementById('vote-buttons');
@@ -6829,20 +6772,20 @@ function updatePhoneUI(ar, room, pid) {
     return;
   }
   if (ar.state === 'open') {
-    firebaseDB.ref('rooms/' + room + '/round/' + ar.id + '/predictions/' + pid).once('value').then(s => {
-      const amountBlock = document.getElementById('vote-amount-block');
-      if (s.val() !== null) {
-        title.textContent = '✓ VOTADO';
-        q.textContent = `Esperando que Mario juegue "${ar.gameName}"...`;
-        btns.style.display = 'none'; thanks.classList.add('show');
-        if (amountBlock) amountBlock.style.display = 'none';
-      } else {
-        title.textContent = 'APUESTA YA';
-        q.innerHTML = `Ronda ${esc(ar.id)}/12 — <strong style="color:var(--gold)">${esc(ar.gameName)}</strong><br/>¿Mario lo logra?`;
-        btns.style.display = 'flex'; thanks.classList.remove('show');
-        if (amountBlock) amountBlock.style.display = 'block';
-      }
-    });
+    const amountBlock = document.getElementById('vote-amount-block');
+    if (myVote) {
+      title.textContent = '✓ VOTADO';
+      q.textContent = `Esperando que Mario juegue "${ar.gameName}"...`;
+      btns.style.display = 'none'; thanks.classList.add('show');
+      if (amountBlock) amountBlock.style.display = 'none';
+    } else {
+      title.textContent = ar.id >= 900 ? 'VOTO DEL PÚBLICO' : 'APUESTA YA';
+      q.innerHTML = ar.id >= 900
+        ? `<strong style="color:var(--gold)">${esc(ar.gameName)}</strong><br/>Mira la TV y vota.`
+        : `Ronda ${esc(ar.id)}/12 — <strong style="color:var(--gold)">${esc(ar.gameName)}</strong><br/>¿Mario lo logra?`;
+      btns.style.display = 'flex'; thanks.classList.remove('show');
+      if (amountBlock) amountBlock.style.display = ar.id >= 900 ? 'none' : 'block';
+    }
   }
 }
 function castVote(choice) {
@@ -6852,13 +6795,9 @@ function castVote(choice) {
   // Read the chupitos amount the player picked (range input 1-5, default 2).
   const amountInput = document.getElementById('bet-amount');
   const amount = amountInput ? Math.max(1, Math.min(10, parseInt(amountInput.value) || 2)) : 2;
-  if (FIREBASE_ENABLED && firebaseDB) {
-    firebaseDB.ref('rooms/' + room + '/activeRound').once('value').then(snap => {
-      const ar = snap.val();
-      if (!ar || ar.state !== 'open') return;
-      // Store as { choice, amount } so we can multiply shots at resolve time.
-      firebaseDB.ref('rooms/' + room + '/round/' + ar.id + '/predictions/' + pid).set({ choice, amount });
-    });
+  const ar = window._phoneActiveRound;
+  if (ar && ar.state === 'open') {
+    API_POST('vote', { room, round: ar.id, pid, choice, amount });
   }
   document.getElementById('vote-buttons').style.display = 'none';
   document.getElementById('vote-thanks').classList.add('show');
@@ -6902,15 +6841,11 @@ async function goToFinal() {
   setTimeout(() => { sfx.success(); flash('gold'); }, 2900);
 
   // Podium of all players (Mario + connected phones)
-  if (FIREBASE_ENABLED && firebaseDB) {
-    const snap = await firebaseDB.ref('rooms/' + ROOM_ID + '/players').once('value');
-    const players = Object.values(snap.val() || {}).map(p => ({ name: p.name || '?', chupitos: p.chupitos || 0 }));
-    players.push({ name: '🤵 MARIO', chupitos: total, isMario: true });
-    players.sort((a, b) => b.chupitos - a.chupitos);
-    renderPodium(players);
-  } else {
-    renderPodium([{ name: '🤵 MARIO', chupitos: total, isMario: true }]);
-  }
+  const s = await API_STATE(ROOM_ID);
+  const players = ((s && s.players) || []).map(p => ({ name: p.name || '?', chupitos: p.chupitos || 0 }));
+  players.push({ name: '🤵 MARIO', chupitos: total, isMario: true });
+  players.sort((a, b) => b.chupitos - a.chupitos);
+  renderPodium(players);
 }
 
 function renderPodium(players) {
