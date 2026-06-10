@@ -3891,11 +3891,16 @@ async function showTransitionCard(v) {
   openPrediction(v);
 
   // BACK button — aborts the round, returns to the victim menu.
+  // ORDER MATTERS: resolve {cancelled:true} BEFORE backToVictims() — that call
+  // dispatches 'start-game', which fires this card's own start-game listener
+  // and would otherwise resolve the promise with undefined first ("ghost game"
+  // bug: the caller saw no cancellation and launched the game into the hidden
+  // stage with live timers + key handlers).
   const backBtn = document.getElementById('transition-back-btn');
   if (backBtn) backBtn.addEventListener('click', () => {
+    resolveOuter({ cancelled: true });
     closePrediction();
     backToVictims();
-    resolveOuter({ cancelled: true });
   }, { once: true });
 
   // PRACTICE button — runs the practice version, then re-shows this card.
