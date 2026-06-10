@@ -32,9 +32,7 @@
   - Carriles con contraste alternado, colas de hold 2× más anchas con borde, feedback central 60px, escenario con luces moradas. Stage 64dvh → nada cortado a 390px (bottom 756/844). Chart y scoring intactos.
   - Verificado Playwright 390px+desktop: receptores presentes, input teclado+touch con pressed/flash, notas y holds cayendo, sin clipping.
 
-- [ ] **P1.D Mapa Tenerife: rediseño — "no se entiende na" (Javier).**
-  Confirmado en prod: la isla pinta NEGRA (fill computado `rgb(0,0,0)` — el gradiente no se aplica), el SVG mide 176×100px en móvil y los 12 pins (existen en DOM) son invisibles. En desktop igual: borrón negro.
-  **Plan**: tilemap pixel-art Pokemon GBC (colores planos, NO gradientes, NO spotlight, transforms raster con image-rendering:pixelated si hay raster), isla reconocible, 12 pins estilo gimnasio visibles y clicables, pin activo destacado, ruta del progreso. Respetar lecciones: pins próximos → dy manual + alternar lado.
+- [x] **P1.D Mapa Tenerife: rediseño.** ✅ 444021a — **Causa raíz: el mapa nunca tuvo CSS** (ni .tenerife-svg ni .island ni .map-pin: isla negra por fill default, SVG sin width, pins sin estilos). Rediseño "mapa de aventura": océano con gradiente+olas+brújula, isla arena+interior verde, Teide nevado con cota, ruta de progreso (oro recorrido / punteado pendiente), 12 pins estado (✓ verde / activo oro con halo pulsante / futuro azul), info card SIGUIENTE PARADA pulida. Pins clicables intactos (jumpToRound). Verificado Playwright 390px+desktop con currentRound=5.
 
 - [ ] **P1.E Intro: ritmo y limpieza — "hay cosas lentas, hay imagenes sin sentido" (Javier).**
   Revisar `startIntro` completo: terminal (delays), counter 4.7M, mapa África con 12 labels (hold de 10s — candidato a recorte), WANTED poster, crawl 40s. Acortar tiempos muertos, eliminar/arreglar imágenes que no se entienden, asegurar que el botón "Saltar intro ▸" está siempre visible y que cada beat aporta. El mapa de África pixel-art se mantiene (es de las cosas buenas) pero los labels no deben bloquear 10s.
