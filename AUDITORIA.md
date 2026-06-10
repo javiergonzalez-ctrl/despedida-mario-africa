@@ -54,14 +54,14 @@
 
 ## P4 — Texturas / UI / copys
 
-- [ ] **P4.1 Copys desactualizados en VICTIMS i18n**: gl/ng de Anna (ronda 12) describen el lore viejo ("vestida de noiva co polígrafo, 6 votos") en vez de Wally; gl/ng de Paz dicen "5 acusacións" vs 7 en es. Tras P1.B revisar también VICTIMS[10] entero.
-- [ ] **P4.2 Copy lobby**: "⚠ Si Firebase no está configurado..." — Firebase ya no existe (Neon). Reescribir ("Si un móvil no conecta: voto manual desde el portátil").
-- [ ] **P4.3 'esperando móviles...' hardcodeado** en el poll de `openLobby` (index.html:3810) — usar `t('lobby_waiting')`.
+- [x] **P4.1 Copys desactualizados en VICTIMS i18n** ✅ 984083b — Anna gl/ng reescritos al lore Wally (Paz gl/ng ya quedaron al día en P1.B).
+- [x] **P4.2 Copy lobby** ✅ 984083b — "¿Un móvil no conecta? Siempre se puede votar en manual desde el portátil." en es/gl/ng + HTML.
+- [x] **P4.3 'esperando móviles...' hardcodeado** ✅ 984083b — ahora `t('lobby_waiting')`.
 
 ## P5 — Deuda de código
 
-- [ ] **P5.1 Dead code `gamePress` + `gamePenalty`** (~250 líneas, sin víctima asignada; `PRACTICE_SUPPORTED` aún lista 'penalty'). **PENDIENTE JAVIER**: ¿recuperar Press Conference para alguna víctima o borrar? (decisión creativa — no borro a ciegas).
-- [ ] **P5.2 Flag `FIREBASE_ENABLED` + shims `firebaseDB`/`initFirebase`** — renombrar/limpiar a capa backend Neon (cosmético, bajo riesgo, hacer al final).
+- [~] **P5.1 Dead code `gamePress` + `gamePenalty`** — marcados con comentario ⚠ DEAD CODE y 'penalty' fuera de PRACTICE_SUPPORTED (984083b). **PENDIENTE JAVIER**: ¿recuperar Press Conference para alguna víctima o borrar las ~250 líneas?
+- [x] **P5.2 Flag backend** ✅ 984083b — `BACKEND_ENABLED` + `initBackend()` (shim `firebaseDB` sin usos eliminado); cero referencias a Firebase en el código vivo. Regresión verificada: millonario/lobby/predicciones funcionan.
 
 ## P6 — Features creativas (solo si sobra backlog)
 
