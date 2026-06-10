@@ -15,9 +15,9 @@
 
 ## P1 — Cambios confirmados por Javier (alta prioridad)
 
-> **MANDATO GRÁFICO (Javier 2026-06-10 noche): luz verde para cambiar los gráficos y hacer algo más profesional aún.** Aplica a mapa (P1.D), rhythm (P1.C), intro (P1.E) y a cualquier juego/pantalla que lo necesite — siempre dentro de las lecciones (colores planos GBC, raster pixelated, sin viewBox zoom).
+> **MANDATO GRÁFICO (Javier 2026-06-10/11 noche): luz verde total.** Rediseñar gráficos para algo más profesional Y memorable/atractivo para el jugador. Las lecciones ESTÉTICAS (colores planos GBC estrictos, retro purista) quedan a mi criterio — puedo romperlas si el resultado es mejor. Las lecciones TÉCNICAS se mantienen (no SVG viewBox zoom sobre pixel art = artefactos; no SVGs huérfanos en body = bugs visuales; no-cache headers). Criterio rector: ¿lo recordarán los colegas en la fiesta?
 
-- [ ] **P1.A Quiz F1 (ronda 6): REVERTIR al set simple** anterior a af4e461 / be051ec / 283a2e1 (humor negro + troll). Extraer el set previo con `git show 830ffbc:index.html` (F1_QUESTIONS es). Sincronizar `instruction` de Helmer (es dice "21 preguntas — humor MUY negro"; gl/ng dicen 12). Verificar quiz completo tras revert.
+- [x] **P1.A Quiz F1 (ronda 6): REVERTIR al set simple** ✅ — restaurado set de 830ffbc (es: 15 preguntas = 12 F1 + 3 Mario; gl/ng intactas) + instruction de Helmer. Verificado Playwright: 15 dots, preguntas clásicas, avance OK.
 
 - [ ] **P1.B ¿QUIÉN QUIERE SER MILLONARIO? — nuevo minijuego que SUSTITUYE la ronda 11** (fuera el polígrafo de Paz de esa posición).
   - 6-7 preguntas A/B/C/D dificultad creciente, lore Mario+Anna (UFV, F1 Fantasy África, Menorca sept 2025, boda Cádiz 2026, "¡Mil veces sí!", Noniná, Paz Sálvame, Albert ex-Barça). Array JS comentado y editable (Javier las ajusta mañana).
