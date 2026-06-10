@@ -956,6 +956,51 @@
   }
   .rush-attempt.hit { background: var(--terminal); box-shadow: 0 0 16px var(--terminal); }
   .rush-attempt.miss { background: var(--blood); box-shadow: 0 0 16px var(--blood); }
+  /* --- Escena Lagos (P3.1): atardecer + skyline + tráfico. Solo ambiente. --- */
+  .lagos-scene {
+    position: relative; height: 150px; border-radius: 16px; overflow: hidden;
+    margin-bottom: 14px;
+    background: linear-gradient(180deg, #2b1740 0%, #6b2d52 38%, #c95b2e 72%, #e8923f 100%);
+    border: 1px solid rgba(255,215,0,0.25);
+    box-shadow: 0 10px 36px rgba(0,0,0,0.5);
+  }
+  .lagos-sun {
+    position: absolute; left: 50%; top: 52%; width: 54px; height: 54px; margin-left: -27px;
+    border-radius: 50%; background: #ffd76a;
+    box-shadow: 0 0 44px 12px rgba(255,200,90,0.55);
+  }
+  .lagos-skyline { position: absolute; left: 0; right: 0; bottom: 24px; display: flex; align-items: flex-end; gap: 4px; padding: 0 6px; }
+  .lagos-skyline div {
+    flex: 1; border-radius: 2px 2px 0 0; background-color: #1a1026;
+    background-image:
+      repeating-linear-gradient(0deg, transparent 0 7px, rgba(255,214,106,0.22) 7px 9px),
+      repeating-linear-gradient(90deg, transparent 0 6px, rgba(0,0,0,0.45) 6px 8px);
+  }
+  .lagos-road { position: absolute; left: 0; right: 0; bottom: 0; height: 24px; background: #26262b; }
+  .lagos-road::before {
+    content: ''; position: absolute; left: -40px; right: -40px; top: 50%; height: 2px;
+    background: repeating-linear-gradient(90deg, #f7d34d 0 18px, transparent 18px 34px);
+    animation: roadScroll 0.6s linear infinite;
+  }
+  @keyframes roadScroll { to { transform: translateX(-34px); } }
+  .lagos-taxi { position: absolute; bottom: 1px; left: -10%; font-size: 22px; line-height: 1; animation: taxiRun 5.5s linear infinite; }
+  @keyframes taxiRun { 0% { left: -10%; } 100% { left: 106%; } }
+  .lagos-danfo { position: absolute; bottom: 2px; left: 110%; font-size: 19px; line-height: 1; transform: scaleX(-1); animation: danfoRun 8.5s linear infinite 1.6s; }
+  @keyframes danfoRun { 0% { left: 110%; } 100% { left: -14%; } }
+  .lagos-title { position: absolute; top: 8px; left: 0; right: 0; text-align: center; text-shadow: 0 2px 10px rgba(0,0,0,0.65); }
+  .lagos-title .t1 { font-family: 'Bebas Neue'; font-size: clamp(32px, 6vw, 46px); letter-spacing: 0.06em; line-height: 1; }
+  .lagos-title .t2 { font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.25em; color: #ffd76a; text-transform: uppercase; }
+  /* El cursor ES el taxi de Elver: frénalo dentro de la PARADA */
+  .rush-bar { overflow: visible; }
+  .rush-cursor::after {
+    content: '🚕'; position: absolute; top: -30px; left: 50%; transform: translateX(-50%);
+    font-size: 28px; line-height: 1; filter: drop-shadow(0 3px 4px rgba(0,0,0,0.6));
+  }
+  .rush-zone::after {
+    content: 'PARADA'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-family: 'JetBrains Mono', monospace; font-size: 9px; letter-spacing: 0.18em;
+    color: #bfffd0; opacity: 0.85; pointer-events: none;
+  }
 
   /* ============ MINI GAME: MANGO MEMORY ============ */
   .mango-grid {
@@ -4353,10 +4398,23 @@ function gameRush(v) {
   let zoneWidth = 18;
   let zoneStart = Math.random() * (100 - zoneWidth);
 
+  // Alturas del skyline (fijas — que no bailen entre renders)
+  const SKYLINE_H = [46, 70, 38, 84, 58, 92, 50, 74, 42, 64, 88, 54];
   stage.innerHTML = `
     <div class="rush-stage">
-      <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:8px;">RUSH HOUR LAGOS</div>
-      <div style="color:var(--text-dim);margin-bottom:16px;">Pulsa <span class="key-hint">SPACE</span> o toca la barra · Intento <span id="rush-att">1</span>/${maxAttempts}</div>
+      <div class="lagos-scene">
+        <div class="lagos-sun"></div>
+        <div class="lagos-skyline">${SKYLINE_H.map(h => `<div style="height:${h}px;"></div>`).join('')}</div>
+        <div class="lagos-road">
+          <div class="lagos-taxi">🚕</div>
+          <div class="lagos-danfo">🚌</div>
+        </div>
+        <div class="lagos-title">
+          <div class="t1">RUSH HOUR LAGOS</div>
+          <div class="t2">frena el taxi en la parada</div>
+        </div>
+      </div>
+      <div style="color:var(--text-dim);margin-bottom:12px;">Pulsa <span class="key-hint">SPACE</span> o toca la carretera · Intento <span id="rush-att">1</span>/${maxAttempts}</div>
       <div class="rush-attempts" id="rush-atts">
         ${Array.from({length: maxAttempts}, (_, i) => `<div class="rush-attempt" id="rush-att-${i}"></div>`).join('')}
       </div>
@@ -4364,7 +4422,7 @@ function gameRush(v) {
         <div class="rush-zone" id="rush-zone" style="left:${zoneStart}%; width:${zoneWidth}%;"></div>
         <div class="rush-cursor" id="rush-cursor" style="left:${cursorPos}%;"></div>
       </div>
-      <p style="color:var(--text-dim);font-size:14px;">El taxi de Elver se aproxima. La zona <strong style="color:var(--terminal)">cambia de sitio</strong> cada vez.</p>
+      <p style="color:var(--text-dim);font-size:14px;">El taxi de Elver no tiene frenos finos. La PARADA <strong style="color:var(--terminal)">cambia de sitio</strong> cada intento.</p>
     </div>
   `;
 
