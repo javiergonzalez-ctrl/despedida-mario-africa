@@ -34,8 +34,11 @@
 
 - [x] **P1.D Mapa Tenerife: rediseño.** ✅ 444021a — **Causa raíz: el mapa nunca tuvo CSS** (ni .tenerife-svg ni .island ni .map-pin: isla negra por fill default, SVG sin width, pins sin estilos). Rediseño "mapa de aventura": océano con gradiente+olas+brújula, isla arena+interior verde, Teide nevado con cota, ruta de progreso (oro recorrido / punteado pendiente), 12 pins estado (✓ verde / activo oro con halo pulsante / futuro azul), info card SIGUIENTE PARADA pulida. Pins clicables intactos (jumpToRound). Verificado Playwright 390px+desktop con currentRound=5.
 
-- [ ] **P1.E Intro: ritmo y limpieza — "hay cosas lentas, hay imagenes sin sentido" (Javier).**
-  Revisar `startIntro` completo: terminal (delays), counter 4.7M, mapa África con 12 labels (hold de 10s — candidato a recorte), WANTED poster, crawl 40s. Acortar tiempos muertos, eliminar/arreglar imágenes que no se entienden, asegurar que el botón "Saltar intro ▸" está siempre visible y que cada beat aporta. El mapa de África pixel-art se mantiene (es de las cosas buenas) pero los labels no deben bloquear 10s.
+- [x] **P1.E Intro: ritmo y limpieza.** ✅ 5db8923 — Recut total 61s→~32s: terminal ×0.55, counter 2.6→1.8s, gap extra 800ms fuera, África hold 10s→4.5s (labels entran a 400ms+50ms/label), WANTED 2.6s, crawl CSS 40s→22s con corte a 20s. La "imagen sin sentido" principal (mapa Tenerife negro) ya cayó en P1.D. Verificado Playwright: timeline de fases correcta, desemboca en victims a ~32s.
+
+- [x] **P1.F "Saltar intro" SIEMPRE operativo.** ✅ 5db8923 — Botón fixed z-200 visible sobre las 5 fases (ya lo estaba). BUG REAL arreglado: la corrutina async seguía viva tras saltar y su `goToVictims()` final (a los ~40s) te SACABA de la partida en curso. Ahora token `_introToken` + guard `alive()` (token+visibilidad) tras cada await; skip llama `cancelIntro()`. Verificado Playwright: skip a mitad de terminal → victims → jumpToRound(7) → 5s después sigue en screen-game con la intro congelada (corrutina muerta).
+
+- [ ] **P1.G Controles a MITAD de juego: reiniciar Y salir** (Javier 2026-06-11). Hoy en mitad de un juego no puedes ni reiniciar ni salir (◀ MENÚ oculto durante game-running por el fix fat-finger). Añadir DOS controles accesibles durante la partida (pills en el HUD visibles solo con game-running): "↻" reiniciar → jumpToRound(state.currentRound) (la transition card actúa de confirmación natural) y "✕" salir → backToVictims() (menú del juego; desde ahí ya hay ◀ INICIO al menú principal). Verificar teardown limpio del juego en curso (timers, listeners, audio) en ambos caminos.
 
 ## P2 — Fricción / bugs móvil (390px)
 
