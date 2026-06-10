@@ -181,6 +181,18 @@
   }
   .hud-pill.shots { border-color: var(--blood); color: var(--blood); }
   .hud-pill.round { border-color: var(--gold); color: var(--gold); }
+  /* Controles mid-game (P1.G): solo visibles con un juego corriendo.
+     El HUD es pointer-events:none — estos botones lo re-activan. */
+  .hud-ctl {
+    display: none; cursor: pointer; pointer-events: auto;
+    background: rgba(0,0,0,0.55); border: 1px solid var(--glass-border);
+    color: var(--text-dim); font-family: 'JetBrains Mono', monospace; font-size: 14px;
+    padding: 6px 12px; border-radius: 999px; backdrop-filter: blur(8px);
+    line-height: 1; transition: border-color 0.15s, color 0.15s;
+  }
+  #hud-restart:hover { border-color: var(--gold); color: var(--gold); }
+  #hud-exit:hover { border-color: var(--blood); color: var(--blood); }
+  body.game-running .hud-ctl { display: inline-flex; }
 
   /* ============ RUNNER PHYSICAL CONTROL BUTTONS ============ */
   /* Side-by-side under the canvas so the finger never blocks the play area.
@@ -2255,6 +2267,9 @@
 <div class="hud hidden" id="hud">
   <div class="hud-left">
     <div class="hud-pill round" id="hud-round">RONDA —</div>
+    <!-- P1.G: reiniciar la prueba / salir al menú a MITAD de juego -->
+    <button class="hud-ctl" id="hud-restart" onclick="jumpToRound(state.currentRound)" title="Reiniciar esta prueba" aria-label="Reiniciar esta prueba">↻</button>
+    <button class="hud-ctl" id="hud-exit" onclick="backToVictims()" title="Salir al menú" aria-label="Salir al menú">✕</button>
   </div>
   <div class="hud-right">
     <div class="hud-pill shots" id="hud-shots">🥃 0 CHUPITOS</div>
@@ -3909,6 +3924,9 @@ async function jumpToRound(n) {
   // the same teardown event used by the round flow.
   document.dispatchEvent(new CustomEvent('start-game'));
   if (window.__rhythmAudio) { try { window.__rhythmAudio.pause(); } catch(e){} window.__rhythmAudio = null; }
+  // We're heading to a transition card, not a running game: drop the flag so
+  // the mid-game HUD controls (↻/✕) hide and the back button shows again.
+  document.body.classList.remove('game-running');
   // Drop any pending vote callback from the previous round and close its modal
   _voteCallback = null;
   const qrm = document.getElementById('qr-modal');
