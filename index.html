@@ -9,6 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
 <title>AFRICA STRIKES BACK — Operación Cristóbal</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🥃</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;700&family=Bebas+Neue&family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -1754,8 +1755,11 @@
     overflow-y: auto;
     align-items: stretch;
     justify-content: flex-start;
-    padding: 20px 16px 32px;
+    padding: 56px 16px 32px; /* P2.1: aire bajo las lang-pills fijas a 390px */
   }
+  /* P2.1: en el damage report final cambiar de idioma no aporta — fuera pills
+     (pisaban el pretitle a 390px). body.final-active lo pone goToFinal(). */
+  body.final-active .lang-picker { display: none; }
   #screen-final .pretitle { margin-bottom: 6px; }
   #screen-final .final-label { font-size: 12px; }
   #screen-final > * { flex-shrink: 0; }
@@ -4117,6 +4121,9 @@ async function showTransitionCard(v) {
       ${hasPractice ? `<p style="color:var(--text-dim);font-size:11px;font-family:'JetBrains Mono',monospace;margin-top:10px;letter-spacing:0.1em;">${t('practice_tip')}</p>` : ''}
     </div>
   `;
+  // P2.3: arrancar cada carta arriba del todo (móvil aterrizaba a mitad de scroll)
+  const _sg = document.getElementById('screen-game');
+  if (_sg) _sg.scrollTop = 0;
   // Declare resolveOuter + promise FIRST so all handlers can reach it.
   let resolveOuter;
   const promise = new Promise(resolve => { resolveOuter = resolve; });
@@ -4297,6 +4304,9 @@ async function showResult(shotsTaken, msg = '') {
       </div>
     </div>
   `;
+  // P2.3: si el juego dejó el stage scrolleado, el result aparecía a mitad.
+  const sg = document.getElementById('screen-game');
+  if (sg) sg.scrollTop = 0;
 }
 
 function startGame(v) {
@@ -7384,6 +7394,7 @@ async function goToFinal() {
   show('screen-final');
   document.getElementById('hud').classList.add('hidden');
   document.body.classList.remove('hud-active');
+  document.body.classList.add('final-active'); // esconde lang-pills (P2.1)
   const total = state.shots;
   const wed = state.weddingResult;
   let title, msg;
