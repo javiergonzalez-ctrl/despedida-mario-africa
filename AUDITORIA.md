@@ -26,11 +26,11 @@
   - API extendido: `vote.js` choice 0..3, `state.js` counts.byChoice + **fix prioridad open en activeRound** (bug latente: un round 800/900+ cerrado tapaba las apuestas de rondas posteriores). Móvil: botones A/B/C/D para rounds 800-899.
   - Verificado: Playwright 390px+desktop (flujo win/lose, 50:50, público, % persistentes) + E2E prod (vote choice 3 → byChoice=[0,0,0,1]; activeRound prioriza open). `gamePoligrafo` queda sin víctima → P5.1.
 
-- [ ] **P1.C Ronda 3 (Lulu's Revenge, rhythm): mejora integral "a todos los niveles"** (pedido por Javier 2026-06-10).
-  - Jugabilidad: revisar ritmo/densidad del chart, ventanas de hit, claridad de los holds, curva de dificultad.
-  - Móvil 390px: botones táctiles D/F/J/K pegados/cortados en el borde inferior (safe-area), Lulu (cabra, esquina sup. dcha.) tapada por notas, contraste de carriles.
-  - Visual: zona de hit más legible, feedback de acierto/fallo más gordo, scorecard.
-  - Verificar partida completa en móvil y desktop tras los cambios.
+- [x] **P1.C Ronda 3 (Lulu's Revenge, rhythm): mejora integral.** ✅ e890371
+  - Receptores DDR por carril (cyan/rosa/oro/verde) en la zona de hit: pressed/held/hit-flash. Sustituyen a la fila de teclas Franco que se cortaba abajo (Franco sigue en las notas, que es el chiste).
+  - Tap zone = carril COMPLETO (antes franja invisible de 90px que nadie veía). Lulu fuera del campo → header, reacciona con .party en cada PERFECT.
+  - Carriles con contraste alternado, colas de hold 2× más anchas con borde, feedback central 60px, escenario con luces moradas. Stage 64dvh → nada cortado a 390px (bottom 756/844). Chart y scoring intactos.
+  - Verificado Playwright 390px+desktop: receptores presentes, input teclado+touch con pressed/flash, notas y holds cayendo, sin clipping.
 
 - [ ] **P1.D Mapa Tenerife: rediseño — "no se entiende na" (Javier).**
   Confirmado en prod: la isla pinta NEGRA (fill computado `rgb(0,0,0)` — el gradiente no se aplica), el SVG mide 176×100px en móvil y los 12 pins (existen en DOM) son invisibles. En desktop igual: borrón negro.
@@ -42,7 +42,7 @@
 ## P2 — Fricción / bugs móvil (390px)
 
 - [ ] **P2.1 Pantalla final: lang-pills (ES/GL/NAIJA) pisan el pretitle** "DAMAGE REPORT — JUICIO CERRADO" a 390px. Padding-top o esconder pills en screen-final.
-- [ ] **P2.2 Rhythm: fila de botones táctiles cortada por el borde inferior** (se solapa con P1.C — resolver ahí).
+- [x] **P2.2 Rhythm: fila de botones táctiles cortada por el borde inferior** ✅ — resuelto en P1.C (e890371): receptores a bottom:32px + stage 64dvh + tap zone carril completo.
 - [ ] **P2.3 Result screen: scroll-to-top al renderizar** (pendiente del playtest; en móvil aterrizas a mitad de scroll).
 - [ ] **P2.4 favicon 404** en todas las cargas — meter favicon inline (data URI emoji 🏁/🥃) y matar el error de consola.
 
