@@ -3,3 +3,6 @@
 .idea/
 node_modules/
 *.log
+
+# Voice cloning workspace — contiene .env con API key, venvs y modelos RVC. NO subir.
+voice_cloning/
