@@ -5390,16 +5390,24 @@ function gameSlot(v) {
     const reels = [document.getElementById('reel-0'), document.getElementById('reel-1'), document.getElementById('reel-2')];
     const rig = RIGGED[Math.min(spinIndex, RIGGED.length - 1)];
 
-    // Spin animation (emojis aleatorios mientras gira)
+    const isRigged = spinIndex >= 1; // rondas 2 y 3: amaño descarado
     reels.forEach(r => r.classList.add('spinning'));
-    for (let t = 0; t < 30; t++) {
-      reels.forEach(r => { r.innerHTML = ''; r.textContent = symbols[Math.floor(Math.random() * symbols.length)]; });
-      await sleep(60);
+    if (isRigged) {
+      // Las 3 fotos amañadas dando vueltas ~15s (que se vea el tongo)
+      reels.forEach(r => applyReel(r, rig));
+      await sleep(15000);
+    } else {
+      // Ronda 1: emojis aleatorios girando
+      for (let t = 0; t < 35; t++) {
+        reels.forEach(r => { r.innerHTML = ''; r.textContent = symbols[Math.floor(Math.random() * symbols.length)]; });
+        await sleep(60);
+      }
     }
 
-    // Para los 3 rodillos con el MISMO resultado amañado
+    // Paradas escalonadas: cada rodillo tarda más que el anterior (suspense)
+    const gaps = isRigged ? [1600, 2600, 3600] : [800, 1300, 1900];
     for (let i = 0; i < 3; i++) {
-      await sleep(400);
+      await sleep(gaps[i]);
       applyReel(reels[i], rig);
       reels[i].classList.remove('spinning');
       sfx.click();
@@ -5817,12 +5825,16 @@ function gameDrift(v) {
 function gameWhack(v) {
   const stage = document.getElementById('game-stage');
   const pazImg = avatarUrl('Paz Padilla', 'avataaars'); // foto real (override) con fallback DiceBear
+  // Topos golpeables = fotos reales del grupo (a Paz NO se le pega).
   const fakeImgs = [
-    DICEBEAR('Fake-Senora-1', 'avataaars'),
-    DICEBEAR('Fake-Senora-2', 'avataaars'),
-    DICEBEAR('Fake-Senora-3', 'avataaars'),
-    DICEBEAR('Fake-Senora-4', 'avataaars')
+    'assets/elver-galarga.jpg', 'assets/rosa-melano.jpg', 'assets/aitor-tilla.jpg',
+    'assets/kerry-kaverga.jpg', 'assets/helmer-cader.jpg', 'assets/salva-polla.jpg',
+    'assets/unam-amadita.jpg', 'assets/lola-mento.jpg', 'assets/mela-sopla.jpg',
+    'assets/lulu-goat.jpg', 'assets/memory-florentino.jpg', 'assets/memory-iris.jpg',
+    'assets/memory-olga.jpg', 'assets/memory-paula-bellod.jpg', 'assets/memory-raquel.jpg'
   ];
+  // Pool único: grupo + Paz repetida (~35% Paz). Sale cualquiera al azar, sin patrón.
+  const WHACK_POOL = [...fakeImgs, ...Array(8).fill(pazImg)];
   let timeLeft = 22;
   let wrongHits = 0;
   let missedFakes = 0;
@@ -5835,7 +5847,7 @@ function gameWhack(v) {
     <div class="whack-stage">
       <div style="text-align:center;">
         <div style="font-family:'Bebas Neue';font-size:48px;letter-spacing:0.05em;margin-bottom:8px;">WHACK-A-SUEGRA</div>
-        <div style="color:var(--text-dim);margin-bottom:8px;">Pega SOLO a las fakes. Si pegas a Paz: chupito x2. <strong style="color:var(--blood)">Acelera con el tiempo.</strong></div>
+        <div style="color:var(--text-dim);margin-bottom:8px;">Pega a TODO el grupo. Pero si le das a Paz Padilla: chupito x2. <strong style="color:var(--blood)">Acelera con el tiempo.</strong></div>
         <div class="whack-hud">
           <span class="good">✓ FAKES: <span id="w-good">0</span></span>
           <span>⏱ <span id="w-time">22</span>s</span>
@@ -5876,14 +5888,14 @@ function gameWhack(v) {
     });
     if (empty.length === 0) { setT(popRandom, 200); return; }
     const i = empty[Math.floor(Math.random() * empty.length)];
-    const isPaz = Math.random() < 0.5;
+    const pick = WHACK_POOL[Math.floor(Math.random() * WHACK_POOL.length)];
+    const isPaz = (pick === pazImg);
     const t = document.getElementById('w-t-' + i);
     if (!t) return;
     t.dataset.type = isPaz ? 'paz' : 'fake';
-    const imgIdx = Math.floor(Math.random() * fakeImgs.length);
-    const img = isPaz ? pazImg : fakeImgs[imgIdx];
+    const imgIdx = Math.max(0, fakeImgs.indexOf(pick));
     t.dataset.imgIdx = imgIdx;
-    t.innerHTML = `<img src="${img}" alt="" />`;
+    t.innerHTML = `<img src="${pick}" alt="" />`;
     t.classList.remove('struck');
     t.classList.add(isPaz ? 'real' : 'fake');
     t.classList.add('up');
@@ -5933,7 +5945,7 @@ function gameWhack(v) {
       document.getElementById('w-bad').textContent = wrongHits;
     } else {
       goodHits++;
-      const tone = fakeTones[parseInt(t.dataset.imgIdx) || 0];
+      const tone = fakeTones[(parseInt(t.dataset.imgIdx) || 0) % fakeTones.length];
       beep(tone, 0.12, 'square', 0.1);
       setT(() => beep(tone * 1.25, 0.16, 'square', 0.09), 90);
       flash('gold');
