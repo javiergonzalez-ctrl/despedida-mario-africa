@@ -5393,9 +5393,9 @@ function gameSlot(v) {
     const isRigged = spinIndex >= 1; // rondas 2 y 3: amaño descarado
     reels.forEach(r => r.classList.add('spinning'));
     if (isRigged) {
-      // Las 3 fotos amañadas dando vueltas ~15s (que se vea el tongo)
+      // Las 3 fotos amañadas dando vueltas ~7s (que se vea el tongo sin eternizarse)
       reels.forEach(r => applyReel(r, rig));
-      await sleep(15000);
+      await sleep(7000);
     } else {
       // Ronda 1: emojis aleatorios girando
       for (let t = 0; t < 35; t++) {
@@ -5405,7 +5405,7 @@ function gameSlot(v) {
     }
 
     // Paradas escalonadas: cada rodillo tarda más que el anterior (suspense)
-    const gaps = isRigged ? [1600, 2600, 3600] : [800, 1300, 1900];
+    const gaps = isRigged ? [1100, 1800, 2500] : [800, 1300, 1900];
     for (let i = 0; i < 3; i++) {
       await sleep(gaps[i]);
       applyReel(reels[i], rig);
