@@ -4,17 +4,20 @@ El juego las detecta solo (fallback automático a avatar placeholder mientras no
 Formato: JPG cuadrado preferible (se recortan a círculo). No hace falta tocar código.
 
 ## Ronda 2 — Mango Memory (cartas)
-- `memory-olga.jpg`
-- `memory-paula-bellod.jpg`
-- `memory-iris.jpg`
-- `memory-raquel.jpg`
-- `memory-jesus-gil.jpg`
+- ✅ `memory-olga.jpg` (recibida 2026-06-11)
+- ✅ `memory-paula-bellod.jpg` (recibida 2026-06-11, recorte de captura IG)
+- ✅ `memory-iris.jpg` (= foto del Demonio de las Islas Cíes, pedido Javier)
+- ✅ `memory-raquel.jpg` (recibida 2026-06-11 — la.rizzxs; si el nombre de la carta no cuadra con la persona, decir a Claude y se renombra la etiqueta)
+- ✅ `memory-florentino.jpg` (antes era jesus-gil; Florentino Pérez, recibida 2026-06-11)
+
+## Sin asignar
+- `_pendiente-asignar-6.jpg` (chico pelo rizado, recibida 2026-06-11, **solo local/no deployada**) — Javier: ¿quién es y a qué hueco va? ("este pon otra")
 
 ## Ronda 8 — Vuelo MC-911
-- `mario-face.png` — cara de Mario (va montada en el avión, circular)
+- ⏳ `mario-face.png` — cara de Mario (va montada en el avión, circular). **FALTA**
 
 ## Pendientes de decidir cómo se integran (pasar a Javier/Claude)
-- Capturas de noticias reales de Anna/Mario → acusaciones del polígrafo (ronda 11)
+- Capturas de noticias reales de Anna/Mario → el polígrafo ya NO está en el flujo (R11 = Millonario); decidir destino
 - Foto multitud "Buscando a Wally" (ronda 12 — hoy es multitud emoji, la foto puede ser nivel 2)
 - Foto Alaska y Mario
 - Foto anillo de boda de Olga
@@ -22,4 +25,4 @@ Formato: JPG cuadrado preferible (se recortan a círculo). No hace falta tocar c
 - Audio "la sotanita" (formato mp3/ogg)
 
 ## Ya existentes
-- `kerry-kaverga.jpg`, `salva-polla.jpg`, `demonio-islas-jimenez.jpg`, `cara-al-sol.mp3`
+- `kerry-kaverga.jpg`, `salva-polla.jpg`, `demonio-islas-jimenez.jpg`, `cara-al-sol.mp3`, `lulu-goat.jpg`, `franco.jpg`, `mario-runner.jpg`
