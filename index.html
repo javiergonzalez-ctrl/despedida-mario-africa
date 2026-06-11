@@ -2497,9 +2497,11 @@
   <div id="vote-name-step" style="text-align:center;width:100%;max-width:400px;">
     <h1>BIENVENIDO</h1>
     <p class="vote-q">¿Cómo te llamas? (te identificará en el ranking)</p>
-    <input id="vote-name-input" type="text" maxlength="14" placeholder="Tu nombre"
+    <input id="vote-name-input" type="text" maxlength="14" placeholder="Tu nombre" autocomplete="off" enterkeyhint="go"
       style="width:100%;padding:18px;border-radius:12px;background:rgba(0,0,0,0.5);color:var(--text);border:2px solid var(--glass-border);font-size:20px;font-family:inherit;text-align:center;margin-bottom:16px;" />
     <button class="vote-btn si" onclick="joinRoom()">▶ ENTRAR A LA SALA</button>
+    <!-- Sello de versión: si el móvil no muestra la versión actual = HTML cacheado -->
+    <p id="vote-version" style="margin-top:18px;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);opacity:0.7;"></p>
   </div>
   <div id="vote-active-step" style="display:none;text-align:center;width:100%;max-width:400px;">
     <p style="color:var(--text-dim);font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:0.2em;">Conectado · <span id="vote-myname"></span></p>
@@ -2570,6 +2572,9 @@
 // (Firebase fue eliminado 2026-06-10 por billing de Google.)
 // BACKEND_ENABLED = false desactiva todo el voto QR (modo solo-portátil).
 const BACKEND_ENABLED = true;
+// Sello de build visible en la página de voto — diagnóstico de caché en móviles.
+// Subir al hacer cambios relevantes del flujo móvil.
+const BUILD_TAG = 'v2026-06-11.1';
 const API_POST = (path, body) =>
   fetch('/api/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     .then(r => r.json()).catch(() => null);
@@ -7644,6 +7649,11 @@ window.addEventListener('DOMContentLoaded', () => {
   if (params.get('vote') === '1') {
     show('screen-vote');
     initBackend();
+    const vEl = document.getElementById('vote-version');
+    if (vEl) vEl.textContent = BUILD_TAG;
+    // ENTER en el input = entrar (teclados móviles con "ir")
+    const nameInput = document.getElementById('vote-name-input');
+    if (nameInput) nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') joinRoom(); });
     const room = params.get('room');
     if (room) {
       const savedName = localStorage.getItem('mario_name_' + room);
