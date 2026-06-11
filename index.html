@@ -1199,6 +1199,14 @@
     font-size: clamp(50px, 10vw, 90px);
     transition: transform 0.05s linear;
   }
+  .slot-symbol img.slot-face {
+    width: clamp(48px, 13vw, 78px);
+    height: clamp(48px, 13vw, 78px);
+    object-fit: cover;
+    border-radius: 10px;
+    display: block;
+    border: 2px solid var(--gold);
+  }
   .slot-symbol.spinning { animation: slotSpin 0.1s linear infinite; }
   @keyframes slotSpin {
     0% { transform: translateY(-20%); }
@@ -5340,12 +5348,25 @@ function gameRhythm(v, opts = {}) {
 function gameSlot(v) {
   const stage = document.getElementById('game-stage');
   const symbols = ['💀', '☠️', '💰', '🚗', '🎰', '🏎️'];
-  // rigged probabilities (skull = bad, more frequent)
-  const weighted = ['💀', '💀', '💀', '☠️', '☠️', '🎰', '🏎️', '🚗', '💰'];
+  // ⚙️ MÁQUINA AMAÑADA: las 3 tiradas tienen resultado fijo (es el chiste).
+  //   1ª: emojis normales, jackpot → "gana" (el grupo bebe).
+  //   2ª: la cara de Mario x3 (se ve el amaño).
+  //   3ª: la cara de Anna x3 (recortada).
+  const RIGGED = [
+    { type: 'emoji', val: '💰' },
+    { type: 'img', val: 'assets/slot/mario.jpg' },
+    { type: 'img', val: 'assets/slot/anna.jpg' }
+  ];
+  let spinIndex = 0;
   let spinsLeft = 3;
   let totalShots = 0;
   let groupGain = 0;
   let spinning = false;
+
+  const applyReel = (reel, rig) => {
+    if (rig.type === 'img') reel.innerHTML = `<img class="slot-face" src="${rig.val}" alt="" />`;
+    else { reel.innerHTML = ''; reel.textContent = rig.val; }
+  };
 
   stage.innerHTML = `
     <div style="text-align:center;">
@@ -5367,46 +5388,37 @@ function gameSlot(v) {
     spinning = true;
     sfx.whoosh();
     const reels = [document.getElementById('reel-0'), document.getElementById('reel-1'), document.getElementById('reel-2')];
-    const finalSymbols = [
-      weighted[Math.floor(Math.random() * weighted.length)],
-      weighted[Math.floor(Math.random() * weighted.length)],
-      weighted[Math.floor(Math.random() * weighted.length)]
-    ];
+    const rig = RIGGED[Math.min(spinIndex, RIGGED.length - 1)];
 
-    // Spin animation
+    // Spin animation (emojis aleatorios mientras gira)
     reels.forEach(r => r.classList.add('spinning'));
     for (let t = 0; t < 30; t++) {
-      reels.forEach(r => { r.textContent = symbols[Math.floor(Math.random() * symbols.length)]; });
+      reels.forEach(r => { r.innerHTML = ''; r.textContent = symbols[Math.floor(Math.random() * symbols.length)]; });
       await sleep(60);
     }
 
+    // Para los 3 rodillos con el MISMO resultado amañado
     for (let i = 0; i < 3; i++) {
       await sleep(400);
-      reels[i].textContent = finalSymbols[i];
+      applyReel(reels[i], rig);
       reels[i].classList.remove('spinning');
       sfx.click();
     }
 
-    // Evaluate
-    const allSame = finalSymbols.every(s => s === finalSymbols[0]);
+    // Resultado por tirada
     let resultMsg = '';
-    if (allSame && finalSymbols[0] === '💀') {
-      totalShots += 4; resultMsg = '🤯 ¡TRIPLE CALAVERA! +4 chupitos.';
-      flash('red'); shake('heavy'); sfx.fail();
-    } else if (allSame && finalSymbols[0] === '☠️') {
-      totalShots += 3; resultMsg = '☠️ ¡TRIPLE MUERTE! +3.';
+    if (spinIndex === 0) {
+      groupGain += 2; resultMsg = '💰 ¡JACKPOT! La máquina sonríe… el GRUPO bebe 2.';
+      flash('gold'); sfx.kaching();
+    } else if (spinIndex === 1) {
+      totalShots += 3; resultMsg = '🃏 ¿Tu careto, tres veces? Esto está amañadísimo. Bebes 3, Mario.';
       flash('red'); shake('light'); sfx.fail();
-    } else if (allSame && finalSymbols[0] === '💰') {
-      groupGain += 2; resultMsg = '💰 JACKPOT — EL GRUPO BEBE 2.';
-      flash('gold'); sfx.kaching();
-    } else if (allSame && finalSymbols[0] === '🚗') {
-      groupGain += 1; resultMsg = '🚗 PODIO HAMILTON — Grupo bebe 1.';
-      flash('gold'); sfx.kaching();
     } else {
-      totalShots += 1; resultMsg = '— Cash-out fallido. +1 chupito.';
-      flash('red');
+      totalShots += 3; resultMsg = '💍 ¡Y ahora Anna x3! La banca siempre gana… y tú te casas. Bebes 3.';
+      flash('red'); shake('light'); sfx.fail();
     }
     toast(resultMsg);
+    spinIndex++;
     spinsLeft--;
     const spinsEl = document.getElementById('slot-spins');
     if (spinsEl) spinsEl.textContent = `Spins restantes: ${spinsLeft}`;
