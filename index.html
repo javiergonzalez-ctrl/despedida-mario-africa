@@ -4559,7 +4559,7 @@ function gameRush(v) {
 function gameMango(v) {
   const stage = document.getElementById('game-stage');
   // Pairs-memory (playtest 2026-06-09): 20 cards face-down, 10 pairs built
-  // from 6 distinct designs (5 crew faces + the mango — some faces appear in
+  // from 7 distinct designs (6 crew faces + the mango — some faces appear in
   // two pairs). Match by DESIGN. 5 free fails, then shots scale.
   // Photos: drop assets/memory-<id>.jpg — DiceBear placeholder until then.
   const DESIGNS = [
@@ -4568,13 +4568,14 @@ function gameMango(v) {
     { id: 'iris',         name: 'Iris',         tone: 523 },   // foto = Demonio de las Islas Cíes (pedido Javier)
     { id: 'raquel',       name: 'Raquel',       tone: 587 },   // foto recibida 2026-06-11
     { id: 'florentino',   name: 'Florentino',   tone: 659 },   // antes Jesús Gil — foto real recibida 2026-06-11
-    { id: 'mango',        name: 'Mango',        tone: 784, emoji: '🥭' }
+    { id: 'mango',        name: 'Mango',        tone: 784, emoji: '🥭' },
+    { id: 'topo',         name: 'El Topo',      tone: 880 }    // foto recibida 2026-06-11
   ];
   const FREE_FAILS = 5;
   const PAIRS = 10;
-  // Designs 0-3 give two pairs each (16 cards), designs 4-5 one pair (4) = 20
+  // Designs 0-2 give two pairs each (12 cards), designs 3-6 one pair (8) = 20
   const deck = [];
-  [0,0,1,1,2,2,3,3,4,5].forEach(d => deck.push(d, d));
+  [0,0,1,1,2,2,3,4,5,6].forEach(d => deck.push(d, d));
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];

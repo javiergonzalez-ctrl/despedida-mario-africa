@@ -9,9 +9,7 @@ Formato: JPG cuadrado preferible (se recortan a círculo). No hace falta tocar c
 - ✅ `memory-iris.jpg` (= foto del Demonio de las Islas Cíes, pedido Javier)
 - ✅ `memory-raquel.jpg` (recibida 2026-06-11 — la.rizzxs; si el nombre de la carta no cuadra con la persona, decir a Claude y se renombra la etiqueta)
 - ✅ `memory-florentino.jpg` (antes era jesus-gil; Florentino Pérez, recibida 2026-06-11)
-
-## Sin asignar
-- `_pendiente-asignar-6.jpg` (chico pelo rizado, recibida 2026-06-11, **solo local/no deployada**) — Javier: ¿quién es y a qué hueco va? ("este pon otra")
+- ✅ `memory-topo.jpg` (El Topo, añadido como 7ª carta 2026-06-11 — Olga/Paula/Iris 2 parejas, resto 1)
 
 ## Ronda 8 — Vuelo MC-911
 - ⏳ `mario-face.png` — cara de Mario (va montada en el avión, circular). **FALTA**
