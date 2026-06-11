@@ -2419,6 +2419,7 @@
       <button class="btn-primary" onclick="startRounds()" data-i18n="start_party">▶ EMPEZAR PARTIDA</button>
     </div>
     <p style="margin-top: 12px;"><button class="btn-secondary" onclick="startRounds()" data-i18n="skip_lobby">Saltar lobby</button></p>
+    <p style="margin-top: 14px;"><a id="lobby-admin-link" href="#" target="_blank" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim);text-decoration:underline;">⚙ panel del anfitrión (echar gente · resets)</a></p>
   </div>
 </div>
 
@@ -2539,6 +2540,21 @@
   </div>
 </div>
 
+<!-- ============ ADMIN (anfitrión: ?admin=1&room=X) ============ -->
+<div class="screen hidden" id="screen-admin">
+  <div style="text-align:center;width:100%;max-width:520px;">
+    <p style="color:var(--terminal);font-family:'JetBrains Mono',monospace;letter-spacing:0.3em;font-size:12px;margin-bottom:10px;">▸ PANEL DEL ANFITRIÓN ◂</p>
+    <h2 style="font-family:'Bebas Neue';font-size:clamp(36px,7vw,56px);margin-bottom:4px;">SALA <span id="admin-room" style="color:var(--gold);"></span></h2>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim);margin-bottom:18px;">Ronda activa: <span id="admin-active" style="color:var(--cyan);">—</span></p>
+    <div id="admin-players" style="text-align:left;background:rgba(255,255,255,0.04);border:1px solid var(--glass-border);border-radius:14px;padding:12px;margin-bottom:18px;min-height:60px;"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn-secondary" id="admin-reset-votes" style="border-color:var(--gold);color:var(--gold);">🔄 RESETEAR VOTOS DE LA RONDA ACTIVA</button>
+      <button class="btn-secondary" id="admin-reset-room" style="border-color:var(--blood);color:var(--blood);">💣 VACIAR SALA ENTERA (jugadores + votos)</button>
+    </div>
+    <p style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);margin-top:16px;">Se actualiza solo cada 3s. Echar a alguien borra también sus votos y chupitos.</p>
+  </div>
+</div>
+
 <!-- ============ QR MODAL ============ -->
 <div class="qr-modal" id="qr-modal" role="dialog" aria-modal="true" aria-labelledby="qr-modal-title">
   <h2 id="qr-modal-title">EL PÚBLICO DECIDE</h2>
@@ -2574,7 +2590,7 @@
 const BACKEND_ENABLED = true;
 // Sello de build visible en la página de voto — diagnóstico de caché en móviles.
 // Subir al hacer cambios relevantes del flujo móvil.
-const BUILD_TAG = 'v2026-06-11.1';
+const BUILD_TAG = 'v2026-06-11.2';
 const API_POST = (path, body) =>
   fetch('/api/' + path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     .then(r => r.json()).catch(() => null);
@@ -4133,6 +4149,8 @@ function openLobby() {
   initBackend();
   show('screen-lobby');
   document.getElementById('lobby-room').textContent = ROOM_ID;
+  const adminLink = document.getElementById('lobby-admin-link');
+  if (adminLink) adminLink.href = `${location.origin}${location.pathname}?admin=1&room=${ROOM_ID}`;
   const url = `${location.origin}${location.pathname}?vote=1&room=${ROOM_ID}`;
   const urlEl = document.getElementById('lobby-url');
   urlEl.innerHTML = `<a href="${url}" target="_blank" style="color:var(--gold);text-decoration:underline;user-select:text;-webkit-user-select:text;word-break:break-all;">${url}</a>
@@ -7397,6 +7415,49 @@ function closeVote() {
   }
 }
 
+// ===== Panel del anfitrión (?admin=1&room=X) =====
+let _adminPoll = null;
+function openAdmin(room) {
+  show('screen-admin');
+  document.getElementById('admin-room').textContent = room;
+  let activeRoundId = null;
+  const render = async () => {
+    const s = await API_STATE(room);
+    if (!s) return;
+    const ar = s.activeRound;
+    activeRoundId = ar ? ar.round : null;
+    document.getElementById('admin-active').textContent = ar ? `${ar.round} · ${ar.state}` : 'ninguna';
+    const list = document.getElementById('admin-players');
+    list.innerHTML = (s.players || []).length === 0
+      ? '<p style="color:var(--text-dim);font-style:italic;text-align:center;">sala vacía</p>'
+      : s.players.map(p => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 6px;border-bottom:1px solid rgba(255,255,255,0.06);">
+          <strong style="font-family:'Bebas Neue';font-size:20px;letter-spacing:0.04em;">${esc(p.name)}</strong>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--blood);">🥃 ${p.chupitos || 0}</span>
+          <button class="btn-secondary" data-kick="${esc(p.pid)}" style="padding:6px 12px;font-size:11px;border-color:var(--blood);color:var(--blood);">ECHAR</button>
+        </div>`).join('');
+    list.querySelectorAll('[data-kick]').forEach(b => b.addEventListener('click', async () => {
+      if (!confirm('¿Echar a este jugador? Se borran también sus votos y chupitos.')) return;
+      await API_POST('admin', { action: 'kick', room, pid: b.dataset.kick });
+      render();
+    }, { once: true }));
+  };
+  document.getElementById('admin-reset-votes').addEventListener('click', async () => {
+    if (activeRoundId === null) { alert('No hay ronda activa.'); return; }
+    if (!confirm(`¿Borrar los votos de la ronda ${activeRoundId} y reabrirla?`)) return;
+    await API_POST('admin', { action: 'reset-votes', room, round: activeRoundId });
+    render();
+  });
+  document.getElementById('admin-reset-room').addEventListener('click', async () => {
+    if (!confirm('💣 ¿VACIAR LA SALA ENTERA? Jugadores, votos y rondas. No hay vuelta atrás.')) return;
+    await API_POST('admin', { action: 'reset-room', room });
+    render();
+  });
+  render();
+  if (_adminPoll) clearInterval(_adminPoll);
+  _adminPoll = setInterval(render, 3000);
+}
+
 // ===== Mobile voting page (multi-round predictions) =====
 function getRoomFromURL() {
   return new URLSearchParams(location.search).get('room');
@@ -7412,12 +7473,19 @@ function joinRoom() {
   if (!room) return;
   // Defense in depth: strip control chars and HTML special chars from the
   // user-supplied name BEFORE persisting it. esc() on the render side is the
-  // real protection, this just keeps Firebase tidy.
+  // real protection, this just keeps the DB tidy.
   const raw = (document.getElementById('vote-name-input').value || '').trim();
   const name = raw.replace(/[<>&"`\x00-\x1f]/g, '').slice(0, 14) || 'Anónimo';
   localStorage.setItem('mario_name_' + room, name);
-  const pid = getPlayerId(room);
-  API_POST('join', { room, pid, name });
+  let pid = getPlayerId(room); // mutable: el server puede devolver el pid de un jugador existente con este nombre
+  API_POST('join', { room, pid, name }).then(r => {
+    if (r && r.pid && r.pid !== pid) {
+      // Identidad por nombre: adoptamos la ficha existente (anti-duplicados
+      // por incógnito / cambio de móvil). Sus chupitos se conservan.
+      pid = r.pid;
+      localStorage.setItem('mario_pid_' + room, pid);
+    }
+  });
   // Phone polls the room state every 2s: active round + my vote + my shots
   setInterval(async () => {
     const s = await API_STATE(room, undefined, pid);
@@ -7662,6 +7730,8 @@ window.addEventListener('DOMContentLoaded', () => {
         joinRoom();
       }
     }
+  } else if (params.get('admin') === '1') {
+    openAdmin(params.get('room') || ROOM_ID);
   } else {
     show('screen-start');
     // Partida interrumpida (reload de la TV a mitad): ofrecer REANUDAR con
