@@ -3294,21 +3294,21 @@ const VICTIMS = [
     }
   },
   {
-    name: 'Salva Polla', loc: 'Kinshasa, RDC 🇨🇩',
-    avatar: DICEBEAR('Salva-Polla'),
-    story: 'Minero de coltán. El coltán acaba en el iPhone donde Mario verá las apuestas. Apostó el salario en "F1 Fantasy Premium VIP Elite".',
+    name: 'Elsa Brosón', loc: 'Kinshasa, RDC 🇨🇩',
+    avatar: DICEBEAR('Elsa-Broson'),
+    story: 'Minera de coltán. El coltán acaba en el iPhone donde Mario verá las apuestas. Apostó el salario en "F1 Fantasy Premium VIP Elite".',
     quote: '"Yo saco el coltán. Tú me robas con el coltán. Reza, Mario."',
     debt: 4, game: 'clicker', gameName: 'COLTÁN CLICKER',
     instruction: 'Pulsa [SPACE] o spam tap 110 veces en 14 segundos. El botón ENCOGE.',
     i18n: {
       gl: {
-        story: 'Mineiro de coltán. O coltán remata no iPhone onde Mario verá as apostas. Apostou o salario en "F1 Fantasy Premium VIP Elite".',
+        story: 'Mineira de coltán. O coltán remata no iPhone onde Mario verá as apostas. Apostou o salario en "F1 Fantasy Premium VIP Elite".',
         quote: '"Eu saco o coltán. Ti róubasme co coltán. Reza, Mario."',
         gameName: 'COLTÁN CLICKER',
         instruction: 'Preme [SPACE] ou spam-tap 110 veces en 14 s. O botón ENCOLLE.'
       },
       ng: {
-        story: 'Coltan miner. Di coltan end inside di iPhone wey Mario use to see im bets. E gamble im salary for "F1 Fantasy Premium VIP Elite".',
+        story: 'Coltan miner. Di coltan end inside di iPhone wey Mario use to see im bets. She gamble her salary for "F1 Fantasy Premium VIP Elite".',
         quote: '"Na me dey dig di coltan. Na you dey thief me with di coltan. Pray, Mario."',
         gameName: 'COLTAN CLICKER',
         instruction: 'Press [SPACE] or spam-tap 110 times for 14 s. Di button dey shrink.'
@@ -3569,8 +3569,10 @@ const AFRICA_DOTS_REAL = [
 const MAP_PINS = [{x:140,y:155},{x:190,y:130},{x:245,y:115},{x:305,y:105},{x:370,y:108},{x:425,y:125},{x:470,y:155},{x:455,y:195},{x:390,y:215},{x:310,y:225},{x:230,y:215},{x:165,y:190}];
 
 const VICTIM_IMAGES = {
+  'Elver Galarga': 'assets/elver-galarga.jpg',
+  'Rosa Melano': 'assets/rosa-melano.jpg',
   'Kerry Kaverga': 'assets/kerry-kaverga.jpg',
-  'Salva Polla': 'assets/salva-polla.jpg',
+  'Elsa Brosón': 'assets/salva-polla.jpg', // misma foto; el personaje se renombró 2026-06-11
   'El Demonio de las Islas Jiménez': 'assets/demonio-islas-jimenez.jpg',
   // Add more victim photos here as friends contribute them.
 };
@@ -4274,16 +4276,21 @@ async function showTransitionCard(v) {
     showTransitionCard(v).then(resolveOuter);
   }, { once: true });
 
-  // REAL START — primes audio inside the gesture (iOS Safari requirement)
+  // REAL START — primes audio inside the gesture (iOS Safari requirement).
+  // startedByButton: un 'start-game' EXTERNO (teardown de jumpToRound, back,
+  // etc.) debe CANCELAR esta card, no arrancar su juego — sin esto, saltar a
+  // otra ronda con una card abierta lanzaba el juego viejo encima de la nueva.
+  let startedByButton = false;
   const startBtn = document.getElementById('transition-start-btn');
   if (startBtn) startBtn.addEventListener('click', () => {
     if (v.game === 'rhythm') primeRhythmAudio();
+    startedByButton = true;
     document.dispatchEvent(new CustomEvent('start-game'));
   }, { once: true });
 
   document.addEventListener('start-game', () => {
     closePrediction();
-    resolveOuter();
+    resolveOuter(startedByButton ? undefined : { cancelled: true });
   }, { once: true });
 
   return promise;
@@ -5628,7 +5635,7 @@ function gameClicker(v) {
     document.removeEventListener('keydown', keyHandler);
     const missing = Math.max(0, target - count);
     const shots = Math.min(6, Math.ceil(missing / 20));
-    setTimeout(() => showResult(shots, count >= target ? `¡${count} clicks en ${TOTAL_TIME - timeLeft}s! Salva Polla se va satisfecho.` : `Solo ${count}/${target}. Bebes ${shots}.`), 600);
+    setTimeout(() => showResult(shots, count >= target ? `¡${count} clicks en ${TOTAL_TIME - timeLeft}s! Elsa Brosón se va satisfecha.` : `Solo ${count}/${target}. Bebes ${shots}.`), 600);
   }
   document.addEventListener('start-game', () => document.removeEventListener('keydown', keyHandler), { once: true });
 }

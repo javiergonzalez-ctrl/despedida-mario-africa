@@ -22,5 +22,10 @@ Formato: JPG cuadrado preferible (se recortan a círculo). No hace falta tocar c
 - Foto Paz Padilla real (ronda 11) y Anna real (ronda 12)
 - Audio "la sotanita" (formato mp3/ogg)
 
+## Avatares de víctimas (rondas)
+- ✅ `elver-galarga.jpg` (jefe 1, recibida 2026-06-11 — bigote)
+- ✅ `rosa-melano.jpg` (jefe 2, recibida 2026-06-11 — pulgar arriba)
+- ✅ `salva-polla.jpg` → ahora el personaje se llama **Elsa Brosón** (misma foto)
+
 ## Ya existentes
 - `kerry-kaverga.jpg`, `salva-polla.jpg`, `demonio-islas-jimenez.jpg`, `cara-al-sol.mp3`, `lulu-goat.jpg`, `franco.jpg`, `mario-runner.jpg`
