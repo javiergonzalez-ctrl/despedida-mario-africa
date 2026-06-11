@@ -4010,7 +4010,7 @@ async function startIntro() {
   // Phase 5: Crawl (animación CSS 22s; cortamos a victims a los 20s)
   stage.innerHTML = `
     <div class="crawl-wrap">
-      <div class="crawl" id="crawl-el">${tList(CRAWL_TEXT_HTML)}</div>
+      <div class="crawl" id="crawl-el" style="animation-play-state:paused;">${tList(CRAWL_TEXT_HTML)}</div>
     </div>
   `;
   sfx.whoosh();
@@ -6748,25 +6748,33 @@ function millSpeak(text) {
 function playCrawlNarration(alive) {
   return new Promise((resolve) => {
     const crawlEl = document.getElementById('crawl-el');
-    if (state.muted) { setTimeout(resolve, 20000); return; }
+    // El div nace con la animación EN PAUSA; arranca solo cuando suena el audio,
+    // con la duración exacta de la voz (si no, el texto corre a 22s y se adelanta).
+    const startAnim = (durSec) => {
+      if (!crawlEl) return;
+      crawlEl.style.animationDuration = durSec + 's';
+      crawlEl.style.animationPlayState = 'running';
+    };
+    if (state.muted) { startAnim(24); setTimeout(resolve, 24000); return; }
     let a;
-    try { a = new Audio('assets/voice/crawl_es.mp3'); } catch (e) { setTimeout(resolve, 20000); return; }
+    try { a = new Audio('assets/voice/crawl_es.mp3'); } catch (e) { startAnim(24); setTimeout(resolve, 24000); return; }
     window.__crawlAudio = a;
-    let done = false;
+    let done = false, started = false;
     const finish = () => {
       if (done) return; done = true;
       try { a.pause(); } catch (e) {}
       if (window.__crawlAudio === a) window.__crawlAudio = null;
       resolve();
     };
-    a.addEventListener('loadedmetadata', () => {
-      if (crawlEl && a.duration && isFinite(a.duration)) {
-        crawlEl.style.animationDuration = (a.duration + 1.5) + 's';
-      }
-    });
+    const begin = () => {
+      if (started) return; started = true;
+      const d = (a.duration && isFinite(a.duration)) ? a.duration + 1.5 : 24;
+      startAnim(d);
+    };
+    a.addEventListener('playing', begin);
     a.addEventListener('ended', finish);
-    a.addEventListener('error', () => setTimeout(finish, 20000));
-    a.play().catch(() => { setTimeout(finish, 20000); });
+    a.addEventListener('error', () => { startAnim(24); setTimeout(finish, 24000); });
+    a.play().then(begin).catch(() => { startAnim(24); setTimeout(finish, 24000); });
     setTimeout(finish, 70000); // tope de seguridad
   });
 }
