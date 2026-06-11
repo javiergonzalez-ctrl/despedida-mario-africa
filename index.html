@@ -295,6 +295,11 @@
   /* Hide the floating language picker while the HUD is showing (during games)
      to avoid the HUD chupitos pill overlapping it on mobile. */
   body.hud-active .lang-picker { display: none; }
+  /* Y durante la INTRO: el idioma se eligió en la pantalla anterior y las
+     pills (root, z-200) tapaban el botón "Saltar intro ▸" (dentro del stacking
+     context de .screen) — el click se lo comían ellas. */
+  body.intro-active .lang-picker { display: none; }
+  body.intro-active .skip-btn { z-index: 300; }
 
   /* ============ DEDICATED LANG SELECT SCREEN ============ */
   /* Inherits .screen layout (position:fixed, flex column, .hidden = opacity 0). */
@@ -3029,6 +3034,9 @@ async function showMap(opts = {}) {
 // ============================================
 function show(screenId) {
   clearToast(); // a toast belongs to the screen that fired it — never carry it over
+  // intro-active gated HERE (única puerta de cambio de pantalla): oculta las
+  // lang-pills durante la intro para que no tapen el botón Saltar intro.
+  document.body.classList.toggle('intro-active', screenId === 'screen-intro');
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
   document.getElementById(screenId).classList.remove('hidden');
 }
