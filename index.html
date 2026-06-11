@@ -7875,9 +7875,45 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
-window.addEventListener('DOMContentLoaded', () => {
+// Puerta de acceso (usuario/contraseña). Simbólica: es una web estática, la
+// clave viaja en el cliente. Suficiente como cortina para una despedida.
+function showAccessGate(onOk) {
+  const ov = document.createElement('div');
+  ov.id = 'access-gate';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:#0a0e27;display:flex;align-items:center;justify-content:center;padding:24px;';
+  ov.innerHTML = `
+    <div style="max-width:360px;width:100%;text-align:center;">
+      <div style="font-size:48px;margin-bottom:14px;">🔒</div>
+      <div style="font-family:'Press Start 2P',monospace;font-size:13px;color:var(--gold,#f4c542);letter-spacing:0.1em;line-height:1.6;margin-bottom:22px;">ÁFRICA STRIKES BACK</div>
+      <input id="gate-user" placeholder="Usuario" autocomplete="off" autocapitalize="off"
+        style="width:100%;padding:13px;margin-bottom:10px;border-radius:10px;border:2px solid #2a3270;background:#11173a;color:#fff;font-size:16px;box-sizing:border-box;" />
+      <input id="gate-pass" type="password" placeholder="Contraseña" autocomplete="off"
+        style="width:100%;padding:13px;margin-bottom:6px;border-radius:10px;border:2px solid #2a3270;background:#11173a;color:#fff;font-size:16px;box-sizing:border-box;" />
+      <div id="gate-err" style="display:none;color:#ff5577;font-size:13px;margin:6px 0;">Usuario o contraseña incorrectos</div>
+      <button id="gate-btn" class="btn-primary" style="width:100%;margin-top:12px;">ENTRAR ▸</button>
+    </div>`;
+  document.body.appendChild(ov);
+  const u = document.getElementById('gate-user');
+  if (u) u.focus();
+  const tryLogin = () => {
+    const user = (document.getElementById('gate-user').value || '').trim().toLowerCase();
+    const pass = document.getElementById('gate-pass').value || '';
+    if (user === 'javi' && pass === 'ñe') {
+      try { localStorage.setItem('asb_auth', '1'); } catch (e) {}
+      ov.remove();
+      onOk();
+    } else {
+      const err = document.getElementById('gate-err');
+      if (err) err.style.display = 'block';
+    }
+  };
+  document.getElementById('gate-btn').addEventListener('click', tryLogin);
+  ['gate-user', 'gate-pass'].forEach(id =>
+    document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') tryLogin(); }));
+}
+
+function bootGame(params) {
   applyI18n();
-  const params = new URLSearchParams(location.search);
   if (params.get('vote') === '1') {
     show('screen-vote');
     initBackend();
@@ -7913,6 +7949,18 @@ window.addEventListener('DOMContentLoaded', () => {
         anchor.insertAdjacentElement('afterend', btn);
       }
     }
+  }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(location.search);
+  let authed = false;
+  try { authed = localStorage.getItem('asb_auth') === '1'; } catch (e) {}
+  // Los votantes del público (QR, ?vote=1) entran sin contraseña.
+  if (params.get('vote') !== '1' && !authed) {
+    showAccessGate(() => bootGame(params));
+  } else {
+    bootGame(params);
   }
 });
 
