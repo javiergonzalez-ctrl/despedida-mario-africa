@@ -73,6 +73,14 @@
 - No fotos reales que no existen (las de Álvaro), no audio grabado inventado, no cambiar lore/orden salvo A y B.
 - Commits: email `239983809+javiergonzalez-ctrl@users.noreply.github.com`, add por archivo, push a main tras verificar.
 
+## ☀️ SESIÓN MAÑANA 2026-06-11 (post-cierre, peticiones de Javier en vivo)
+- [x] **Saltar intro bloqueado (2 causas)** ✅ 2150ad6 + 7d1f35e — (a) lang-pills (root z-200) tapaban el skip-btn de la intro → body.intro-active las oculta (gestionado en show()); (b) `.title-grid` decorativo sin pointer-events:none se comía los clicks de los botones secundarios de la pantalla inicial. Ambos verificados con CLICKS REALES de puntero (lección: `.click()` por JS se salta el hit-testing y no caza overlays).
+- [x] **Fotos juego 2 completas** ✅ 28a279d — Paula/Olga/Florentino(ex-Jesús Gil)/Raquel(la.rizzxs)/Iris(=Demonio Cíes). 5/5 verificadas cargando. Falta solo mario-face.png (avión R8). Foto #6 (chico rizos) sin hueco, guardada local sin desplegar.
+- [x] **Resiliencia anti-desastre** ✅ 7d1f35e — estado del host (ronda+chupitos+desglose) persiste en localStorage en cada cambio; botón "⏮ REANUDAR PARTIDA" tras reload de la TV (TTL 6h, se limpia al acabar). Móviles ya eran server-side.
+- [x] **BUILD_TAG visible en página de voto** ✅ a85e59c — diagnóstico de caché móvil en 2 segundos + ENTER para entrar a la sala.
+- [x] **Anti multi-sesión (incógnito)** ✅ 11fa754 — identidad por NOMBRE: join con nombre existente adopta la ficha (pid) del jugador y conserva chupitos. E2E prod: merged=True, 1 solo jugador.
+- [x] **Panel del anfitrión** ✅ 11fa754 — `?admin=1&room=X` (enlace en el lobby): lista de jugadores con ECHAR, reset votos de la ronda activa, vaciar sala. E2E prod: kick/reset-votes/reset-room verificados. Barrera = conocer el room id (consciente, fiesta entre amigos).
+
 ## 🌙 CIERRE DE LA NOCHE (2026-06-11 ~01:20) — BACKLOG AGOTADO
 
 **Hecho y en prod** (d28d482 → último): P0.1 juego fantasma · P0.2 toast pegado · P1.A quiz revert · P1.B Millonario R11 + API choice 0..3 + fix activeRound · P1.C rhythm receptores DDR · P1.D mapa aventura · P1.E intro 61s→32s · P1.F skip mata corrutina · P1.G controles HUD ↻/✕ · P2.1/2.3/2.4 polish · P3.1 rush Lagos · P3.2 E2E prod · P4.1-3 copys · P5.2 BACKEND_ENABLED.
