@@ -3575,7 +3575,10 @@ const VICTIM_IMAGES = {
   'Kerry Kaverga': 'assets/kerry-kaverga.jpg',
   'Helmer Cader': 'assets/helmer-cader.jpg',
   'Elsa Brosón': 'assets/salva-polla.jpg', // misma foto; el personaje se renombró 2026-06-11
+  'Unam Amadita': 'assets/unam-amadita.jpg',
+  'Lola Mento': 'assets/lola-mento.jpg',
   'Paz Padilla': 'assets/paz-padilla.jpg',
+  'Anna Ferrer': 'assets/anna-ferrer.jpg',
   'El Demonio de las Islas Jiménez': 'assets/demonio-islas-jimenez.jpg',
   // Add more victim photos here as friends contribute them.
 };
@@ -7117,7 +7120,7 @@ function gamePoligrafo(v) {
 // ============================================
 function gameAnnaBoss(v) {
   const stage = document.getElementById('game-stage');
-  const annaImg = DICEBEAR('Anna-Ferrer-Bride', 'avataaars');
+  const annaImg = avatarUrl('Anna Ferrer', 'avataaars'); // foto real (override) con fallback DiceBear
   let totalShots = 0;
   let answerTimer = null;
   let yesCount = 0;
