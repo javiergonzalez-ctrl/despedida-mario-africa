@@ -3575,6 +3575,7 @@ const VICTIM_IMAGES = {
   'Kerry Kaverga': 'assets/kerry-kaverga.jpg',
   'Helmer Cader': 'assets/helmer-cader.jpg',
   'Elsa Brosón': 'assets/salva-polla.jpg', // misma foto; el personaje se renombró 2026-06-11
+  'Paz Padilla': 'assets/paz-padilla.jpg',
   'El Demonio de las Islas Jiménez': 'assets/demonio-islas-jimenez.jpg',
   // Add more victim photos here as friends contribute them.
 };
@@ -5776,7 +5777,7 @@ function gameDrift(v) {
 // ============================================
 function gameWhack(v) {
   const stage = document.getElementById('game-stage');
-  const pazImg = DICEBEAR('Paz-Padilla', 'avataaars');
+  const pazImg = avatarUrl('Paz Padilla', 'avataaars'); // foto real (override) con fallback DiceBear
   const fakeImgs = [
     DICEBEAR('Fake-Senora-1', 'avataaars'),
     DICEBEAR('Fake-Senora-2', 'avataaars'),
@@ -6730,7 +6731,7 @@ function gameMillonario(v) {
         <div class="mill-logo">¿QUIÉN QUIERE SER<br/>MILLONARIO?</div>
         <div class="mill-sub" style="margin-top:6px;">edición "conoce a tu propia boda"</div>
         <div class="mill-host">
-          <img src="${v.avatar}" alt="Paz Padilla" />
+          <img src="${avatarUrl(v.name, 'avataaars')}" alt="Paz Padilla" />
           <div class="bubble">"Buenas noches, España. Esta noche, en el sillón… mi futuro yerno. ${qs.length} preguntas sobre SU PROPIA VIDA. Si las falla, no se lleva el millón: se lleva chupitos. <strong>Ozú, empezamos.</strong>"</div>
         </div>
         <div class="mill-lifelines" style="margin-top:10px;">
@@ -6764,7 +6765,7 @@ function gameMillonario(v) {
         </div>
         <div class="mill-prize">💰 EN JUEGO: ${q.prize}</div>
         <div class="mill-host">
-          <img src="${v.avatar}" alt="Paz Padilla" />
+          <img src="${avatarUrl(v.name, 'avataaars')}" alt="Paz Padilla" />
           <div class="bubble">"${hostLine}"</div>
         </div>
         <div class="mill-question">${q.q}</div>
