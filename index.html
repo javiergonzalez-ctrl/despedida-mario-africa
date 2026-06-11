@@ -439,6 +439,7 @@
   }
   .title-grid {
     position: absolute; inset: 0;
+    pointer-events: none; /* decorativo: interceptaba los clicks de los botones de start */
     background-image:
       linear-gradient(rgba(255, 23, 68, 0.04) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 23, 68, 0.04) 1px, transparent 1px);
@@ -3041,9 +3042,53 @@ function show(screenId) {
   document.getElementById(screenId).classList.remove('hidden');
 }
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ============================================
+// PERSISTENCIA DEL HOST (anti-catástrofe)
+// Los votos/chupitos de los MÓVILES ya viven en el servidor (Neon) y cada
+// móvil se re-engancha solo (pid+nombre en localStorage). Lo único que vivía
+// solo en memoria era el estado del HOST (TV): ronda actual + chupitos de
+// Mario. Esto lo guarda en cada cambio y permite REANUDAR tras un reload.
+// ============================================
+function saveHostState() {
+  try {
+    localStorage.setItem('asb_host_state', JSON.stringify({
+      shots: state.shots, groupShots: state.groupShots,
+      currentRound: state.currentRound, roundShots: state.roundShots,
+      weddingResult: state.weddingResult, ts: Date.now()
+    }));
+  } catch (e) {}
+}
+function loadHostState() {
+  try {
+    const raw = localStorage.getItem('asb_host_state');
+    if (!raw) return null;
+    const s = JSON.parse(raw);
+    if (!s || !s.currentRound || s.currentRound < 1) return null;
+    // Partidas de hace >6h = otra fiesta: no ofrecer reanudar
+    if (Date.now() - (s.ts || 0) > 6 * 3600 * 1000) return null;
+    return s;
+  } catch (e) { return null; }
+}
+function clearHostState() { try { localStorage.removeItem('asb_host_state'); } catch (e) {} }
+function resumeParty() {
+  const s = loadHostState();
+  if (!s) return;
+  state.shots = s.shots || 0;
+  state.groupShots = s.groupShots || 0;
+  state.roundShots = s.roundShots || {};
+  state.weddingResult = s.weddingResult || null;
+  initAudio();
+  state.currentRound = s.currentRound;
+  updateHud();
+  jumpToRound(s.currentRound); // transition card de la ronda interrumpida
+}
+window.resumeParty = resumeParty;
+
 function updateHud() {
   document.getElementById('hud-shots').textContent = `🥃 ${state.shots} ${t('shots_word').toUpperCase()}`;
   document.getElementById('hud-round').textContent = state.currentRound > 0 ? `${t('hud_round')} ${state.currentRound}/12` : t('hud_round_none');
+  saveHostState(); // cualquier cambio de marcador/ronda queda persistido
 }
 function addShots(n) {
   state.shots += n;
@@ -7460,6 +7505,7 @@ function castVote(choice) {
 // ============================================
 async function goToFinal() {
   show('screen-final');
+  clearHostState(); // partida cerrada — no ofrecer reanudar esto
   document.getElementById('hud').classList.add('hidden');
   document.body.classList.remove('hud-active');
   document.body.classList.add('final-active'); // esconde lang-pills (P2.1)
@@ -7608,6 +7654,21 @@ window.addEventListener('DOMContentLoaded', () => {
     }
   } else {
     show('screen-start');
+    // Partida interrumpida (reload de la TV a mitad): ofrecer REANUDAR con
+    // la ronda y los chupitos exactos. Los móviles ni se enteran (server-side).
+    const saved = loadHostState();
+    if (saved) {
+      const anchor = document.querySelector('#screen-start .btn-primary');
+      if (anchor) {
+        const btn = document.createElement('button');
+        btn.className = 'btn-secondary';
+        btn.id = 'resume-party-btn';
+        btn.style.cssText = 'margin-top:14px;border-color:var(--terminal);color:var(--terminal);font-weight:700;';
+        btn.textContent = `⏮ REANUDAR PARTIDA — ronda ${saved.currentRound}/12 · ${saved.shots} 🥃`;
+        btn.onclick = resumeParty;
+        anchor.insertAdjacentElement('afterend', btn);
+      }
+    }
   }
 });
 
