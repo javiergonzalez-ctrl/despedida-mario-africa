@@ -4544,13 +4544,14 @@ function startGame(v) {
 function gameRush(v) {
   const stage = document.getElementById('game-stage');
   let attempt = 0;
-  const maxAttempts = 4;
+  const maxAttempts = 7;
+  const PASS_HITS = 4; // 4 aciertos de 7 para superar la prueba
   const results = [];
   let cursorPos = Math.random() * 100;
   let dir = Math.random() > 0.5 ? 1 : -1;
-  let speed = 1.0;
+  let speed = 1.4; // arranca menos sencillo
   let running = true;
-  let zoneWidth = 18;
+  let zoneWidth = 15;
   let zoneStart = Math.random() * (100 - zoneWidth);
 
   // Alturas del skyline (fijas — que no bailen entre renders)
@@ -4577,7 +4578,7 @@ function gameRush(v) {
         <div class="rush-zone" id="rush-zone" style="left:${zoneStart}%; width:${zoneWidth}%;"></div>
         <div class="rush-cursor" id="rush-cursor" style="left:${cursorPos}%;"></div>
       </div>
-      <p style="color:var(--text-dim);font-size:14px;">El taxi de Elver no tiene frenos finos. La PARADA <strong style="color:var(--terminal)">cambia de sitio</strong> cada intento.</p>
+      <p style="color:var(--text-dim);font-size:14px;">El taxi de Elver no tiene frenos finos. La PARADA <strong style="color:var(--terminal)">cambia y se estrecha</strong> cada intento. Necesitas <strong style="color:var(--gold)">4 de 7</strong> para pasar.</p>
     </div>
   `;
 
@@ -4602,8 +4603,8 @@ function gameRush(v) {
     else { sfx.miss(); flash('red'); shake('light'); }
     attempt++;
     if (attempt < maxAttempts) {
-      speed += 0.3;
-      zoneWidth = Math.max(8, zoneWidth - 1.5);
+      speed += 0.22;                                   // cada intento un pelín más rápido
+      zoneWidth = Math.max(7, zoneWidth - 1.1);        // y la parada un pelín más estrecha
       zoneStart = Math.random() * (100 - zoneWidth);
       dir = Math.random() > 0.5 ? 1 : -1;
       const zEl = document.getElementById('rush-zone');
@@ -4615,8 +4616,14 @@ function gameRush(v) {
       if (aEl) aEl.textContent = attempt + 1;
     } else {
       running = false;
-      const misses = results.filter(r => !r).length;
-      setTimeout(() => showResult(misses, misses === 0 ? '¡4/4 frenazos! Elver se calma. De momento.' : `Elver te exige ${misses} chupito${misses>1?'s':''}.`), 800);
+      const hits = results.filter(r => r).length;
+      const passed = hits >= PASS_HITS;
+      // Si aprueba (4+), se le perdonan fallos; si no, bebe todos los fallos.
+      const shots = passed ? Math.max(0, (maxAttempts - hits) - 2) : (maxAttempts - hits);
+      const msg = passed
+        ? `✅ ${hits}/${maxAttempts} frenazos — prueba superada. ${shots ? shots + ' chupito' + (shots > 1 ? 's' : '') : '¡Cero chupitos!'}`
+        : `❌ Solo ${hits}/${maxAttempts}. No llegas a ${PASS_HITS} — Elver te exige ${shots} chupitos.`;
+      setTimeout(() => showResult(shots, msg), 800);
     }
   }
 
@@ -7367,34 +7374,53 @@ function gameAnnaBoss(v) {
     }, 1000);
   }
 
-  // ============ PHASE 2 — ¿ESTA PAREJA SE QUIERE O NO? (galería) ============
+  // ============ PHASE 2 — ¿PEGAN O NO? (todas las fotos + cierre con la pareja real) ============
   function renderLastVow() {
     if (!aliveAnna) return; // player may have jumped away during the 2s pause
-    const FOTOS = ['assets/pareja/pareja1.jpg', 'assets/pareja/pareja2.jpg', 'assets/pareja/pareja3.jpg', 'assets/pareja/pareja4.jpg', 'assets/pareja/pareja5.jpg', 'assets/pareja/pareja6.jpg', 'assets/pareja/pareja7.jpg', 'assets/pareja/pareja8.jpg', 'assets/pareja/pareja9.jpg'];
-    const CIERRE = 'assets/pareja/pareja10.jpg'; // la pareja REAL: cierre del juego con "Mil veces sí, Marcos"
+    const POOL = ['assets/pareja/pareja1.jpg', 'assets/pareja/pareja2.jpg', 'assets/pareja/pareja3.jpg', 'assets/pareja/pareja4.jpg', 'assets/pareja/pareja5.jpg', 'assets/pareja/pareja6.jpg', 'assets/pareja/pareja7.jpg', 'assets/pareja/pareja8.jpg', 'assets/pareja/pareja9.jpg'];
+    const CIERRE = 'assets/pareja/pareja10.jpg'; // la pareja REAL: SIEMPRE la última, con "Mil veces sí, Marcos"
     const CUNAO = [
       '¡Que nooo, criatura! Que ella claro que quería con él, míralo, si está coladito.',
       'Anda ya, postureo dice. Si esos dos se quieren con locura, se les ve en los ojos.',
       '¡Pero qué dices, Mario! Que se adoran, ozú, que lo digo yo que de amor sé un rato.'
     ];
-    const foto = FOTOS[Math.floor(Math.random() * FOTOS.length)]; // UNA foto al azar del pool
-    let answered = false;
-    stage.innerHTML = `
-      <div class="poligrafo-stage" style="text-align:center; border-color: var(--gold); box-shadow: 0 0 80px rgba(255,215,0,0.3);">
-        <div class="salvame-logo" style="color: var(--gold); text-shadow: 0 0 20px var(--gold);">▸ LA PREGUNTA FINAL ◂</div>
-        <div style="margin:12px auto;max-width:520px;">
-          <img src="${foto}" alt="" style="width:100%;max-height:46vh;object-fit:contain;border-radius:14px;border:3px solid var(--gold);box-shadow:0 8px 32px rgba(0,0,0,0.5);" />
-        </div>
-        <div class="paz-quote" style="font-size:clamp(18px,4.4vw,26px);margin:8px 0 18px;">¿Esta pareja pega… o no pega?</div>
-        <div class="paz-controls">
-          <button class="paz-btn yes" id="quiere-si">💞 SÍ PEGAN</button>
-          <button class="paz-btn no" id="quiere-no">💔 NO PEGAN</button>
-        </div>
-      </div>
-    `;
-    millSpeak('¿Esta pareja se quiere de verdad… o es puro postureo de Instagram?');
+    const orden = POOL.slice().sort(() => Math.random() - 0.5); // todas, en orden aleatorio
+    let i = 0;
 
-    // Cierre del juego: la pareja REAL + "Mil veces sí, Marcos" + fin.
+    function renderFoto() {
+      if (i >= orden.length) { renderCierre(); return; }
+      const foto = orden[i];
+      let answered = false;
+      stage.innerHTML = `
+        <div class="poligrafo-stage" style="text-align:center; border-color: var(--gold); box-shadow: 0 0 80px rgba(255,215,0,0.3);">
+          <div class="salvame-logo" style="color: var(--gold); text-shadow: 0 0 20px var(--gold);">▸ ¿PEGAN O NO? · ${i + 1}/${orden.length} ◂</div>
+          <div style="margin:12px auto;max-width:520px;">
+            <img src="${foto}" alt="" style="width:100%;max-height:44vh;object-fit:contain;border-radius:14px;border:3px solid var(--gold);box-shadow:0 8px 32px rgba(0,0,0,0.5);" />
+          </div>
+          <div class="paz-quote" style="font-size:clamp(18px,4.4vw,26px);margin:8px 0 18px;">¿Esta pareja pega… o no pega?</div>
+          <div class="paz-controls">
+            <button class="paz-btn yes" id="quiere-si">💞 SÍ PEGAN</button>
+            <button class="paz-btn no" id="quiere-no">💔 NO PEGAN</button>
+          </div>
+        </div>
+      `;
+      if (i === 0) millSpeak('¿Esta pareja se quiere de verdad… o es puro postureo de Instagram?');
+      const answer = async () => {
+        if (answered || !aliveAnna) return;
+        answered = true;
+        // Resultado ALEATORIO por foto: nadie sabe si esa pareja "pega" o no.
+        const gana = Math.random() < 0.5;
+        if (gana) { sfx.kaching(); flash('gold'); }
+        else { sfx.fail(); flash('red'); shake('light'); totalShots += 1; if (Math.random() < 0.4) millSpeak(CUNAO[Math.floor(Math.random() * CUNAO.length)]); }
+        await sleep(gana ? 1100 : 1600); if (!aliveAnna) return;
+        i++;
+        renderFoto();
+      };
+      document.getElementById('quiere-si')?.addEventListener('click', answer, { once: true });
+      document.getElementById('quiere-no')?.addEventListener('click', answer, { once: true });
+    }
+
+    // Cierre: la pareja REAL + "Mil veces sí, Marcos" + fin.
     function renderCierre() {
       stage.innerHTML = `
         <div class="poligrafo-stage" style="text-align:center; border-color: var(--gold); box-shadow: 0 0 100px rgba(255,215,0,0.45);">
@@ -7407,27 +7433,10 @@ function gameAnnaBoss(v) {
       `;
       sfx.kaching(); flash('gold'); try { spawnConfetti(); } catch (e) {}
       millSpeak('Mil veces sí, Marcos.');
-      setTimeout(() => { if (aliveAnna) showResult(totalShots, '💍 Mil veces sí. Enhorabuena, Marcos.'); }, 5200);
+      setTimeout(() => { if (aliveAnna) showResult(totalShots, '💍 Mil veces sí. Enhorabuena, Marcos.'); }, 5400);
     }
 
-    const answer = async () => {
-      if (answered || !aliveAnna) return;
-      answered = true;
-      // Resultado ALEATORIO: responda lo que responda, nadie sabe si gana o bebe.
-      const gana = Math.random() < 0.5;
-      if (gana) {
-        sfx.kaching(); flash('gold');
-        millSpeak('Ozú, qué bonito. Claro que se quieren, criatura.');
-      } else {
-        sfx.fail(); flash('red'); shake('light');
-        totalShots += 3;
-        millSpeak(CUNAO[Math.floor(Math.random() * CUNAO.length)]);
-      }
-      await sleep(3200); if (!aliveAnna) return;
-      renderCierre(); // siempre cierra con la pareja real y "Mil veces sí, Marcos"
-    };
-    document.getElementById('quiere-si')?.addEventListener('click', answer, { once: true });
-    document.getElementById('quiere-no')?.addEventListener('click', answer, { once: true });
+    renderFoto();
   }
 
   function animateGoldTrace() {
