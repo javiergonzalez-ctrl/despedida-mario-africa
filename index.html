@@ -7376,29 +7376,28 @@ function gameAnnaBoss(v) {
       'Anda ya, postureo dice. Si esos dos se quieren con locura, se les ve en los ojos.',
       '¡Pero qué dices, Mario! Que se adoran, ozú, que lo digo yo que de amor sé un rato.'
     ];
-    let cur = 0, answered = false;
+    const foto = FOTOS[Math.floor(Math.random() * FOTOS.length)]; // UNA foto al azar
+    let answered = false;
     stage.innerHTML = `
       <div class="poligrafo-stage" style="text-align:center; border-color: var(--gold); box-shadow: 0 0 80px rgba(255,215,0,0.3);">
         <div class="salvame-logo" style="color: var(--gold); text-shadow: 0 0 20px var(--gold);">▸ LA PREGUNTA FINAL ◂</div>
         <div style="margin:12px auto;max-width:520px;">
-          <img id="pareja-foto" src="${FOTOS[0]}" alt="" style="width:100%;max-height:42vh;object-fit:contain;border-radius:14px;border:3px solid var(--gold);box-shadow:0 8px 32px rgba(0,0,0,0.5);" />
+          <img src="${foto}" alt="" style="width:100%;max-height:46vh;object-fit:contain;border-radius:14px;border:3px solid var(--gold);box-shadow:0 8px 32px rgba(0,0,0,0.5);" />
         </div>
-        <div class="paz-quote" style="font-size:clamp(18px,4.4vw,26px);margin:8px 0 18px;">¿Esta pareja se quiere de verdad… o es postureo?</div>
+        <div class="paz-quote" style="font-size:clamp(18px,4.4vw,26px);margin:8px 0 18px;">¿Esta pareja pega… o no pega?</div>
         <div class="paz-controls">
-          <button class="paz-btn yes" id="quiere-si">💞 SE QUIEREN</button>
-          <button class="paz-btn no" id="quiere-no">📸 POSTUREO</button>
+          <button class="paz-btn yes" id="quiere-si">💞 SÍ PEGAN</button>
+          <button class="paz-btn no" id="quiere-no">💔 NO PEGAN</button>
         </div>
       </div>
     `;
-    const fotoEl = document.getElementById('pareja-foto');
-    const carr = setInterval(() => { cur = (cur + 1) % FOTOS.length; if (fotoEl) fotoEl.src = FOTOS[cur]; else clearInterval(carr); }, 1800);
-    document.addEventListener('start-game', () => clearInterval(carr), { once: true });
     millSpeak('¿Esta pareja se quiere de verdad… o es puro postureo de Instagram?');
-    const answer = async (siQuieren) => {
+    const answer = async () => {
       if (answered || !aliveAnna) return;
       answered = true;
-      clearInterval(carr);
-      if (siQuieren) {
+      // Resultado ALEATORIO: responda lo que responda, nadie sabe si gana o bebe.
+      const gana = Math.random() < 0.5;
+      if (gana) {
         sfx.kaching(); flash('gold');
         millSpeak('Ozú, qué bonito. Claro que se quieren, criatura.');
       } else {
@@ -7407,15 +7406,12 @@ function gameAnnaBoss(v) {
         millSpeak(CUNAO[Math.floor(Math.random() * CUNAO.length)]);
       }
       await sleep(3200); if (!aliveAnna) return;
-      // Última ronda: al terminar va directo a la pantalla final (Mario se pasó el juego).
-      showResult(totalShots, siQuieren
-        ? 'Dijiste que se quieren. Ozú, qué final más bonito, criatura.'
-        : 'Dijiste que es postureo… la sotana no te lo perdona.');
+      showResult(totalShots, gana
+        ? 'El amor verdadero gana. Ozú, qué final más bonito, criatura.'
+        : 'La sotana ha dictado: esta vez bebes, Mario.');
     };
-    const si = document.getElementById('quiere-si');
-    const no = document.getElementById('quiere-no');
-    if (si) si.addEventListener('click', () => answer(true), { once: true });
-    if (no) no.addEventListener('click', () => answer(false), { once: true });
+    document.getElementById('quiere-si')?.addEventListener('click', answer, { once: true });
+    document.getElementById('quiere-no')?.addEventListener('click', answer, { once: true });
   }
 
   function animateGoldTrace() {
