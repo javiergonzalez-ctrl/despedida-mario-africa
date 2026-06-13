@@ -3414,10 +3414,10 @@ const VICTIMS = [
   {
     name: 'Anna Ferrer', loc: 'Madrid / Cádiz (próximamente) 🇪🇸',
     avatar: DICEBEAR('Anna-Ferrer-Bride', 'avataaars'),
-    story: 'FINAL FINAL BOSS. La novia. Mario se ha fugado de la boda y hay que encontrarlo entre los invitados. Luego, EL voto final con el polígrafo de mamá — y el público vota si la boda se cancela.',
-    quote: '"Mario, mírame a los ojos y respóndeme. Mil veces… ¿qué?"',
-    debt: 10, game: 'annaboss', gameName: '¿DÓNDE ESTÁ MARIO?',
-    instruction: 'Mario se ha fugado de la boda y se esconde entre 120 invitados. Encuéntralo en 30s (ojo a los novios falsos). Luego: EL voto final y el público decide si hay boda.',
+    story: 'FINAL FINAL BOSS. La novia. La pregunta que lo decide todo: ¿esta pareja se quiere de verdad o es puro postureo? Y luego el público vota si hay boda.',
+    quote: '"Mario, mírame a los ojos. ¿Esto es amor… o es Instagram?"',
+    debt: 10, game: 'annaboss', gameName: '¿SE QUIEREN O NO?',
+    instruction: 'Mira las fotos de la pareja y decide: ¿se quieren de verdad o es postureo? Luego el público vota si hay boda.',
     i18n: {
       gl: {
         story: 'BOSS FINAL FINAL. A noiva. Mario fuxiu da voda e hai que atopalo entre os invitados. Logo, O voto final co polígrafo da mamá — e o público vota se a voda se cancela.',
@@ -7367,53 +7367,52 @@ function gameAnnaBoss(v) {
     }, 1000);
   }
 
-  // ============ PHASE 2 — EL ÚLTIMO SÍ (one iconic vow) ============
+  // ============ PHASE 2 — ¿ESTA PAREJA SE QUIERE O NO? (galería) ============
   function renderLastVow() {
     if (!aliveAnna) return; // player may have jumped away during the 2s pause
-    const vow = tList(ANNA_VOWS)[tList(ANNA_VOWS).length - 1]; // "¿Me querrás MIL VECES…?"
+    const FOTOS = ['assets/pareja/pareja1.jpg', 'assets/pareja/pareja2.jpg', 'assets/pareja/pareja3.jpg', 'assets/pareja/pareja4.jpg', 'assets/pareja/pareja5.jpg'];
+    const CUNAO = [
+      '¡Que nooo, criatura! Que ella claro que quería con él, míralo, si está coladito.',
+      'Anda ya, postureo dice. Si esos dos se quieren con locura, se les ve en los ojos.',
+      '¡Pero qué dices, Mario! Que se adoran, ozú, que lo digo yo que de amor sé un rato.'
+    ];
+    let cur = 0, answered = false;
     stage.innerHTML = `
-      <div class="poligrafo-stage" style="border-color: var(--gold); box-shadow: 0 0 80px rgba(255,215,0,0.3);">
-        <div class="salvame-logo" style="color: var(--gold); text-shadow: 0 0 20px var(--gold);">▸ ANNA FERRER · EL ÚLTIMO SÍ ◂</div>
-        <div class="paz-card" style="border-left-color: var(--gold);">
-          <div class="paz-avatar" style="border-color: var(--gold); background: linear-gradient(135deg, #ff8eb6, var(--gold));"><img src="${annaImg}" alt="Anna Ferrer" /></div>
-          <div>
-            <div class="paz-name" style="color: var(--gold);">ANNA FERRER · EL VOTO FINAL · <span id="anna-clock" style="color:white;">${ANNA_TIME(ANSWER_TIME)}</span></div>
-            <div class="paz-quote">"${vow}"</div>
-          </div>
+      <div class="poligrafo-stage" style="text-align:center; border-color: var(--gold); box-shadow: 0 0 80px rgba(255,215,0,0.3);">
+        <div class="salvame-logo" style="color: var(--gold); text-shadow: 0 0 20px var(--gold);">▸ LA PREGUNTA FINAL ◂</div>
+        <div style="margin:12px auto;max-width:520px;">
+          <img id="pareja-foto" src="${FOTOS[0]}" alt="" style="width:100%;max-height:42vh;object-fit:contain;border-radius:14px;border:3px solid var(--gold);box-shadow:0 8px 32px rgba(0,0,0,0.5);" />
         </div>
-        <div class="poligrafo-machine" style="border-color: rgba(255,215,0,0.4);">
-          <div class="poligrafo-screen" style="border-color: var(--gold);">
-            <svg width="100%" height="100%" viewBox="0 0 400 80" preserveAspectRatio="none">
-              <polyline id="poli-trace" fill="none" stroke="#FFD700" stroke-width="2" stroke-linejoin="round" />
-            </svg>
-          </div>
-          <div class="poligrafo-verdict" id="poli-verdict"></div>
-        </div>
+        <div class="paz-quote" style="font-size:clamp(18px,4.4vw,26px);margin:8px 0 18px;">¿Esta pareja se quiere de verdad… o es postureo?</div>
         <div class="paz-controls">
-          <button class="paz-btn yes" data-anna-yes>[Y] MIL VECES SÍ</button>
-          <button class="paz-btn no" data-anna-no>[N] NO</button>
+          <button class="paz-btn yes" id="quiere-si">💞 SE QUIEREN</button>
+          <button class="paz-btn no" id="quiere-no">📸 POSTUREO</button>
         </div>
       </div>
     `;
-    const yesBtn = stage.querySelector('[data-anna-yes]');
-    const noBtn = stage.querySelector('[data-anna-no]');
-    if (yesBtn) yesBtn.addEventListener('click', () => annaAnswer(1));
-    if (noBtn) noBtn.addEventListener('click', () => annaAnswer(0));
-    animateGoldTrace();
-    let t = ANSWER_TIME;
-    if (answerTimer) clearInterval(answerTimer);
-    answerTimer = setInterval(() => {
-      t -= 0.1;
-      const clk = document.getElementById('anna-clock');
-      if (!clk) { clearInterval(answerTimer); return; }
-      clk.textContent = ANNA_TIME(Math.max(0, t));
-      if (t <= 1.2) clk.style.color = 'var(--blood)';
-      if (t <= 0) {
-        clearInterval(answerTimer);
-        toast('⏱ Mario duda en EL voto → Anna lo toma como "NO"', 'danger');
-        annaAnswer(0, true);
+    const fotoEl = document.getElementById('pareja-foto');
+    const carr = setInterval(() => { cur = (cur + 1) % FOTOS.length; if (fotoEl) fotoEl.src = FOTOS[cur]; else clearInterval(carr); }, 1800);
+    document.addEventListener('start-game', () => clearInterval(carr), { once: true });
+    millSpeak('¿Esta pareja se quiere de verdad… o es puro postureo de Instagram?');
+    const answer = async (siQuieren) => {
+      if (answered || !aliveAnna) return;
+      answered = true;
+      clearInterval(carr);
+      if (siQuieren) {
+        sfx.kaching(); flash('gold');
+        millSpeak('Ozú, qué bonito. Claro que se quieren, criatura.');
+      } else {
+        sfx.fail(); flash('red'); shake('light');
+        totalShots += 3;
+        millSpeak(CUNAO[Math.floor(Math.random() * CUNAO.length)]);
       }
-    }, 100);
+      await sleep(3200); if (!aliveAnna) return;
+      openWeddingVote();
+    };
+    const si = document.getElementById('quiere-si');
+    const no = document.getElementById('quiere-no');
+    if (si) si.addEventListener('click', () => answer(true), { once: true });
+    if (no) no.addEventListener('click', () => answer(false), { once: true });
   }
 
   function animateGoldTrace() {
@@ -7526,7 +7525,7 @@ function gameAnnaBoss(v) {
     document.removeEventListener('keydown', keyHandler);
   }, { once: true });
 
-  renderWally();
+  renderLastVow(); // último juego = directamente la galería "¿se quieren o no?"
 }
 function ANNA_TIME(t) { return t.toFixed(1) + 's'; }
 
