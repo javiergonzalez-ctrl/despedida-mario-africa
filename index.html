@@ -7407,7 +7407,10 @@ function gameAnnaBoss(v) {
         millSpeak(CUNAO[Math.floor(Math.random() * CUNAO.length)]);
       }
       await sleep(3200); if (!aliveAnna) return;
-      openWeddingVote();
+      // Última ronda: al terminar va directo a la pantalla final (Mario se pasó el juego).
+      showResult(totalShots, siQuieren
+        ? 'Dijiste que se quieren. Ozú, qué final más bonito, criatura.'
+        : 'Dijiste que es postureo… la sotana no te lo perdona.');
     };
     const si = document.getElementById('quiere-si');
     const no = document.getElementById('quiere-no');
